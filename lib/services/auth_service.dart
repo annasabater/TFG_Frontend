@@ -1,90 +1,115 @@
+// lib/services/auth_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
-  bool isLoggedIn = false; // Estado de autenticación
+  bool isLoggedIn = false;
+  Map<String, dynamic>? currentUser;
 
   static String get _baseApiUrl {
-    if (kIsWeb) {
-      return 'http://localhost:9000/api';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:9000/api';
-    } else {
-      return 'http://localhost:9000/api';
-    }
+    if (kIsWeb) return 'http://localhost:9000/api';
+    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
+    return 'http://localhost:9000/api';
   }
 
-  // Endpoints concretos
-  String get _loginUrl  => '$_baseApiUrl/users/login';
-  String get _signupUrl => '$_baseApiUrl/users/signup';
+  String get _loginUrl        => '$_baseApiUrl/users/login';
+  String get _signupUrl       => '$_baseApiUrl/users/signup';
+  String get _updateProfileUrl=> '$_baseApiUrl/users';
 
-  /// Inicia sesión con email y contraseña
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final url  = Uri.parse(_loginUrl);
+    final url = Uri.parse(_loginUrl);
     final body = json.encode({'email': email, 'password': password});
-
     try {
-      print('Enviando POST a $url');
-      final response = await http.post(
-        url,
+      final resp = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
-      print('Respuesta status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
         isLoggedIn = true;
-        return json.decode(response.body);
+        currentUser = data;
+        return data;
       } else {
         return {'error': 'Email o contraseña incorrectos'};
       }
     } catch (e) {
-      print('Error al conectar con el servidor: $e');
       return {'error': 'Error de conexión'};
     }
   }
 
-  /// Registra un nuevo usuario
   Future<Map<String, dynamic>> signup({
     required String userName,
     required String email,
     required String password,
-    required String role,
+    String role = 'Usuario',
   }) async {
     final url  = Uri.parse(_signupUrl);
     final body = json.encode({
       'userName': userName,
-      'email': email,
+      'email':    email,
       'password': password,
-      'role': role,
+      'role':     role,
     });
-
     try {
-      print('Enviando POST a $url');
-      final response = await http.post(
-        url,
+      final resp = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
-      print('Respuesta status: ${response.statusCode}');
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return json.decode(response.body);
+      if (resp.statusCode == 201 || resp.statusCode == 200) {
+        return json.decode(resp.body);
       } else {
-        final data = json.decode(response.body);
+        final data = json.decode(resp.body);
         return {'error': data['message'] ?? 'Error en registro'};
       }
     } catch (e) {
-      print('Error al conectar con el servidor: $e');
       return {'error': 'Error de conexión'};
     }
   }
 
-  /// Cierra la sesión localmente
+  Future<Map<String, dynamic>> updateProfile({
+    required String userName,
+    required String email,
+    String? password,
+    String? role,
+  }) async {
+    if (currentUser == null || currentUser!['_id'] == null) {
+      return {'error': 'No hay usuario autenticado'};
+    }
+    final id = currentUser!['_id'];
+    final url = Uri.parse('$_updateProfileUrl/$id');
+
+    final bodyMap = {
+      'userName': userName,
+      'email':    email,
+    };
+    if (password != null && password.isNotEmpty) {
+      bodyMap['password'] = password;
+    }
+    if (role != null) {
+      bodyMap['role'] = role;
+    }
+
+    try {
+      final resp = await http.put(url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(bodyMap),
+      );
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
+        currentUser = {...currentUser!, ...data};
+        return data;
+      } else {
+        return {'error': 'Error al actualizar perfil'};
+      }
+    } catch (e) {
+      return {'error': 'Error de conexión'};
+    }
+  }
+
   void logout() {
     isLoggedIn = false;
-    print('Sesión cerrada');
+    currentUser = null;
   }
 }

@@ -1,11 +1,13 @@
-//app_router.dart
+// lib/routes/app_router.dart
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
-import 'package:SkyNet/screens/borrar_screen.dart';
+import 'package:SkyNet/screens/auth/register_screen.dart';
+import 'package:SkyNet/screens/edit_profile_screen.dart'; 
+import 'package:SkyNet/screens/home_screen.dart';
 import 'package:SkyNet/screens/details_screen.dart';
 import 'package:SkyNet/screens/editar_screen.dart';
+import 'package:SkyNet/screens/borrar_screen.dart';
 import 'package:SkyNet/screens/imprimir_screen.dart';
-import 'package:SkyNet/screens/home_screen.dart';
 import 'package:SkyNet/screens/perfil_screen.dart';
 import 'package:SkyNet/screens/jocs_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
@@ -14,40 +16,64 @@ import 'package:SkyNet/services/auth_service.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/' : '/login',
   routes: [
-    GoRoute(path: '/login', builder: (context, state) => LoginPage()),
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (_, __) => LoginPage(),
+    ),
+    GoRoute(
+      path: '/register',
+      name: 'register',
+      builder: (_, __) => const RegisterPage(),
+    ),
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      name: 'home',
+      builder: (_, __) => const HomeScreen(),
       routes: [
         GoRoute(
           path: 'details',
-          builder: (context, state) => const DetailsScreen(),
+          name: 'details',
+          builder: (_, __) => const DetailsScreen(),
           routes: [
             GoRoute(
               path: 'imprimir',
-              builder: (context, state) => const ImprimirScreen(),
+              name: 'imprimir',
+              builder: (_, __) => const ImprimirScreen(),
             ),
           ],
         ),
         GoRoute(
           path: 'editar',
-          builder: (context, state) => const EditarScreen(),
+          name: 'editar',
+          builder: (_, __) => const EditarScreen(),
         ),
         GoRoute(
           path: 'borrar',
-          builder: (context, state) => const BorrarScreen(),
+          name: 'borrar',
+          builder: (_, __) => const BorrarScreen(),
         ),
         GoRoute(
           path: 'profile',
-          builder: (context, state) => const PerfilScreen(),
+          name: 'profile',
+          builder: (_, __) => const PerfilScreen(),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              name: 'editProfile',
+              builder: (_, __) => const EditProfileScreen(),  
+            ),
+          ],
         ),
         GoRoute(
           path: 'jocs',
-          builder: (context, state) => const JocsPage(),
+          name: 'jocs',
+          builder: (_, __) => const JocsPage(),
           routes: [
             GoRoute(
               path: 'competencia',
-              builder: (context, state) => const DroneControlPage(),
+              name: 'competencia',
+              builder: (_, __) => const DroneControlPage(),
             ),
           ],
         ),
