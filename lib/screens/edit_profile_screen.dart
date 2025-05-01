@@ -1,3 +1,4 @@
+
 // lib/screens/auth/edit_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +17,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _isLoading = false;
+  bool _isLoading     = false;
 
   final List<String> _roles = ['Administrador', 'Usuario', 'Empresa', 'Gobierno'];
   String? _selectedRole;
@@ -24,13 +25,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final user = AuthService().currentUser;
-    if (user != null) {
-      _nameCtrl.text     = user['userName'] ?? '';
-      _emailCtrl.text    = user['email']    ?? '';
-      _selectedRole      = user['role']     ?? 'Usuario';
-    } else {
-      _selectedRole      = 'Usuario';
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final auth = AuthService();
+    final id = auth.currentUser?['_id'];
+    if (id != null) {
+      final res = await auth.getUserById(id);
+      if (!res.containsKey('error')) {
+        setState(() {
+          _nameCtrl.text  = res['userName'] ?? '';
+          _emailCtrl.text = res['email']    ?? '';
+          _selectedRole   = res['role']     ?? 'Usuario';
+        });
+      }
     }
   }
 
@@ -38,7 +47,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final pw    = _passwordCtrl.text;
-    final role = _selectedRole ?? 'Usuario';
+    final role  = _selectedRole ?? 'Usuario';
 
     if (name.isEmpty || email.isEmpty) {
       _showError('Nombre y Email son obligatorios.');
@@ -48,16 +57,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
     final res = await AuthService().updateProfile(
       userName: name,
-      email: email,
+      email:    email,
       password: pw.isNotEmpty ? pw : null,
-      role: role,
+      role:     role,
     );
     setState(() => _isLoading = false);
 
     if (res.containsKey('error')) {
       _showError(res['error']);
     } else {
-      context.pop(); // vuelve atrás
+      context.pop();
     }
   }
 
@@ -83,12 +92,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            MyTextfield(controller: _nameCtrl, hintText: 'Nombre', obscureText: false),
+            MyTextfield(controller: _nameCtrl,     hintText: 'Nombre',           obscureText: false),
             const SizedBox(height: 12),
-            MyTextfield(controller: _emailCtrl, hintText: 'Email', obscureText: false),
+            MyTextfield(controller: _emailCtrl,    hintText: 'Email',            obscureText: false),
             const SizedBox(height: 12),
-            MyTextfield(controller: _passwordCtrl, hintText: 'Nueva Contraseña', obscureText: true),
+            MyTextfield(controller: _passwordCtrl, hintText: 'Nueva Contraseña',  obscureText: true),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedRole,
@@ -102,9 +112,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onChanged: (val) => setState(() => _selectedRole = val),
             ),
             const SizedBox(height: 24),
-            _isLoading
-              ? CircularProgressIndicator(color: colors.primary)
-              : MyButton(onTap: _update),
+            if (_isLoading)
+              Center(child: CircularProgressIndicator(color: colors.primary))
+            else ...[
+              ElevatedButton(
+                onPressed: _update,
+                child: const Text('Actualizar Perfil'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.pop(),
+                child: const Text('Cancelar'),
+              ),
+            ],
           ],
         ),
       ),

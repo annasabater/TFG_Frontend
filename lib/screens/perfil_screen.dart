@@ -4,74 +4,122 @@ import 'package:go_router/go_router.dart';
 import '../widgets/Layout.dart';
 import '../services/auth_service.dart';
 
-class PerfilScreen extends StatelessWidget {
+class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
+
+  @override
+  _PerfilScreenState createState() => _PerfilScreenState();
+}
+
+class _PerfilScreenState extends State<PerfilScreen> {
+  bool _isLoading = true;
+  Map<String, dynamic>? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final auth = AuthService();
+    final id = auth.currentUser?['_id'];
+    if (id != null) {
+      final res = await auth.getUserById(id);
+      if (!res.containsKey('error')) {
+        setState(() {
+          _user = res;
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutWrapper(
       title: 'Perfil',
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const CircleAvatar(
-                    radius: 70,
-                    backgroundColor: Colors.blue, // ahora azul
-                    child: Icon(Icons.person, size: 70, color: Colors.white),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Exemple',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 70,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          child: const Icon(Icons.person, size: 70, color: Colors.white),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          _user?['userName'] ?? '',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _user?['email'] ?? '',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 32),
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('ID', style: Theme.of(context).textTheme.titleSmall),
+                                const SizedBox(height: 4),
+                                Text(_user?['_id'] ?? ''),
+                                const Divider(),
+                                Text('Rol', style: Theme.of(context).textTheme.titleSmall),
+                                const SizedBox(height: 4),
+                                Text(_user?['role'] ?? ''),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        ListTile(
+                          leading: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
+                          title: const Text('Editar Perfil'),
+                          subtitle: const Text('Actualitza la teva informació personal'),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () => context.go('/profile/edit'),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            AuthService().logout();
+                            context.go('/login');
+                          },
+                          icon: const Icon(Icons.logout),
+                          label: const Text('TANCAR SESSIÓ'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'demo@exemple.com',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 32),
-                  // ... tus Cards de datos ...
-                  const SizedBox(height: 32),
-                  // Botón Editar Perfil
-                  ListTile(
-                    leading: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
-                    title: const Text('Editar Perfil'),
-                    subtitle: const Text('Actualitza la teva informació personal'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      // Navega a /profile/edit
-                      context.go('/profile/edit');
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      AuthService().logout();
-                      context.go('/login');
-                    },
-                    icon: const Icon(Icons.logout),
-                    label: const Text('TANCAR SESSIÓ'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
