@@ -1,11 +1,9 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:seminari_flutter/provider/users_provider.dart';
-import 'package:seminari_flutter/routes/app_router.dart';
+import 'package:SkyNet/provider/users_provider.dart';
+import 'package:SkyNet/routes/app_router.dart';
 import 'package:provider/provider.dart';
-import 'package:seminari_flutter/services/auth_service.dart';
-import 'package:seminari_flutter/screens/auth/login_screen.dart';
-import 'package:seminari_flutter/screens/home_screen.dart';
-import 'package:seminari_flutter/pages/drone_control_page.dart';
+import 'package:SkyNet/services/auth_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,24 +12,38 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Esquema de color personalizado (azul claro)
+    final lightScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF81D4FA), // Azul pastel
+      brightness: Brightness.light,
+    );
+
     return ChangeNotifierProvider(
-      create: (context) => UserProvider(),
+      create: (_) => UserProvider(),
       child: MaterialApp.router(
-        title: 'Flutter Demo',
-        debugShowCheckedModeBanner:
-            false, // si volem veure o no el banner de debug
+        title: 'S K Y N E T',
+        debugShowCheckedModeBanner: false,
         routerConfig: appRouter,
+        themeMode: ThemeMode.light, // Siempre claro
+
+        // Tema claro
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.light,
+          colorScheme: lightScheme,
+          scaffoldBackgroundColor: lightScheme.background,
+          appBarTheme: AppBarTheme(
+            centerTitle: false,
+            elevation: 0,
+            backgroundColor: lightScheme.primary,
+            foregroundColor: lightScheme.onPrimary,
           ),
-          appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
+          drawerTheme: DrawerThemeData(
+            backgroundColor: lightScheme.surface,
+          ),
           cardTheme: CardTheme(
+            color: lightScheme.surface,
             elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -39,6 +51,8 @@ class MyApp extends StatelessWidget {
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
+              backgroundColor: lightScheme.primary,
+              foregroundColor: lightScheme.onPrimary,
               elevation: 2,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -47,38 +61,25 @@ class MyApp extends StatelessWidget {
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: lightScheme.primaryContainer),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: lightScheme.primaryContainer),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: lightScheme.primary),
+            ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: lightScheme.surfaceVariant,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.dark,
-          ),
-          appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              elevation: 2,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            filled: true,
-          ),
-        ),
+
+        // No es necesario darkTheme al forzar light
       ),
     );
   }

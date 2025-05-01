@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 //import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:seminari_flutter/provider/users_provider.dart';
-import 'package:seminari_flutter/widgets/Layout.dart';
+import 'package:SkyNet/provider/users_provider.dart';
+import 'package:SkyNet/widgets/Layout.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

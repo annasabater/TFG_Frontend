@@ -1,8 +1,9 @@
+// lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:seminari_flutter/components/my_textfield.dart';
-import 'package:seminari_flutter/components/my_button.dart';
-import 'package:seminari_flutter/services/auth_service.dart';
+import 'package:SkyNet/components/my_textfield.dart';
+import 'package:SkyNet/components/my_button.dart';
+import 'package:SkyNet/services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
@@ -12,7 +13,6 @@ class LoginPage extends StatelessWidget {
 
   void signUserIn(BuildContext context) async {
     final authService = AuthService();
-
     final email = emailController.text;
     final password = passwordController.text;
 
@@ -22,7 +22,6 @@ class LoginPage extends StatelessWidget {
     }
 
     final result = await authService.login(email, password);
-
     if (result.containsKey('error')) {
       _showError(context, result['error']);
     } else {
@@ -33,26 +32,24 @@ class LoginPage extends StatelessWidget {
   void _showError(BuildContext context, String message) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -61,11 +58,11 @@ class LoginPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 25),
-                const Text(
+                Text(
                   'Benvingut!',
                   style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
+                    color: colors.onBackground,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -75,21 +72,23 @@ class LoginPage extends StatelessWidget {
                   hintText: 'Email',
                   obscureText: false,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 MyTextfield(
                   controller: passwordController,
                   hintText: 'Contrasenya',
                   obscureText: true,
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text(
                       'Has oblidat la teva contrasenya?',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: colors.onSurfaceVariant),
                     ),
-                  ],
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  ),
                 ),
                 const SizedBox(height: 25),
                 MyButton(onTap: () => signUserIn(context)),
@@ -98,19 +97,22 @@ class LoginPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Encara no ets membre?',
-                      style: TextStyle(color: Colors.grey[600]),
+                      'Encara no ets membre? ',
+                      style: TextStyle(color: colors.onSurfaceVariant),
                     ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Registra\'t',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
+                    GestureDetector(
+                      onTap: () => context.go('/register'),
+                      child: Text(
+                        'Registra\'t',
+                        style: TextStyle(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 25),
               ],
             ),
           ),

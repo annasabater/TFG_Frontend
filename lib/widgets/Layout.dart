@@ -1,3 +1,4 @@
+// lib/widgets/Layout.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -40,7 +41,7 @@ class LayoutWrapper extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Flutter Demo App',
+                    'S K Y N E T',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -76,6 +77,12 @@ class LayoutWrapper extends StatelessWidget {
             'Perfil', 
             Icons.account_circle, 
             '/profile'),
+          _buildNavItem(
+            context,
+            'Jocs',
+            Icons.sports_esports,
+            '/jocs',
+          ),
           const Divider(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

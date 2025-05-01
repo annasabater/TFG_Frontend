@@ -1,0 +1,32 @@
+//jocs_page.dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+class JocsPage extends StatelessWidget {
+  const JocsPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Jocs'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ListTile(
+            leading: const Icon(Icons.sports_esports),
+            title: const Text('Competencia'),
+            subtitle: const Text('Control del dron'),
+            onTap: () {
+              // navega a /jocs/competencia
+              context.go('/jocs/competencia');
+            },
+          ),
+          // se pueden añadir más “jocs”
+        ],
+      ),
+    );
+  }
+}
+

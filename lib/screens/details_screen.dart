@@ -1,6 +1,6 @@
 // details_screen.dart
 import 'package:flutter/material.dart';
-import 'package:seminari_flutter/widgets/Layout.dart';
+import 'package:SkyNet/widgets/Layout.dart';
 import '../provider/users_provider.dart';
 import 'package:provider/provider.dart';
 import '../widgets/UserCard.dart';
