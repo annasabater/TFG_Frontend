@@ -5,7 +5,7 @@ import '../widgets/Layout.dart';
 import '../services/auth_service.dart';
 
 class PerfilScreen extends StatefulWidget {
-  const PerfilScreen({super.key});
+  const PerfilScreen({Key? key}) : super(key: key);
 
   @override
   _PerfilScreenState createState() => _PerfilScreenState();
@@ -23,18 +23,22 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _loadUser() async {
     final auth = AuthService();
-    final id = auth.currentUser?['_id'];
-    if (id != null) {
-      final res = await auth.getUserById(id);
-      if (!res.containsKey('error')) {
+    final currentUser = auth.currentUser;
+    if (currentUser != null) {
+      try {
+        final res = await auth.getUserById(currentUser['_id']);
         setState(() {
-          _user = res;
-          _isLoading = false;
+          _user = res.containsKey('error') ? currentUser : res;
         });
-        return;
+      } catch (_) {
+        setState(() {
+          _user = currentUser;
+        });
       }
     }
-    setState(() => _isLoading = false);
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -60,14 +64,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         const SizedBox(height: 24),
                         Text(
                           _user?['userName'] ?? '',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _user?['email'] ?? '',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Rol: ${_user?['role'] ?? ''}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: Colors.grey),
                         ),
                         const SizedBox(height: 32),
                         Card(
