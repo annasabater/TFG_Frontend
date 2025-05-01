@@ -12,12 +12,13 @@ class SquareTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.deepPurple[100]!),
+        color: colors.surfaceVariant,                     // fondo gris/azul suave
         borderRadius: BorderRadius.circular(16),
-        color: Colors.deepPurple[50],
+        border: Border.all(color: colors.primaryContainer), // borde azul pastel
       ),
       child: Image.asset(
         imagePath,

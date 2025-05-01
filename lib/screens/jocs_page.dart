@@ -17,13 +17,10 @@ class JocsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.sports_esports),
             title: const Text('Competencia'),
-            subtitle: const Text('Control del dron'),
             onTap: () {
-              // navega a /jocs/competencia
               context.go('/jocs/competencia');
             },
           ),
-          // se pueden añadir más “jocs”
         ],
       ),
     );

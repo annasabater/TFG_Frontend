@@ -1,7 +1,8 @@
+// lib/components/my_button.dart
 import 'package:flutter/material.dart';
 
 class MyButton extends StatefulWidget {
-  final Function()? onTap;
+  final VoidCallback? onTap;
 
   const MyButton({super.key, required this.onTap});
 
@@ -14,6 +15,8 @@ class _MyButtonState extends State<MyButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -21,21 +24,21 @@ class _MyButtonState extends State<MyButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          padding: const EdgeInsets.all(25),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           margin: const EdgeInsets.symmetric(horizontal: 25),
           decoration: BoxDecoration(
-            color: _isHovered ? Colors.deepPurple[100] : Colors.deepPurple[50],
+            color: _isHovered ? colors.primary : colors.primaryContainer,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _isHovered ? Colors.deepPurple[300]! : Colors.deepPurple[100]!,
+              color: _isHovered ? colors.primary : colors.primaryContainer,
               width: 2,
             ),
           ),
           child: Center(
             child: Text(
-              "Sign In",
+              'Sign In',
               style: TextStyle(
-                color: _isHovered ? Colors.deepPurple[500] : Colors.deepPurple[300],
+                color: _isHovered ? colors.onPrimary : colors.onPrimaryContainer,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),

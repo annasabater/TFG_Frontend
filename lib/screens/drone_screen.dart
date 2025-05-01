@@ -19,6 +19,7 @@ class DroneProvider with ChangeNotifier {
     notifyListeners();
   }
 
+
   void _setError(String? errorMessage) {
     _error = errorMessage;
     notifyListeners();
