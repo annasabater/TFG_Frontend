@@ -1,5 +1,5 @@
 // lib/screens/drone_control_page.dart
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 
 class DroneControlPage extends StatelessWidget {
@@ -107,9 +107,9 @@ class DroneControlPage extends StatelessWidget {
     );
   }
 }
+*/
 
 
-/*
 // lib/screens/drone_control_page.dart
 
 import 'package:flutter/material.dart';
@@ -247,4 +247,3 @@ class _DroneControlPageState extends State<DroneControlPage> {
         ),
       );
 }
-*/
