@@ -6,23 +6,29 @@ class DroneControlPage extends StatelessWidget {
   const DroneControlPage({super.key});
 
   void fireBullet(String type) {
-    // Lógica para disparar según tipo
     print("Disparo tipo: $type");
   }
 
   void handleJoystickMove(String id, Offset offset) {
-    // Aquí puedes enviar comandos al dron
-    print("Joystick $id movido: $offset");
+    if (id == 'horizontal') {
+      final roll  = offset.dx.clamp(-1.0, 1.0); //Inclinación hacia la derecha o la izquierda.
+      final pitch = (-offset.dy).clamp(-1.0, 1.0); //Inclinación hacia adelante o hacia atrás.
+      print('MOVE roll=$roll pitch=$pitch');
+    } else {
+      final yaw = offset.dx.clamp(-1.0, 1.0); //Rotación hacia la izquierda o la derecha.
+      final throttle = (-offset.dy).clamp(-1.0, 1.0); //Aceleración hacia arriba o hacia abajo.
+      print('MOVE yaw=$yaw throttle=$throttle');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF2F5), // Azul/gris/blanco claro
+      backgroundColor: const Color(0xFFEFF2F5),
       body: SafeArea(
         child: Stack(
           children: [
-            // Botones de bala en columna vertical a la derecha
+            // Botones de bala
             Positioned(
               top: 30,
               right: 16,
@@ -37,7 +43,7 @@ class DroneControlPage extends StatelessWidget {
               ),
             ),
 
-            // Joysticks alineados en la parte inferior
+            // Joysticks abajo
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -89,22 +95,156 @@ class DroneControlPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 3),
-            ),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
           ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            imagePath,
-            fit: BoxFit.contain,
-          ),
+          child: Image.asset(imagePath, fit: BoxFit.contain),
         ),
       ),
     );
   }
 }
+
+
+/*
+// lib/screens/drone_control_page.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_joystick/flutter_joystick.dart';
+import 'package:socket_io_client/socket_io_client.dart';
+import '../services/socket_service.dart';
+
+class DroneControlPage extends StatefulWidget {
+  const DroneControlPage({Key? key}) : super(key: key);
+
+  @override
+  _DroneControlPageState createState() => _DroneControlPageState();
+}
+
+class _DroneControlPageState extends State<DroneControlPage> {
+  Socket? _socket;
+  Map<String, dynamic>? _gameState;
+
+  @override
+  void initState() {
+    super.initState();
+    _initGameSocket();
+  }
+
+  void _initGameSocket() async {
+    final sid = SocketService.currentSessionId!;
+    _socket = await SocketService.initGameSocket();
+    _socket!.on('connect', (_) => print('Conectado al juego (session: $sid)'));
+    _socket!.on('state_update', (data) {
+      setState(() => _gameState = data as Map<String, dynamic>?);
+    });
+  }
+
+  void _sendCommand(String action, Map<String, dynamic> payload) {
+    final sid = SocketService.currentSessionId!;
+    _socket!.emit('command', {
+      'sessionId': sid,
+      'action': action,
+      'payload': payload,
+    });
+  }
+
+  void fireBullet(String type) => _sendCommand('fire', {'type': type});
+  void handleJoystickMove(String id, Offset offset) =>
+      _sendCommand('move', {'stick': id, 'dx': offset.dx, 'dy': offset.dy});
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _gameState?['status']?.toString() ?? '';
+    return Scaffold(
+      backgroundColor: const Color(0xFFEFF2F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            if (status.isNotEmpty)
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Text("Estado: $status"),
+              ),
+            Positioned(
+              top: 30,
+              right: 16,
+              child: Column(
+                children: [
+                  _buildBulletButton("lib/assets/bullet1.png", "tipo1"),
+                  const SizedBox(height: 12),
+                  _buildBulletButton("lib/assets/bullet2.png", "tipo2"),
+                  const SizedBox(height: 12),
+                  _buildBulletButton("lib/assets/bullet3.png", "tipo3"),
+                ],
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 40.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildJoystick("left"),
+                    _buildJoystick("right"),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJoystick(String id) => Joystick(
+        listener: (details) =>
+            handleJoystickMove(id, Offset(details.x, details.y)),
+        mode: JoystickMode.all,
+        base: Container(
+          width: 120,
+          height: 120,
+          decoration: const BoxDecoration(
+            color: Color(0xFF2F3B4C),
+            shape: BoxShape.circle,
+          ),
+        ),
+        stick: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.7),
+            shape: BoxShape.circle,
+          ),
+        ),
+      );
+
+  Widget _buildBulletButton(String imagePath, String type) => GestureDetector(
+        onTap: () => fireBullet(type),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: Offset(0, 3),
+              )
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset(imagePath, fit: BoxFit.contain),
+          ),
+        ),
+      );
+}
+*/

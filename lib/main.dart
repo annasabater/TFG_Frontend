@@ -1,8 +1,9 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:SkyNet/models/user.dart';          
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/routes/app_router.dart';
-import 'package:provider/provider.dart';
 import 'package:SkyNet/services/auth_service.dart';
 
 void main() {
@@ -14,21 +15,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Esquema de color personalizado (azul claro)
     final lightScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF81D4FA), // Azul pastel
+      seedColor: const Color(0xFF81D4FA),
       brightness: Brightness.light,
     );
 
-    return ChangeNotifierProvider(
-      create: (_) => UserProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+
+        // Injecta l’usuari desat (si existeix) al provider en arrencar
+        ProxyProvider<UserProvider, void>(
+          update: (_, prov, __) {
+            final raw = AuthService().currentUser; 
+            if (raw != null) prov.setCurrentUser(User.fromJson(raw));
+          },
+        ),
+      ],
       child: MaterialApp.router(
         title: 'S K Y N E T',
         debugShowCheckedModeBanner: false,
         routerConfig: appRouter,
-        themeMode: ThemeMode.light, // Siempre claro
-
-        // Tema claro
+        themeMode: ThemeMode.light,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: lightScheme,
@@ -39,15 +47,11 @@ class MyApp extends StatelessWidget {
             backgroundColor: lightScheme.primary,
             foregroundColor: lightScheme.onPrimary,
           ),
-          drawerTheme: DrawerThemeData(
-            backgroundColor: lightScheme.surface,
-          ),
+          drawerTheme: DrawerThemeData(backgroundColor: lightScheme.surface),
           cardTheme: CardTheme(
             color: lightScheme.surface,
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
@@ -55,9 +59,7 @@ class MyApp extends StatelessWidget {
               foregroundColor: lightScheme.onPrimary,
               elevation: 2,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
@@ -78,8 +80,6 @@ class MyApp extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
-
-        // No es necesario darkTheme al forzar light
       ),
     );
   }

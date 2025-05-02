@@ -1,35 +1,31 @@
+// lib/models/user.dart
 class User {
   final String? id;
   final String userName;
   final String email;
-  final String password;
   final String role;
+  final String? password;
 
   User({
     this.id,
     required this.userName,
     required this.email,
-    required this.password,
     required this.role,
+    this.password,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'] as String?,           // si Mongo devuelve _id
-      userName: json['userName'] as String,
-      email: json['email'] as String,
-      password: '',                          // no devolver contraseña al leer
-      role: json['role'] as String,
-    );
-  }
+  factory User.fromJson(Map<String, dynamic> json) => User(
+        id:       json['_id']?.toString(),
+        userName: (json['userName'] ?? json['username'] ?? '').toString(),
+        email:    (json['email']    ?? '').toString(),
+        role:     (json['role']     ?? '').toString(),
+        // password pot no venir del backend
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (id != null) '_id': id,
-      'userName': userName,
-      'email': email,
-      'password': password,
-      'role': role,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        '_id':      id,
+        'userName': userName,
+        'email':    email,
+        'role':     role,
+      };
 }

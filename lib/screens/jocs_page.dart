@@ -27,3 +27,27 @@ class JocsPage extends StatelessWidget {
   }
 }
 
+/*
+// lib/screens/jocs_page.dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+class JocsPage extends StatelessWidget {
+  const JocsPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Juegos')),
+      body: Center(
+        child: ElevatedButton(
+          // Navega directamente al path /jocs/open
+          onPressed: () => context.go('/jocs/open'),
+          child: const Text('Competencia'),
+        ),
+      ),
+    );
+  }
+}
+*/
+

@@ -4,33 +4,74 @@ import '../models/user.dart';
 import '../services/UserService.dart';
 
 class UserProvider with ChangeNotifier {
-  List<User> _users = [];
+  // ------------------ Estat ---------------------------------------------
+  final List<User> _users = [];
+  User? _currentUser;
   bool _isLoading = false;
   String? _error;
 
-  List<User> get users => _users;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  // ------------------ Getters -------------------------------------------
+  List<User> get users  => List.unmodifiable(_users);
+  User?      get currentUser => _currentUser;
+  bool       get isLoading   => _isLoading;
+  String?    get error       => _error;
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
+  // ------------------ Restriccions pel correu ---------------------------
+  static const _restrictedEmails = {
+    'dron_azul1@upc.edu',
+    'dron_verde1@upc.edu',
+    'dron_rojo1@upc.edu',
+    'dron_amarillo1@upc.edu',
+    'invitado_1@upc.edu',
+  };
+
+  bool get isRestricted {
+    final mail = _currentUser?.email.trim().toLowerCase();
+    return mail != null && _restrictedEmails.contains(mail);
+  }
+
+  /// Administrador ↔ rol = 'Administrador' **i** correu *@upc.edu*
+  bool get isAdmin {
+    final u = _currentUser;
+    if (u == null) return false;
+    return u.role.toLowerCase() == 'administrador' &&
+        u.email.trim().toLowerCase().endsWith('@upc.edu');
+  }
+
+  // ------------------ Helpers de sessió ---------------------------------
+  void setCurrentUser(User user) {
+    _currentUser = user;
     notifyListeners();
   }
 
-  void _setError(String? errorMessage) {
-    _error = errorMessage;
+  void clearCurrentUser() {
+    _currentUser = null;
     notifyListeners();
   }
 
+  // ------------------ Interns -------------------------------------------
+  void _setLoading(bool v) {
+    _isLoading = v;
+    notifyListeners();
+  }
+
+  void _setError(String? msg) {
+    _error = msg;
+    notifyListeners();
+  }
+
+  // ------------------ CRUD backend --------------------------------------
   Future<void> loadUsers() async {
     _setLoading(true);
     _setError(null);
-
     try {
-      _users = await UserService.getUsers();
+      final fetched = await UserService.getUsers();
+      _users
+        ..clear()
+        ..addAll(fetched);
     } catch (e) {
       _setError('Error loading users: $e');
-      _users = [];
+      _users.clear();
     } finally {
       _setLoading(false);
     }
@@ -39,18 +80,16 @@ class UserProvider with ChangeNotifier {
   Future<bool> crearUsuari(String userName, String email, String password, String role) async {
     _setLoading(true);
     _setError(null);
-
     try {
       final nouUsuari = User(userName: userName, email: email, password: password, role: role);
-      final createdUser = await UserService.createUser(nouUsuari);
-      _users.add(createdUser);
-      _setLoading(false);
-      notifyListeners();
+      final created = await UserService.createUser(nouUsuari);
+      _users.add(created);
       return true;
     } catch (e) {
       _setError('Error creating user: $e');
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -58,45 +97,35 @@ class UserProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final success = await UserService.deleteUser(id);
-      if (success) {
-        _users.removeWhere((user) => user.id == id);
-        notifyListeners();
-      }
-      _setLoading(false);
-      return success;
+      final ok = await UserService.deleteUser(id);
+      if (ok) _users.removeWhere((u) => u.id == id);
+      return ok;
     } catch (e) {
       _setError('Error deleting user: $e');
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<bool> eliminarUsuari(String userName) async {
     _setLoading(true);
     _setError(null);
-
     try {
-      final userToDelete = _users.firstWhere((user) => user.userName == userName);
-
-      if (userToDelete.id != null) {
-        final success = await UserService.deleteUser(userToDelete.id!);
-        if (success) {
-          _users.removeWhere((user) => user.userName == userName);
-          notifyListeners();
-        }
-        _setLoading(false);
-        return success;
+      final u = _users.firstWhere((e) => e.userName == userName);
+      if (u.id != null) {
+        final ok = await UserService.deleteUser(u.id!);
+        if (ok) _users.remove(u);
+        return ok;
       } else {
-        _users.removeWhere((user) => user.userName == userName);
-        notifyListeners();
-        _setLoading(false);
+        _users.remove(u);
         return true;
       }
     } catch (e) {
       _setError('Error deleting user: $e');
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 }
