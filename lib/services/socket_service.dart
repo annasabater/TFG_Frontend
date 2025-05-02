@@ -1,4 +1,7 @@
+// lib/services/socket_service.dart
+
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:SkyNet/services/auth_service.dart';
 
 class SocketService {
   static String? currentUserEmail;
@@ -12,12 +15,17 @@ class SocketService {
     'dron_amarillo1@upc.edu',
   };
 
-  /// Ha de cridar-se just després del login
+  /// Debe llamarse justo después de que login() sea exitoso
   static void setUserEmail(String email) {
     currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// Inicialitza la sala d'espera (namespace `/jocs`)
+  /// Obtiene el JWT actual o lanza si no hay
+  static String _getJwt() {
+    return AuthService().token;
+  }
+
+  /// Inicializa la sala de espera (namespace `/jocs`)
   static IO.Socket initWaitingSocket() {
     final email = currentUserEmail;
     if (email == null || !_competitorEmails.contains(email)) {
@@ -26,9 +34,10 @@ class SocketService {
     if (_socket != null && _socket!.connected) return _socket!;
 
     _socket = IO.io(
-      'http://localhost:8000/jocs',
+      'http://localhost:9000/jocs',
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setAuth({'token': _getJwt()})
           .disableAutoConnect()
           .build(),
     );
@@ -42,43 +51,43 @@ class SocketService {
     return _socket!;
   }
 
-  /// Un cop rebem `game_started`, cridem això per entrar a la sala amb sessionId
+  /// Tras recibir `game_started`, inicializa el socket de juego
   static IO.Socket initGameSocket() {
     final sid = currentSessionId;
     if (sid == null) throw Exception('Falta sessionId. Espera game_started.');
-
-    // Ens desconnectem 
-  _socket!.disconnect();
+    _socket!.disconnect();
 
     _socket = IO.io(
-      'http://localhost:8000/jocs',
+      'http://localhost:9000/jocs',
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setAuth({'token': _getJwt()})
+          .setQuery({'sessionId': sid})
           .disableAutoConnect()
-          .setQuery({'sessionId': currentSessionId})
           .build(),
-    ); 
+    );
 
     _socket!
-      ..onConnect((_) => print('🎮 Connectat a /jocs (game, session=$sid)'));
+      ..onConnect((_) =>
+          print('🎮 Connectat a /jocs (game, session=$sid)'));
 
     return _socket!;
   }
 
-  /// Envia una comanda al servidor
+  /// Envía una orden al servidor
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
       print('⚠️ Socket no connectat');
       return;
     }
-    _socket!.emit('command', {
+    _socket!.emit('control', {
       'sessionId': currentSessionId,
       'action': action,
       'payload': payload,
     });
   }
 
-  /// Desconnecta i neteja estat
+  /// Desconecta y limpia estado
   static void dispose() {
     _socket?.disconnect();
     _socket = null;

@@ -13,6 +13,13 @@ class AuthService {
 
   bool isLoggedIn = false;
   Map<String, dynamic>? currentUser;
+  String? _jwt;
+
+  /// Acceso al JWT guardado tras login/signup
+  String get token {
+    if (_jwt == null) throw Exception('JWT no disponible. Haz login primero.');
+    return _jwt!;
+  }
 
   String get _baseApiUrl {
     if (kIsWeb) return 'http://localhost:9000/api';
@@ -31,12 +38,14 @@ class AuthService {
       body: jsonEncode({'email': email, 'password': password}),
     );
     if (resp.statusCode == 200) {
-      final data = jsonDecode(resp.body);
+      final Map<String, dynamic> data =
+          jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = data['user'] as Map<String, dynamic>?;
+      _jwt = data['token'] as String?;
       isLoggedIn = true;
-      return {'user': currentUser};
+      return {'user': currentUser!};
     } else {
-      final err = jsonDecode(resp.body);
+      final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Email o contraseña incorrectos'};
     }
   }
@@ -58,12 +67,14 @@ class AuthService {
       }),
     );
     if (resp.statusCode == 201 || resp.statusCode == 200) {
-      final data = jsonDecode(resp.body);
+      final Map<String, dynamic> data =
+          jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = data['user'] as Map<String, dynamic>?;
+      _jwt = data['token'] as String?;
       isLoggedIn = true;
-      return {'user': currentUser};
+      return {'user': currentUser!};
     } else {
-      final err = jsonDecode(resp.body);
+      final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Error en registro'};
     }
   }
@@ -71,12 +82,16 @@ class AuthService {
   Future<Map<String, dynamic>> getUserById(String id) async {
     final resp = await http.get(
       Uri.parse('$_userUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (_jwt != null) 'Authorization': 'Bearer $_jwt',
+      },
     );
     if (resp.statusCode == 200) {
-      final data = jsonDecode(resp.body);
+      final Map<String, dynamic> data =
+          jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = data;
-      return data;
+      return data;   // ya es Map<String, dynamic>
     } else {
       return {'error': 'No se pudo cargar el usuario'};
     }
@@ -100,13 +115,17 @@ class AuthService {
     };
     final resp = await http.put(
       Uri.parse('$_userUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_jwt',
+      },
       body: jsonEncode(body),
     );
     if (resp.statusCode == 200) {
-      final data = jsonDecode(resp.body);
+      final Map<String, dynamic> data =
+          jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = {...currentUser!, ...data};
-      return data;
+      return data;   
     } else {
       return {'error': 'Error al actualizar perfil'};
     }
@@ -115,5 +134,6 @@ class AuthService {
   void logout() {
     isLoggedIn = false;
     currentUser = null;
+    _jwt = null;
   }
 }
