@@ -1,46 +1,87 @@
-// lib/services/socket_service.dart
-
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SocketService {
-  /// Socket del lobby (`/lobby`)
-  static IO.Socket? lobbySocket;
-
-  /// Socket del juego (`/game`)
-  static IO.Socket? gameSocket;
-
-  /// Guarda el sessionId seleccionado globalmente
+  static String? currentUserEmail;
   static String? currentSessionId;
+  static IO.Socket? _socket;
 
-  static const _storage = FlutterSecureStorage();
+  static const _competitorEmails = {
+    'dron_azul1@upc.edu',
+    'dron_verde1@upc.edu',
+    'dron_rojo1@upc.edu',
+    'dron_amarillo1@upc.edu',
+  };
 
-  /// Inicializa el socket para el namespace `/lobby`
-  static Future<IO.Socket> initLobbySocket() async {
-    final token = await _storage.read(key: 'jwtToken');
-    lobbySocket = IO.io(
-      'http://<TU_BACKEND_IP>:9000/lobby',
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .enableAutoConnect()
-          .setAuth({'token': token})
-          .build(),
-    );
-    return lobbySocket!;
+  /// Ha de cridar-se just després del login
+  static void setUserEmail(String email) {
+    currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// Inicializa el socket para el namespace `/game`
-  static Future<IO.Socket> initGameSocket() async {
-    final token = await _storage.read(key: 'jwtToken');
-    final sid = currentSessionId!;
-    gameSocket = IO.io(
-      'http://<TU_BACKEND_IP>:9000/game',
+  /// Inicialitza la sala d'espera (namespace `/jocs`)
+  static IO.Socket initWaitingSocket() {
+    final email = currentUserEmail;
+    if (email == null || !_competitorEmails.contains(email)) {
+      throw Exception('Usuari $email no autoritzat per competir');
+    }
+    if (_socket != null && _socket!.connected) return _socket!;
+
+    _socket = IO.io(
+      'http://localhost:8000/jocs',
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .enableAutoConnect()
-          .setAuth({'token': token, 'sessionId': sid})
+          .disableAutoConnect()
           .build(),
     );
-    return gameSocket!;
+
+    _socket!
+      ..onConnect((_) {
+        print('Connectat a /jocs (waiting room)');
+        _socket!.emit('join', {'email': email});
+      });
+
+    return _socket!;
+  }
+
+  /// Un cop rebem `game_started`, cridem això per entrar a la sala amb sessionId
+  static IO.Socket initGameSocket() {
+    final sid = currentSessionId;
+    if (sid == null) throw Exception('Falta sessionId. Espera game_started.');
+
+    // Ens desconnectem 
+  _socket!.disconnect();
+
+    _socket = IO.io(
+      'http://localhost:8000/jocs',
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .setQuery({'sessionId': currentSessionId})
+          .build(),
+    ); 
+
+    _socket!
+      ..onConnect((_) => print('🎮 Connectat a /jocs (game, session=$sid)'));
+
+    return _socket!;
+  }
+
+  /// Envia una comanda al servidor
+  static void sendCommand(String action, Map<String, dynamic> payload) {
+    if (_socket == null || !_socket!.connected) {
+      print('⚠️ Socket no connectat');
+      return;
+    }
+    _socket!.emit('command', {
+      'sessionId': currentSessionId,
+      'action': action,
+      'payload': payload,
+    });
+  }
+
+  /// Desconnecta i neteja estat
+  static void dispose() {
+    _socket?.disconnect();
+    _socket = null;
+    currentSessionId = null;
   }
 }

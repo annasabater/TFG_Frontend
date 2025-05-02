@@ -1,8 +1,9 @@
 // lib/routes/app_router.dart
+
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
 import 'package:SkyNet/screens/auth/register_screen.dart';
-import 'package:SkyNet/screens/edit_profile_screen.dart'; 
+import 'package:SkyNet/screens/edit_profile_screen.dart';
 import 'package:SkyNet/screens/home_screen.dart';
 import 'package:SkyNet/screens/details_screen.dart';
 import 'package:SkyNet/screens/editar_screen.dart';
@@ -10,6 +11,8 @@ import 'package:SkyNet/screens/borrar_screen.dart';
 import 'package:SkyNet/screens/imprimir_screen.dart';
 import 'package:SkyNet/screens/perfil_screen.dart';
 import 'package:SkyNet/screens/jocs_page.dart';
+import 'package:SkyNet/screens/session_list_screen.dart';
+import 'package:SkyNet/screens/lobby_screen.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/services/auth_service.dart';
 
@@ -61,7 +64,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: 'edit',
               name: 'editProfile',
-              builder: (_, __) => const EditProfileScreen(),  
+              builder: (_, __) => const EditProfileScreen(),
             ),
           ],
         ),
@@ -71,9 +74,21 @@ final GoRouter appRouter = GoRouter(
           builder: (_, __) => const JocsPage(),
           routes: [
             GoRoute(
-              path: 'competencia',
-              name: 'competencia',
-              builder: (_, __) => const DroneControlPage(),
+              path: 'open',
+              name: 'jocsOpen',
+              builder: (_, __) => const SessionListScreen(),
+            ),
+            GoRoute(
+              path: 'lobby',
+              name: 'jocsLobby',
+              builder: (_, __) => const LobbyScreen(),
+              routes: [
+                GoRoute(
+                  path: 'control',
+                  name: 'jocsControl',
+                  builder: (_, __) => const DroneControlPage(),
+                ),
+              ],
             ),
           ],
         ),

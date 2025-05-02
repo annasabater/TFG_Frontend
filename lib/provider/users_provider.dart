@@ -30,6 +30,19 @@ class UserProvider with ChangeNotifier {
     return mail != null && _restrictedEmails.contains(mail);
   }
 
+    // ------------------ Emails permitidos para competir --------------------
+  static const _competitorEmails = {
+    'dron_azul1@upc.edu',
+    'dron_verde1@upc.edu',
+    'dron_rojo1@upc.edu',
+    'dron_amarillo1@upc.edu',
+  };
+
+  bool get isCompetitor {
+    final mail = _currentUser?.email.trim().toLowerCase();
+    return mail != null && _competitorEmails.contains(mail);
+  }
+
   /// Administrador ↔ rol = 'Administrador' **i** correu *@upc.edu*
   bool get isAdmin {
     final u = _currentUser;

@@ -2,8 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:socket_io_client/socket_io_client.dart';
+import 'package:provider/provider.dart';
+import '../provider/users_provider.dart';
 import '../services/socket_service.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class LobbyScreen extends StatefulWidget {
   const LobbyScreen({Key? key}) : super(key: key);
@@ -13,74 +15,91 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
-  Socket? _socket;
-  List<dynamic> _participants = [];
+  IO.Socket? _socket;
+  String _waitingMsg = 'Esperant que el professor iniciï la partida…';
 
   @override
   void initState() {
     super.initState();
-    _connect();
+    _connectWaitingRoom();
   }
 
   @override
   void dispose() {
-    _socket?.disconnect();
+    SocketService.dispose();
     super.dispose();
   }
 
-  void _connect() async {
-    final sid = SocketService.currentSessionId!;
-    final socket = await SocketService.initLobbySocket();
-    _socket = socket;
+  Future<void> _connectWaitingRoom() async {
+    // Cogemos el email del usuario logueado
+    final userProvider = context.read<UserProvider>();
+    final email = userProvider.currentUser?.email;
+    if (email == null) {
+      // No hay usuario, redirigimos al login
+      if (context.mounted) context.go('/login');
+      return;
+    }
 
-    socket.on('connect', (_) {
-      socket.emit('join_lobby', {'sessionId': sid});
-    });
+    // Lo registramos en el SocketService (por si no lo hiciste en el login)
+    SocketService.setUserEmail(email);
 
-    socket.on('lobby_update', (data) {
-      final list = data['participants'];
-      if (list is List) setState(() => _participants = List.from(list));
-    });
+    // Inicializamos la sala d'espera
+    try {
+      _socket = SocketService.initWaitingSocket();
+    } catch (e) {
+      // Si no es competitor (no está en la lista autorizada), mostramos un error
+      WidgetsBinding.instance!.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Accés denegat'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => context.go('/'),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      });
+      return;
+    }
 
-    socket.on('game_start', (data) {
-      context.go('/jocs/lobby/control');
-    });
+    // Escuchamos los eventos
+    _socket!
+      ..on('waiting', (data) {
+        setState(() {
+          _waitingMsg = data['msg'] as String;
+        });
+      })
+      ..on('game_started', (data) {
+        final sid = data['sessionId'] as String?;
+        if (sid != null) {
+          SocketService.currentSessionId = sid;
+        }
+        // Navegamos a la pantalla de control del dron
+        if (context.mounted) context.go('/jocs/lobby/control');
+      })
+      ..on('connect_error', (err) {
+        // Ojo a errores de auth, token, etc.
+        print('Connect error: $err');
+      });
   }
 
   @override
   Widget build(BuildContext context) {
-    final sid = SocketService.currentSessionId ?? '—';
     return Scaffold(
-      appBar: AppBar(title: Text('Lobby: $sid')),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Jugadores conectados:',
-              style: TextStyle(fontSize: 18),
-            ),
+      appBar: AppBar(title: const Text('Sala d’espera')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          child: Text(
+            _waitingMsg,
+            style: const TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _participants.length,
-              itemBuilder: (context, i) {
-                final user = _participants[i]['user'] ?? {};
-                final name = user['userName']?.toString() ?? '';
-                return ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(name),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Esperando al profesor…',
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
