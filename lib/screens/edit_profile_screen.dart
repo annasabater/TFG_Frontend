@@ -82,6 +82,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  void _confirmDeleteAccount() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Eliminar compte?'),
+        content: const Text('¿Estàs segur que vols eliminar el teu compte?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteAccount();
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    setState(() => _isLoading = true);
+    final auth = AuthService();
+    final id = auth.currentUser?['_id'];
+    if (id == null) {
+      setState(() => _isLoading = false);
+      _showError('No sha trobat l\'usuari.');
+      return;
+    }
+    final res = await auth.deleteUserById(id);
+    setState(() => _isLoading = false);
+    if (res['success'] == true) {
+      // Cerrar sesión y redirigir al login
+      auth.logout();
+      if (mounted) context.go('/login');
+    } else {
+      _showError(res['error'] ?? 'No sha pogut eliminar el compte');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -122,6 +165,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               OutlinedButton(
                 onPressed: () => context.pop(),
                 child: const Text('Cancelar'),
+              ),
+              const SizedBox(height: 24),
+              TextButton.icon(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                label: const Text('Eliminar cuenta', style: TextStyle(color: Colors.red)),
+                onPressed: _confirmDeleteAccount,
               ),
             ],
           ],

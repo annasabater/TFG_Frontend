@@ -136,4 +136,20 @@ class AuthService {
     currentUser = null;
     _jwt = null;
   }
+
+  Future<Map<String, dynamic>> deleteUserById(String id) async {
+    final resp = await http.delete(
+      Uri.parse('$_userUrl/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (_jwt != null) 'Authorization': 'Bearer $_jwt',
+      },
+    );
+    if (resp.statusCode == 200) {
+      return {'success': true};
+    } else {
+      final err = jsonDecode(resp.body) as Map<String, dynamic>;
+      return {'error': err['message'] ?? 'Error al eliminar usuario'};
+    }
+  }
 }
