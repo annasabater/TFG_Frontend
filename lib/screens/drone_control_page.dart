@@ -130,8 +130,13 @@ class _DroneControlPageState extends State<DroneControlPage> {
   @override
   void initState() {
     super.initState();
-    _socket = SocketService.initGameSocket();
-    _socket!
+    _initGameSocket();
+  }
+
+  Future<void> _initGameSocket() async {
+    final socket = await SocketService.initGameSocket();
+    setState(() => _socket = socket);
+    socket
       ..onConnect((_) => print('Connectat al joc (session=${SocketService.currentSessionId})'))
       ..on('state_update', (data) {
         setState(() => _gameState = data as Map<String, dynamic>?);

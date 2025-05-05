@@ -31,24 +31,33 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> _connectWaitingRoom() async {
-    // Cogemos el email del usuario logueado
     final userProvider = context.read<UserProvider>();
     final email = userProvider.currentUser?.email;
     if (email == null) {
-      // No hay usuario, redirigimos al login
       if (context.mounted) context.go('/login');
       return;
     }
-
-    // Lo registramos en el SocketService (por si no lo hiciste en el login)
     SocketService.setUserEmail(email);
 
-    // Inicializamos la sala d'espera
     try {
-      _socket = SocketService.initWaitingSocket();
+      final socket = await SocketService.initWaitingSocket();
+      setState(() => _socket = socket);
+      socket
+        ..on('waiting', (data) {
+          setState(() => _waitingMsg = data['msg'] as String);
+        })
+        ..on('game_started', (data) {
+          final sid = data['sessionId'] as String?;
+          if (sid != null) {
+            SocketService.currentSessionId = sid;
+          }
+          if (context.mounted) context.go('/jocs/lobby/control');
+        })
+        ..on('connect_error', (err) {
+          print('Connect error: $err');
+        });
     } catch (e) {
-      // Si no es competitor (no está en la lista autorizada), mostramos un error
-      WidgetsBinding.instance!.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
@@ -63,28 +72,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ),
         );
       });
-      return;
     }
-
-    // Escuchamos los eventos
-    _socket!
-      ..on('waiting', (data) {
-        setState(() {
-          _waitingMsg = data['msg'] as String;
-        });
-      })
-      ..on('game_started', (data) {
-        final sid = data['sessionId'] as String?;
-        if (sid != null) {
-          SocketService.currentSessionId = sid;
-        }
-        // Navegamos a la pantalla de control del dron
-        if (context.mounted) context.go('/jocs/lobby/control');
-      })
-      ..on('connect_error', (err) {
-        // Ojo a errores de auth, token, etc.
-        print('Connect error: $err');
-      });
   }
 
   @override

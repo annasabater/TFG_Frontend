@@ -20,24 +20,26 @@ class SocketService {
     currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// Obtiene el JWT actual o lanza si no hay
-  static String _getJwt() {
-    return AuthService().token;
+  /// Obtiene el JWT actual de forma asíncrona
+  static Future<String> _getJwt() async {
+    return await AuthService().token;
   }
 
   /// Inicializa la sala de espera (namespace `/jocs`)
-  static IO.Socket initWaitingSocket() {
+  static Future<IO.Socket> initWaitingSocket() async {
     final email = currentUserEmail;
     if (email == null || !_competitorEmails.contains(email)) {
       throw Exception('Usuari $email no autoritzat per competir');
     }
     if (_socket != null && _socket!.connected) return _socket!;
 
+    final token = await _getJwt();
+
     _socket = IO.io(
       'http://localhost:9000/jocs',
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .setAuth({'token': _getJwt()})
+          .setAuth({'token': token})
           .disableAutoConnect()
           .build(),
     );
@@ -52,16 +54,18 @@ class SocketService {
   }
 
   /// Tras recibir `game_started`, inicializa el socket de juego
-  static IO.Socket initGameSocket() {
+  static Future<IO.Socket> initGameSocket() async {
     final sid = currentSessionId;
     if (sid == null) throw Exception('Falta sessionId. Espera game_started.');
-    _socket!.disconnect();
+    _socket?.disconnect();
+
+    final token = await _getJwt();
 
     _socket = IO.io(
       'http://localhost:9000/jocs',
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .setAuth({'token': _getJwt()})
+          .setAuth({'token': token})
           .setQuery({'sessionId': sid})
           .disableAutoConnect()
           .build(),

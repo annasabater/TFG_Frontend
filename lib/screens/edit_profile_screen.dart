@@ -1,4 +1,5 @@
 // lib/screens/auth/edit_profile_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/components/my_textfield.dart';
@@ -16,10 +17,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _isLoading     = false;
+
+  bool _loadingUser = true;
+  bool _isUpdating  = false;
 
   final List<String> _roles = ['Administrador', 'Usuario', 'Empresa', 'Gobierno'];
-  String? _selectedRole;
+  String _selectedRole       = 'Usuario';
 
   @override
   void initState() {
@@ -29,41 +32,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadUser() async {
     final auth = AuthService();
-    final id = auth.currentUser?['_id'];
+    final id   = auth.currentUser?['_id'] as String?;
     if (id != null) {
       final res = await auth.getUserById(id);
       if (!res.containsKey('error')) {
         setState(() {
-          _nameCtrl.text  = res['userName'] ?? '';
-          _emailCtrl.text = res['email']    ?? '';
-          _selectedRole   = res['role']     ?? 'Usuario';
+          _nameCtrl.text    = res['userName'] ?? '';
+          _emailCtrl.text   = res['email']    ?? '';
+          _selectedRole     = (res['role'] as String?) ?? _selectedRole;
         });
       }
     }
+    setState(() => _loadingUser = false);
   }
 
-  void _update() async {
+  Future<void> _update() async {
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final pw    = _passwordCtrl.text;
-    final role  = _selectedRole ?? 'Usuario';
+    final role  = _selectedRole;
 
     if (name.isEmpty || email.isEmpty) {
-      _showError('Nombre y Email son obligatorios.');
-      return;
+      return _showError('El nom i email son obligatoris.');
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isUpdating = true);
     final res = await AuthService().updateProfile(
       userName: name,
       email:    email,
-      password: pw.isNotEmpty ? pw : null,
+      password: pw.isEmpty ? null : pw,
       role:     role,
     );
-    setState(() => _isLoading = false);
+    setState(() => _isUpdating = false);
 
     if (res.containsKey('error')) {
-      _showError(res['error']);
+      _showError(res['error'] as String);
     } else {
       context.pop();
     }
@@ -82,52 +85,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  void _confirmDeleteAccount() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¿Eliminar compte?'),
-        content: const Text('¿Estàs segur que vols eliminar el teu compte?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteAccount();
-            },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _deleteAccount() async {
-    setState(() => _isLoading = true);
+    setState(() => _isUpdating = true);
     final auth = AuthService();
-    final id = auth.currentUser?['_id'];
+    final id   = auth.currentUser?['_id'] as String?;
     if (id == null) {
-      setState(() => _isLoading = false);
-      _showError('No sha trobat l\'usuari.');
-      return;
+      setState(() => _isUpdating = false);
+      return _showError('No se ha encontrado el usuario.');
     }
     final res = await auth.deleteUserById(id);
-    setState(() => _isLoading = false);
+    setState(() => _isUpdating = false);
     if (res['success'] == true) {
-      // Cerrar sesión y redirigir al login
       auth.logout();
       if (mounted) context.go('/login');
     } else {
-      _showError(res['error'] ?? 'No sha pogut eliminar el compte');
+      _showError(res['error'] ?? 'No se pudo eliminar la cuenta');
     }
   }
 
   @override
+
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+
+    if (_loadingUser) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Perfil')),
@@ -136,30 +121,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            MyTextfield(controller: _nameCtrl,     hintText: 'Nombre',           obscureText: false),
+            MyTextfield(
+              controller: _nameCtrl,
+              hintText: 'Nom',
+              obscureText: false,
+            ),
             const SizedBox(height: 12),
-            MyTextfield(controller: _emailCtrl,    hintText: 'Email',            obscureText: false),
+            MyTextfield(
+              controller: _emailCtrl,
+              hintText: 'Email',
+              obscureText: false,
+            ),
             const SizedBox(height: 12),
-            MyTextfield(controller: _passwordCtrl, hintText: 'Nueva Contraseña',  obscureText: true),
+            MyTextfield(
+              controller: _passwordCtrl,
+              hintText: 'Nova contrasenya',
+              obscureText: true,
+            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedRole,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: colors.surfaceVariant,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              items: _roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-              onChanged: (val) => setState(() => _selectedRole = val),
+              items: _roles
+                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedRole = val!),
             ),
             const SizedBox(height: 24),
-            if (_isLoading)
+
+            if (_isUpdating)
               Center(child: CircularProgressIndicator(color: colors.primary))
             else ...[
-              ElevatedButton(
-                onPressed: _update,
-                child: const Text('Actualizar Perfil'),
+              MyButton(
+                onTap: _update,
+                text: 'Actualitzar Perfil',
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -169,8 +172,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 24),
               TextButton.icon(
                 icon: const Icon(Icons.delete, color: Colors.red),
-                label: const Text('Eliminar cuenta', style: TextStyle(color: Colors.red)),
-                onPressed: _confirmDeleteAccount,
+                label: const Text('Eliminar compte',
+                    style: TextStyle(color: Colors.red)),
+                onPressed: _deleteAccount,
               ),
             ],
           ],

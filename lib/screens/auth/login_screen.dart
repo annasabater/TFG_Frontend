@@ -96,7 +96,10 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 25),
-                MyButton(onTap: () => _signUserIn(context)),
+                MyButton(
+                  onTap: () => _signUserIn(context),
+                  text: 'Entrar',    
+                ),
                 const SizedBox(height: 25),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

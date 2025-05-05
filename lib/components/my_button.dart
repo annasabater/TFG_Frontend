@@ -1,10 +1,16 @@
 // lib/components/my_button.dart
+
 import 'package:flutter/material.dart';
 
 class MyButton extends StatefulWidget {
   final VoidCallback? onTap;
+  final String text;
 
-  const MyButton({super.key, required this.onTap});
+  const MyButton({
+    Key? key,
+    required this.onTap,
+    required this.text,
+  }) : super(key: key);
 
   @override
   _MyButtonState createState() => _MyButtonState();
@@ -36,7 +42,7 @@ class _MyButtonState extends State<MyButton> {
           ),
           child: Center(
             child: Text(
-              'Sign In',
+              widget.text,
               style: TextStyle(
                 color: _isHovered ? colors.onPrimary : colors.onPrimaryContainer,
                 fontWeight: FontWeight.bold,
