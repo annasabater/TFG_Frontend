@@ -21,19 +21,22 @@ class AuthService {
     return _jwt!;
   }
 
+  /// Base URL de la API según la plataforma
   String get _baseApiUrl {
     if (kIsWeb) return 'http://localhost:9000/api';
     if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
     return 'http://localhost:9000/api';
   }
 
-  String get _loginUrl  => '$_baseApiUrl/users/login';
-  String get _signupUrl => '$_baseApiUrl/users/signup';
-  String get _userUrl   => '$_baseApiUrl/users';
+  /// ENDPOINTS ajustados a /api/auth 
+  String get _loginUrl  => '$_baseApiUrl/auth/login';
+  String get _signupUrl => '$_baseApiUrl/auth/signup';
+  String get _userUrl   => '$_baseApiUrl/users';  
 
+  /// Hace login y guarda _jwt + currentUser
   Future<Map<String, dynamic>> login(String email, String password) async {
     final resp = await http.post(
-      Uri.parse(_loginUrl),
+      Uri.parse(_loginUrl),  // antes: /users/login
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
@@ -50,6 +53,7 @@ class AuthService {
     }
   }
 
+  /// Hace signup y guarda _jwt + currentUser
   Future<Map<String, dynamic>> signup({
     required String userName,
     required String email,
@@ -57,7 +61,7 @@ class AuthService {
     String role = 'Usuario',
   }) async {
     final resp = await http.post(
-      Uri.parse(_signupUrl),
+      Uri.parse(_signupUrl), 
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'userName': userName,
@@ -79,6 +83,7 @@ class AuthService {
     }
   }
 
+  /// Obtiene un usuario por ID (requiere JWT)
   Future<Map<String, dynamic>> getUserById(String id) async {
     final resp = await http.get(
       Uri.parse('$_userUrl/$id'),
@@ -91,12 +96,13 @@ class AuthService {
       final Map<String, dynamic> data =
           jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = data;
-      return data;   // ya es Map<String, dynamic>
+      return data;
     } else {
       return {'error': 'No se pudo cargar el usuario'};
     }
   }
 
+  /// Actualiza perfil (requiere JWT)
   Future<Map<String, dynamic>> updateProfile({
     required String userName,
     required String email,
@@ -125,18 +131,13 @@ class AuthService {
       final Map<String, dynamic> data =
           jsonDecode(resp.body) as Map<String, dynamic>;
       currentUser = {...currentUser!, ...data};
-      return data;   
+      return data;
     } else {
       return {'error': 'Error al actualizar perfil'};
     }
   }
 
-  void logout() {
-    isLoggedIn = false;
-    currentUser = null;
-    _jwt = null;
-  }
-
+  /// Elimina cuenta (requiere JWT)
   Future<Map<String, dynamic>> deleteUserById(String id) async {
     final resp = await http.delete(
       Uri.parse('$_userUrl/$id'),
@@ -151,5 +152,12 @@ class AuthService {
       final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Error al eliminar usuario'};
     }
+  }
+
+  /// Logout local
+  void logout() {
+    isLoggedIn = false;
+    currentUser = null;
+    _jwt = null;
   }
 }
