@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'auth_service.dart';
 
 class UserService {
   static String get baseUrl {
@@ -20,7 +21,15 @@ class UserService {
 
 //poner paginador
   static Future<List<User>> getUsers() async {
-    final response = await http.get(Uri.parse(baseUrl));
+    // Obtener el JWT de AuthService
+    final jwt = await AuthService().token;
+    final response = await http.get(
+      Uri.parse(baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);

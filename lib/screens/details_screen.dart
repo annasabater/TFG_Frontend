@@ -5,8 +5,21 @@ import '../provider/users_provider.dart';
 import 'package:provider/provider.dart';
 import '../widgets/UserCard.dart';
 
-class DetailsScreen extends StatelessWidget {
+class DetailsScreen extends StatefulWidget {
   const DetailsScreen({super.key});
+
+  @override
+  State<DetailsScreen> createState() => _DetailsScreenState();
+}
+
+class _DetailsScreenState extends State<DetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() =>
+      Provider.of<UserProvider>(context, listen: false).loadUsers()
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
