@@ -1,5 +1,4 @@
 // lib/services/socket_service.dart
-
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:SkyNet/services/auth_service.dart';
 
@@ -15,83 +14,75 @@ class SocketService {
     'dron_amarillo1@upc.edu',
   };
 
-  /// Debe llamarse justo después de que login() sea exitoso
+  // mapeo de email a sessionId
+  static const _emailToSessionId = {
+    'dron_azul1@upc.edu'    : 'azul',
+    'dron_verde1@upc.edu'   : 'verde',
+    'dron_rojo1@upc.edu'    : 'rojo',
+    'dron_amarillo1@upc.edu': 'amarillo',
+  };
+
+  /// Tras login, guarda email y le asigna sessionId fija
   static void setUserEmail(String email) {
-    currentUserEmail = email.trim().toLowerCase();
+    final e = email.trim().toLowerCase();
+    if (!_competitorEmails.contains(e))
+      throw Exception('Usuario no autorizado para competir');
+    currentUserEmail = e;
+    currentSessionId = _emailToSessionId[e];
   }
 
-  /// Obtiene el JWT actual de forma asíncrona
-  static Future<String> _getJwt() async {
-    return await AuthService().token;
-  }
+  static Future<String> _getJwt() async => await AuthService().token;
 
-  /// Inicializa la sala de espera (namespace `/jocs`)
-  static Future<IO.Socket> initWaitingSocket() async {
-    final email = currentUserEmail;
-    if (email == null || !_competitorEmails.contains(email)) {
-      throw Exception('Usuari $email no autoritzat per competir');
-    }
-    if (_socket != null && _socket!.connected) return _socket!;
+  static IO.Socket? get socketInstance => _socket;
 
+  static Future<IO.Socket> _connectAndJoin() async {
     final token = await _getJwt();
-
+    final sid = currentSessionId;
+    if (sid == null) throw Exception('No sessionId definido');
     _socket = IO.io(
       'http://localhost:9000/jocs',
       IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({'token': token})
-          .disableAutoConnect()
-          .build(),
+        .setTransports(['websocket'])
+        .setAuth({'token': token})
+        .disableAutoConnect()
+        .build(),
     );
-
     _socket!
       ..onConnect((_) {
-        print('Connectat a /jocs (waiting room)');
-        _socket!.emit('join', {'email': email});
-      });
-
+        print('⚡ Connected to /jocs');
+        _socket!.emit('join', {'sessionId': sid});
+      })
+      ..onConnectError((err) => print('Connect error: $err'))
+      ..onError((err) => print('Socket error: $err'));
+    _socket!.connect();
     return _socket!;
   }
 
-  /// Tras recibir `game_started`, inicializa el socket de juego
+  /// Sala de espera
+  static Future<IO.Socket> initWaitingSocket() async {
+    // setUserEmail ya lanzó si no estaba autorizado
+    if (_socket != null && _socket!.connected) return _socket!;
+    return await _connectAndJoin();
+  }
+
+  /// Socket de juego
   static Future<IO.Socket> initGameSocket() async {
-    final sid = currentSessionId;
-    if (sid == null) throw Exception('Falta sessionId. Espera game_started.');
     _socket?.disconnect();
-
-    final token = await _getJwt();
-
-    _socket = IO.io(
-      'http://localhost:9000/jocs',
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({'token': token})
-          .setQuery({'sessionId': sid})
-          .disableAutoConnect()
-          .build(),
-    );
-
-    _socket!
-      ..onConnect((_) =>
-          print('🎮 Connectat a /jocs (game, session=$sid)'));
-
-    return _socket!;
+    return await _connectAndJoin();
   }
 
-  /// Envía una orden al servidor
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
-      print('⚠️ Socket no connectat');
+      print('⚠️ Socket no conectado');
       return;
     }
     _socket!.emit('control', {
       'sessionId': currentSessionId,
-      'action': action,
-      'payload': payload,
+      'action':    action,
+      'payload':   payload,
     });
   }
 
-  /// Desconecta y limpia estado
   static void dispose() {
     _socket?.disconnect();
     _socket = null;

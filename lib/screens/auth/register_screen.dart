@@ -1,8 +1,6 @@
-// lib/screens/auth/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import 'package:SkyNet/components/my_textfield.dart';
 import 'package:SkyNet/components/my_button.dart';
 import 'package:SkyNet/services/auth_service.dart';
@@ -11,7 +9,6 @@ import 'package:SkyNet/models/user.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
-
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -20,24 +17,20 @@ class _RegisterPageState extends State<RegisterPage> {
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
-
   bool _isLoading = false;
 
-  // llista completa de rols
   static const _allRoles = [
     'Administrador',
     'Usuario',
     'Empresa',
     'Gobierno',
   ];
-
   String _selectedRole = 'Usuario';
 
-  // --------------------------- Ciclo de vida -----------------------------
   @override
   void initState() {
     super.initState();
-    _emailCtrl.addListener(_refreshRoles); // refresca rols quan canvia email
+    _emailCtrl.addListener(_refreshRoles);
   }
 
   @override
@@ -49,57 +42,56 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _refreshRoles() => setState(() {}); // fa rebuild de la pantalla
+  void _refreshRoles() => setState(() {});
 
-  // ---------------------------- SIGN‑UP ---------------------------------
   Future<void> _register() async {
     final name  = _nameCtrl.text.trim();
-    final email = _emailCtrl.text.trim();
+    final email = _emailCtrl.text.trim().toLowerCase();
     final pw    = _passwordCtrl.text;
 
     if (name.isEmpty || email.isEmpty || pw.isEmpty) {
-      _showError('Completa tots els camps');
-      return;
+      return _showError('Completa tots els camps');
     }
-
-    final isUpc = email.toLowerCase().endsWith('@upc.edu');
+    final isUpc = email.endsWith('@upc.edu');
     if (_selectedRole == 'Administrador' && !isUpc) {
-      _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
-      return;
+      return _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
     }
 
     setState(() => _isLoading = true);
 
-    final res = await AuthService().signup(
+    // 1) registro
+    final signRes = await AuthService().signup(
       userName: name,
       email:    email,
       password: pw,
       role:     _selectedRole,
     );
+    if (signRes.containsKey('error')) {
+      setState(() => _isLoading = false);
+      return _showError(signRes['error'] as String);
+    }
 
+    // 2) login automático para obtener token
+    final loginRes = await AuthService().login(email, pw);
     setState(() => _isLoading = false);
 
-    if (res.containsKey('error')) {
-      _showError(res['error']);
-    } else {
-      final mapUser = res['user'] ?? res;
-      context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-      if (context.mounted) context.go('/');
+    if (loginRes.containsKey('error')) {
+      return _showError('Usuario creado, pero falló el login automático: ${loginRes['error']}');
     }
+
+    // 3) guardamos user en el provider y navegamos
+    final mapUser = loginRes['user'] as Map<String, dynamic>;
+    context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+    if (context.mounted) context.go('/');
   }
 
-  // ---------------------------- UI --------------------------------------
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isUpc  = _emailCtrl.text.trim().toLowerCase().endsWith('@upc.edu');
-
-    // Rols disponibles segons el domini del correu
-    final roles = isUpc
+    final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
+    final roles  = isUpc
         ? _allRoles
         : _allRoles.where((r) => r != 'Administrador').toList();
-
-    // Si “Administrador” ja no és vàlid, canviem la selecció
     if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
 
     return Scaffold(
@@ -122,25 +114,19 @@ class _RegisterPageState extends State<RegisterPage> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              items: roles
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
-              onChanged: (val) => setState(() => _selectedRole = val!),
+              items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+              onChanged: (v) => setState(() => _selectedRole = v!),
             ),
             const SizedBox(height: 24),
             _isLoading
-                ? CircularProgressIndicator(color: colors.primary)
-                : MyButton(
-                    onTap: _register,
-                    text: 'Registrarse',  
-                  ),
+              ? CircularProgressIndicator(color: colors.primary)
+              : MyButton(onTap: _register, text: 'Registrarse'),
           ],
         ),
       ),
     );
   }
 
-  // ---------------------------- utils -----------------------------------
   void _showError(String msg) {
     showDialog(
       context: context,

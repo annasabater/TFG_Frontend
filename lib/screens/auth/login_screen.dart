@@ -1,5 +1,3 @@
-// lib/screens/auth/login_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +20,7 @@ class LoginPage extends StatelessWidget {
     final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError(context, 'El email i la contrasenya no poden estar buits.');
+      _showError(context, 'El email y la contraseña no pueden estar vacíos.');
       return;
     }
 
@@ -32,32 +30,30 @@ class LoginPage extends StatelessWidget {
       return;
     }
 
-    // 1) Obtenim el user del result
-    final mapUser = result['user'] ?? result;
-
-    // 2) Desem al provider
+    final mapUser = result['user'] as Map<String, dynamic>;
     context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
 
-    // 3) Desem l’email al SocketService perquè després pugui fer initWaitingSocket()
-    SocketService.setUserEmail(email);
+    // Inicializamos el socket
+    try {
+      SocketService.setUserEmail(email);
+    } catch (e) {
+      _showError(context, e.toString());
+      return;
+    }
 
-    // 4) Ara naveguem a Home
     if (context.mounted) {
       context.go('/');
     }
   }
 
-  void _showError(BuildContext context, String message) {
+  void _showError(BuildContext ctx, String msg) {
     showDialog(
-      context: context,
+      context: ctx,
       builder: (_) => AlertDialog(
         title: const Text('Error'),
-        content: Text(message),
+        content: Text(msg),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
         ],
       ),
     );
@@ -66,21 +62,18 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+            padding: const EdgeInsets.symmetric(horizontal: 25),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 25),
                 Text('Benvingut!', style: TextStyle(
                   color: colors.onBackground,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 24, fontWeight: FontWeight.bold,
                 )),
                 const SizedBox(height: 25),
                 MyTextfield(controller: emailController, hintText: 'Email', obscureText: false),
@@ -91,15 +84,11 @@ class LoginPage extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {},
-                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
                     child: Text('Has oblidat la contrasenya?', style: TextStyle(color: colors.onSurfaceVariant)),
                   ),
                 ),
                 const SizedBox(height: 25),
-                MyButton(
-                  onTap: () => _signUserIn(context),
-                  text: 'Entrar',    
-                ),
+                MyButton(onTap: () => _signUserIn(context), text: 'Entrar'),
                 const SizedBox(height: 25),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

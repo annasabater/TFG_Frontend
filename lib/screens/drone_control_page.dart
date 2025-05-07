@@ -111,7 +111,6 @@ class DroneControlPage extends StatelessWidget {
 
 
 // lib/screens/drone_control_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import '../services/socket_service.dart';
@@ -124,23 +123,24 @@ class DroneControlPage extends StatefulWidget {
 }
 
 class _DroneControlPageState extends State<DroneControlPage> {
-  Map<String, dynamic>? _gameState;
   IO.Socket? _socket;
+  Map<String, dynamic>? _gameState;
 
   @override
   void initState() {
     super.initState();
-    _initGameSocket();
+    _socket = SocketService.socketInstance;
+    _socket
+      ?..on('state_update', (data) {
+        setState(() => _gameState = Map<String, dynamic>.from(data));
+      })
+      ..onDisconnect((_) => print('Disconnected from game'));
   }
 
-  Future<void> _initGameSocket() async {
-    final socket = await SocketService.initGameSocket();
-    setState(() => _socket = socket);
-    socket
-      ..onConnect((_) => print('Connectat al joc (session=${SocketService.currentSessionId})'))
-      ..on('state_update', (data) {
-        setState(() => _gameState = data as Map<String, dynamic>?);
-      });
+  @override
+  void dispose() {
+    SocketService.dispose();
+    super.dispose();
   }
 
   void _onJoystickMove(String stickId, Offset offset) {
@@ -156,21 +156,14 @@ class _DroneControlPageState extends State<DroneControlPage> {
   }
 
   @override
-  void dispose() {
-    SocketService.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final status = _gameState?['status']?.toString() ?? '';
+    final status = _gameState?['status']?.toString() ?? 'Waiting...';
     return Scaffold(
       backgroundColor: const Color(0xFFEFF2F5),
       body: SafeArea(
         child: Stack(
           children: [
-            if (status.isNotEmpty)
-              Positioned(top: 16, left: 16, child: Text("Estado: $status")),
+            Positioned(top: 16, left: 16, child: Text("Estado: $status")),
             Positioned(
               top: 30,
               right: 16,
@@ -206,8 +199,22 @@ class _DroneControlPageState extends State<DroneControlPage> {
   Widget _buildJoystick(String id) => Joystick(
         listener: (det) => _onJoystickMove(id, Offset(det.x, det.y)),
         mode: JoystickMode.all,
-        base: Container(width: 120, height: 120, decoration: const BoxDecoration(color: Color(0xFF2F3B4C), shape: BoxShape.circle)),
-        stick: Container(width: 60, height: 60, decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), shape: BoxShape.circle)),
+        base: Container(
+          width: 120,
+          height: 120,
+          decoration: const BoxDecoration(
+            color: Color(0xFF2F3B4C),
+            shape: BoxShape.circle,
+          ),
+        ),
+        stick: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.7),
+            shape: BoxShape.circle,
+          ),
+        ),
       );
 
   Widget _buildBulletButton(String asset, String type) => GestureDetector(
@@ -218,9 +225,14 @@ class _DroneControlPageState extends State<DroneControlPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
+            ],
           ),
-          child: Padding(padding: const EdgeInsets.all(8.0), child: Image.asset(asset, fit: BoxFit.contain)),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset(asset, fit: BoxFit.contain),
+          ),
         ),
       );
 }

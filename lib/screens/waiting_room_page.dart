@@ -1,5 +1,4 @@
-// lib/screens/salaespera_screen.dart
-
+// lib/screens/waiting_room_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/socket_service.dart';
@@ -13,42 +12,43 @@ class WaitingRoomPage extends StatefulWidget {
 
 class _WaitingRoomPageState extends State<WaitingRoomPage> {
   IO.Socket? _socket;
-  String _waitingMsg = 'Esperant a que s\'uneixin altres jugadors…';
+  String _waitingMsg = 'Esperando a que el profesor inicie la partida…';
 
   @override
   void initState() {
     super.initState();
-    // 1) Hem de tenir ja SocketService.currentUserEmail assignat al login
+    _initSocket();
+  }
+
+  Future<void> _initSocket() async {
     try {
-      _socket = SocketService.initWaitingSocket();
+      _socket = await SocketService.initWaitingSocket();
+      _socket!
+        ..on('waiting', (data) {
+          setState(() => _waitingMsg = data['msg']);
+        })
+        ..on('game_started', (data) async {
+          await SocketService.initGameSocket();
+          if (context.mounted) context.go('/jocs/control');
+        });
     } catch (e) {
-      WidgetsBinding.instance!.addPostFrameCallback((_) {
+      // Si algo falla, volvemos al home con error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Accés denegat'),
+            title: const Text('Error'),
             content: Text(e.toString()),
-            actions: [ TextButton(onPressed: () => context.go('/'), child: const Text('OK')) ],
+            actions: [
+              TextButton(
+                onPressed: () => context.go('/'),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       });
-      return;
     }
-
-    _socket!
-      ..on('waiting', (data) {
-        setState(() => _waitingMsg = data['msg'] as String);
-      })
-      ..on('game_started', (data) {
-        // guardem sessionId (si ens arriba)
-        if (data['sessionId'] != null) {
-          SocketService.currentSessionId = data['sessionId'] as String;
-        }
-        // Reciclem i inicialitzem el “game socket”
-        SocketService.initGameSocket();
-        // Naveguem a control de dron
-        context.go('/jocs/lobby/control');
-      });
   }
 
   @override
@@ -60,7 +60,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sala d’espera')),
+      appBar: AppBar(title: const Text('Sala de espera')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

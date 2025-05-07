@@ -1,3 +1,4 @@
+//lib/services/UserService.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
@@ -17,6 +18,7 @@ class UserService {
   }
 }
 
+//poner paginador
   static Future<List<User>> getUsers() async {
     final response = await http.get(Uri.parse(baseUrl));
 

@@ -18,64 +18,84 @@ class AuthService {
   Map<String, dynamic>? currentUser;
   String? _jwt;
 
-  /// Guarda el token en SharedPreferences
-  Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('jwt', token);
+  /// Guarda el token en SharedPreferences _y_ en memoria.
+  /// Devuelve true si guardó correctamente, false en caso de error.
+  Future<bool> _saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('jwt', token);
+      _jwt = token;
+      isLoggedIn = true;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
-  /// Carga el token de SharedPreferences si no está en memoria
-  Future<String?> _loadToken() async {
-    if (_jwt != null) return _jwt;
+  /// Carga el token de SharedPreferences si no lo tenemos ya en memoria.
+  Future<void> _loadToken() async {
+    if (_jwt != null) return;
     final prefs = await SharedPreferences.getInstance();
     _jwt = prefs.getString('jwt');
     isLoggedIn = _jwt != null;
-    return _jwt;
   }
 
-  /// Acceso al JWT guardado tras login/signup
+  /// Devuelve el JWT almacenado, o lanza excepción si no existe.
   Future<String> get token async {
-    final t = await _loadToken();
-    if (t == null) throw Exception('JWT no disponible. Haz login primero.');
-    return t;
+    await _loadToken();
+    if (_jwt == null || _jwt!.isEmpty) {
+      throw Exception('JWT no disponible. Haz login primero.');
+    }
+    return _jwt!;
   }
 
-  /// Base URL de la API según la plataforma
+  /// Base URL de la API según la plataforma.
   String get _baseApiUrl {
     if (kIsWeb) return 'http://localhost:9000/api';
     if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
     return 'http://localhost:9000/api';
   }
 
-  /// ENDPOINTS ajustados a /api/auth para login y signup
   String get _loginUrl  => '$_baseApiUrl/auth/login';
-  String get _signupUrl => '$_baseApiUrl/auth/signup';
+  String get _signupUrl => '$_baseApiUrl/auth/register';
   String get _userUrl   => '$_baseApiUrl/users';
 
-  /// Hace login y guarda currentUser + JWT
+  /// Hace login, guarda currentUser + JWT, y devuelve {'user': …} o {'error': mensaje}.
   Future<Map<String, dynamic>> login(String email, String password) async {
     final resp = await http.post(
       Uri.parse(_loginUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
-    if (resp.statusCode == 200) {
-      final body = jsonDecode(resp.body) as Map<String, dynamic>;
-      final userData = body.containsKey('user')
-          ? body['user'] as Map<String, dynamic>
-          : body;
-      currentUser = userData;
-      _jwt = body['token'] as String?;
-      if (_jwt != null) await _saveToken(_jwt!);
-      isLoggedIn = true;
-      return {'user': userData};
-    } else {
+
+    if (resp.statusCode != 200) {
       final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Email o contraseña incorrectos'};
     }
+
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+
+    // Capturamos el campo "accesstoken" que devuelve tu backend
+    final tokenStr = body['accesstoken'] as String?;
+    if (tokenStr == null) {
+      return {'error': 'No se recibió token del servidor'};
+    }
+
+    // Obtenemos el objeto user
+    final userData = (body['user'] as Map<String, dynamic>?) ?? {};
+    currentUser = userData;
+
+    // Guardamos el JWT localmente
+    final ok = await _saveToken(tokenStr);
+    if (!ok) {
+      return {'error': 'No se pudo guardar el token localmente'};
+    }
+
+    return {'user': userData};
   }
 
-  /// Hace signup y guarda currentUser + JWT
+  /// Hace signup, devuelve {'user': …} o {'error': mensaje}.
+  /// No confía en el backend para devolver token en /register.
   Future<Map<String, dynamic>> signup({
     required String userName,
     required String email,
@@ -92,45 +112,42 @@ class AuthService {
         'role': role,
       }),
     );
-    if (resp.statusCode == 200 || resp.statusCode == 201) {
-      final body = jsonDecode(resp.body) as Map<String, dynamic>;
-      final userData = body.containsKey('user')
-          ? body['user'] as Map<String, dynamic>
-          : body;
-      currentUser = userData;
-      _jwt = body['token'] as String?;
-      if (_jwt != null) await _saveToken(_jwt!);
-      isLoggedIn = true;
-      return {'user': userData};
-    } else {
+
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
       final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Error en registro'};
     }
+
+    // El backend solo devuelve { message, user }, sin token
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+    final userData = (body['user'] as Map<String, dynamic>?) ?? {};
+    currentUser = userData;
+
+    return {'user': userData};
   }
 
-  /// Obtiene un usuario por ID (requiere JWT)
+  /// Obtiene un usuario por ID (requiere JWT).
   Future<Map<String, dynamic>> getUserById(String id) async {
-    final token = await _loadToken();
+    final jwt = await token;
     final resp = await http.get(
       Uri.parse('$_userUrl/$id'),
       headers: {
         'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $jwt',
       },
     );
-    if (resp.statusCode == 200) {
-      final body = jsonDecode(resp.body) as Map<String, dynamic>;
-      final userData = body.containsKey('user')
-          ? body['user'] as Map<String, dynamic>
-          : body;
-      currentUser = userData;
-      return userData;
-    } else {
+
+    if (resp.statusCode != 200) {
       return {'error': 'No se pudo cargar el usuario'};
     }
+
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+    final userData = (body['user'] as Map<String, dynamic>?) ?? body;
+    currentUser = userData;
+    return userData;
   }
 
-  /// Actualiza perfil (requiere JWT)
+  /// Actualiza perfil (requiere JWT).
   Future<Map<String, dynamic>> updateProfile({
     required String userName,
     required String email,
@@ -141,52 +158,53 @@ class AuthService {
       return {'error': 'No hay usuario autenticado'};
     }
     final id = currentUser!['_id'] as String;
-    final token = await _loadToken();
+    final jwt = await token;
+
     final bodyData = {
       'userName': userName,
       'email': email,
       if (password != null && password.isNotEmpty) 'password': password,
-      if (role != null) 'role': role,
+      if (role    != null)                   'role': role,
     };
+
     final resp = await http.put(
       Uri.parse('$_userUrl/$id'),
       headers: {
         'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $jwt',
       },
       body: jsonEncode(bodyData),
     );
-    if (resp.statusCode == 200) {
-      final body = jsonDecode(resp.body) as Map<String, dynamic>;
-      final updated = body.containsKey('user')
-          ? body['user'] as Map<String, dynamic>
-          : body;
-      currentUser = {...?currentUser, ...updated};
-      return updated;
-    } else {
+
+    if (resp.statusCode != 200) {
       return {'error': 'Error al actualizar perfil'};
     }
+
+    final body = jsonDecode(resp.body) as Map<String, dynamic>;
+    final updated = (body['user'] as Map<String, dynamic>?) ?? body;
+    currentUser = {...?currentUser, ...updated};
+    return updated;
   }
 
-  /// Elimina cuenta (requiere JWT)
+  /// Elimina cuenta (requiere JWT).
   Future<Map<String, dynamic>> deleteUserById(String id) async {
-    final token = await _loadToken();
+    final jwt = await token;
     final resp = await http.delete(
       Uri.parse('$_userUrl/$id'),
       headers: {
         'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $jwt',
       },
     );
-    if (resp.statusCode == 200) {
-      return {'success': true};
-    } else {
+
+    if (resp.statusCode != 200) {
       final err = jsonDecode(resp.body) as Map<String, dynamic>;
       return {'error': err['message'] ?? 'Error al eliminar usuario'};
     }
+    return {'success': true};
   }
 
-  /// Logout local
+  /// Logout local: borra el token y reinicia estado.
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt');
