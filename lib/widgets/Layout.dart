@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../provider/users_provider.dart';
 import '../services/auth_service.dart';
+import '../provider/theme_provider.dart';
 
 class LayoutWrapper extends StatelessWidget {
   final Widget child;
@@ -23,6 +24,15 @@ class LayoutWrapper extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 2,
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) => IconButton(
+              icon: Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              tooltip: themeProvider.isDarkMode ? 'Modo claro' : 'Modo oscuro',
+              onPressed: () => themeProvider.toggleTheme(),
+            ),
+          ),
+        ],
       ),
       drawer: NavigationDrawer(
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -45,6 +55,7 @@ class LayoutWrapper extends StatelessWidget {
 
           _buildNavItem(context, 'Jocs', Icons.sports_esports, '/jocs'),
           _buildNavItem(context, 'Mapa', Icons.map, '/mapa'),
+          _buildNavItem(context, 'Chat', Icons.chat, '/chat'),
           const Divider(),
           _reloadButton(context),
           _logoutButton(context),

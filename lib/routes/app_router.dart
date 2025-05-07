@@ -14,6 +14,8 @@ import 'package:SkyNet/screens/jocs_page.dart';
 import 'package:SkyNet/screens/waiting_room_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/screens/mapa_screen.dart';
+import 'package:SkyNet/screens/chat_select_screen.dart';
+import 'package:SkyNet/screens/chat_screen.dart';
 import 'package:SkyNet/services/auth_service.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -93,6 +95,21 @@ final GoRouter appRouter = GoRouter(
           path: 'mapa',
           name: 'mapa',
           builder: (_, __) => const MapaScreen(),
+        ),
+        GoRoute(
+          path: 'chat',
+          name: 'chat',
+          builder: (_, __) => const ChatSelectScreen(),
+          routes: [
+            GoRoute(
+              path: ':userId',
+              name: 'chatUser',
+              builder: (context, state) {
+                final userId = state.pathParameters['userId']!;
+                return ChatScreen(userId: userId);
+              },
+            ),
+          ],
         ),
       ],
     ),
