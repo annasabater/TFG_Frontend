@@ -56,6 +56,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        Image.asset(
+                          'assets/logo_skynet.png',
+                          width: 100,
+                          height: 100,
+                        ),
+                        const SizedBox(height: 16),
                         CircleAvatar(
                           radius: 70,
                           backgroundColor: Theme.of(context).colorScheme.primary,

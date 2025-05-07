@@ -71,6 +71,12 @@ class LoginPage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 25),
+                Image.asset(
+                  'assets/logo_skynet.png',
+                  width: 120,
+                  height: 120,
+                ),
+                const SizedBox(height: 25),
                 Text('Benvingut!', style: TextStyle(
                   color: colors.onBackground,
                   fontSize: 24, fontWeight: FontWeight.bold,
