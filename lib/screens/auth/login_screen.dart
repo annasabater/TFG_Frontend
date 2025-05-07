@@ -33,13 +33,13 @@ class LoginPage extends StatelessWidget {
     final mapUser = result['user'] as Map<String, dynamic>;
     context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
 
-    // Inicializamos el socket
-    try {
-      SocketService.setUserEmail(email);
-    } catch (e) {
-      _showError(context, e.toString());
-      return;
-    }
+    // Inicializamos el socket SOLO cuando el usuario vaya a competir
+    // try {
+    //   SocketService.setUserEmail(email);
+    // } catch (e) {
+    //   _showError(context, e.toString());
+    //   return;
+    // }
 
     if (context.mounted) {
       context.go('/');

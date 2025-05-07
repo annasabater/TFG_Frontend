@@ -2,9 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:SkyNet/components/my_textfield.dart';
 import 'package:SkyNet/components/my_button.dart';
 import 'package:SkyNet/services/auth_service.dart';
+import 'package:SkyNet/provider/users_provider.dart';
+import 'package:SkyNet/models/user.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -68,7 +71,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (res.containsKey('error')) {
       _showError(res['error'] as String);
     } else {
-      context.pop();
+      final updatedUser = User.fromJson(res);
+      context.read<UserProvider>().setCurrentUser(updatedUser);
+      if (context.mounted) context.pop();
     }
   }
 
