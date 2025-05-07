@@ -13,6 +13,7 @@ import 'package:SkyNet/screens/perfil_screen.dart';
 import 'package:SkyNet/screens/jocs_page.dart';
 import 'package:SkyNet/screens/waiting_room_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
+import 'package:SkyNet/screens/mapa_screen.dart';
 import 'package:SkyNet/services/auth_service.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -87,6 +88,11 @@ final GoRouter appRouter = GoRouter(
               builder: (_, __) => const DroneControlPage(),
             ),
           ],
+        ),
+        GoRoute(
+          path: 'mapa',
+          name: 'mapa',
+          builder: (_, __) => const MapaScreen(),
         ),
       ],
     ),

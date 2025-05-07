@@ -44,6 +44,7 @@ class LayoutWrapper extends StatelessWidget {
           ],
 
           _buildNavItem(context, 'Jocs', Icons.sports_esports, '/jocs'),
+          _buildNavItem(context, 'Mapa', Icons.map, '/mapa'),
           const Divider(),
           _reloadButton(context),
           _logoutButton(context),
