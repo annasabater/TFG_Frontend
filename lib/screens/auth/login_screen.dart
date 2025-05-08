@@ -1,3 +1,4 @@
+// lib/screens/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -12,50 +13,52 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class LoginPage extends StatelessWidget {
   LoginPage({Key? key}) : super(key: key);
 
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController emailController    = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   Future<void> _signUserIn(BuildContext context) async {
-    final email = emailController.text.trim();
+    final email    = emailController.text.trim();
     final password = passwordController.text.trim();
-    final localizations = AppLocalizations.of(context)!;
+    final loc      = AppLocalizations.of(context)!;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError(context, localizations.emptyFieldsError);
+      _showError(context, loc.emptyFieldsError);
       return;
     }
 
     try {
       final result = await AuthService().login(email, password);
       if (result.containsKey('error')) {
-        if (context.mounted) {
-          _showError(context, result['error'] as String);
-        }
+        if (context.mounted) _showError(context, result['error'] as String);
         return;
       }
       final mapUser = result['user'] as Map<String, dynamic>;
       if (context.mounted) {
-        context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+        // Guardamos el usuario en el provider
+        context.read<UserProvider>().setCurrentUser(
+          User.fromJson(mapUser),
+        );
+        // Solo guardamos email, sin validar color
+        SocketService.setUserEmail(mapUser['email'] as String);
+        // Vamos al home
         context.go('/');
       }
     } catch (e) {
-      if (context.mounted) {
-        _showError(context, e.toString());
-      }
+      if (context.mounted) _showError(context, e.toString());
     }
   }
 
   void _showError(BuildContext ctx, String msg) {
-    final localizations = AppLocalizations.of(ctx)!;
+    final loc = AppLocalizations.of(ctx)!;
     showDialog(
       context: ctx,
       builder: (_) => AlertDialog(
-        title: Text(localizations.error),
+        title: Text(loc.error),
         content: Text(msg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(localizations.ok),
+            child: Text(loc.ok),
           ),
         ],
       ),
@@ -65,7 +68,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final localizations = AppLocalizations.of(context)!;
+    final loc    = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -76,14 +79,10 @@ class LoginPage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 25),
-                Image.asset(
-                  'assets/logo_skynet.png',
-                  width: 120,
-                  height: 120,
-                ),
+                Image.asset('assets/logo_skynet.png', width: 120, height: 120),
                 const SizedBox(height: 25),
                 Text(
-                  localizations.welcome,
+                  loc.welcome,
                   style: TextStyle(
                     color: colors.onBackground,
                     fontSize: 24,
@@ -93,13 +92,13 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 25),
                 MyTextfield(
                   controller: emailController,
-                  hintText: localizations.email,
+                  hintText: loc.email,
                   obscureText: false,
                 ),
                 const SizedBox(height: 12),
                 MyTextfield(
                   controller: passwordController,
-                  hintText: localizations.password,
+                  hintText: loc.password,
                   obscureText: true,
                 ),
                 const SizedBox(height: 12),
@@ -108,7 +107,7 @@ class LoginPage extends StatelessWidget {
                   child: TextButton(
                     onPressed: () {},
                     child: Text(
-                      localizations.forgotPassword,
+                      loc.forgotPassword,
                       style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                   ),
@@ -116,20 +115,17 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 25),
                 MyButton(
                   onTap: () => _signUserIn(context),
-                  text: localizations.login,
+                  text: loc.login,
                 ),
                 const SizedBox(height: 25),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      localizations.notAMember,
-                      style: TextStyle(color: colors.onSurfaceVariant),
-                    ),
+                    Text(loc.notAMember, style: TextStyle(color: colors.onSurfaceVariant)),
                     GestureDetector(
                       onTap: () => context.go('/register'),
                       child: Text(
-                        localizations.register,
+                        loc.register,
                         style: TextStyle(
                           color: colors.primary,
                           fontWeight: FontWeight.bold,

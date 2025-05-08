@@ -119,7 +119,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class DroneControlPage extends StatefulWidget {
   const DroneControlPage({Key? key}) : super(key: key);
   @override
-  _DroneControlPageState createState() => _DroneControlPageState();
+  State<DroneControlPage> createState() => _DroneControlPageState();
 }
 
 class _DroneControlPageState extends State<DroneControlPage> {
@@ -129,21 +129,26 @@ class _DroneControlPageState extends State<DroneControlPage> {
   @override
   void initState() {
     super.initState();
+    // Reutilizamos el socket ya abierto en WaitingRoomPage
     _socket = SocketService.socketInstance;
+
+    // Escuchamos actualizaciones de estado si existen
     _socket
       ?..on('state_update', (data) {
         setState(() => _gameState = Map<String, dynamic>.from(data));
       })
-      ..onDisconnect((_) => print('Disconnected from game'));
+      ..onDisconnect((_) => print('🔌 Desconectado del juego'));
   }
 
   @override
   void dispose() {
+    // Cerramos todo al salir de aquí
     SocketService.dispose();
     super.dispose();
   }
 
   void _onJoystickMove(String stickId, Offset offset) {
+    // Enviamos comando de movimiento
     SocketService.sendCommand('move', {
       'stick': stickId,
       'dx': offset.dx,
@@ -152,6 +157,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   }
 
   void _fireBullet(String type) {
+    // Enviamos comando de disparo
     SocketService.sendCommand('fire', {'type': type});
   }
 
@@ -163,7 +169,14 @@ class _DroneControlPageState extends State<DroneControlPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(top: 16, left: 16, child: Text("Estado: $status")),
+            // Mostrar estado arriba a la izquierda
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Text('Estado: $status', style: const TextStyle(fontSize: 16)),
+            ),
+
+            // Botones de bala arriba a la derecha
             Positioned(
               top: 30,
               right: 16,
@@ -177,6 +190,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 ],
               ),
             ),
+
+            // Dos joysticks abajo
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -196,43 +211,47 @@ class _DroneControlPageState extends State<DroneControlPage> {
     );
   }
 
-  Widget _buildJoystick(String id) => Joystick(
-        listener: (det) => _onJoystickMove(id, Offset(det.x, det.y)),
-        mode: JoystickMode.all,
-        base: Container(
-          width: 120,
-          height: 120,
-          decoration: const BoxDecoration(
-            color: Color(0xFF2F3B4C),
-            shape: BoxShape.circle,
-          ),
+  Widget _buildJoystick(String id) {
+    return Joystick(
+      listener: (det) => _onJoystickMove(id, Offset(det.x, det.y)),
+      mode: JoystickMode.all,
+      base: Container(
+        width: 120,
+        height: 120,
+        decoration: const BoxDecoration(
+          color: Color(0xFF2F3B4C),
+          shape: BoxShape.circle,
         ),
-        stick: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.7),
-            shape: BoxShape.circle,
-          ),
+      ),
+      stick: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+          shape: BoxShape.circle,
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _buildBulletButton(String asset, String type) => GestureDetector(
-        onTap: () => _fireBullet(type),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Image.asset(asset, fit: BoxFit.contain),
-          ),
+  Widget _buildBulletButton(String asset, String type) {
+    return GestureDetector(
+      onTap: () => _fireBullet(type),
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
+          ],
         ),
-      );
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(asset, fit: BoxFit.contain),
+        ),
+      ),
+    );
+  }
 }

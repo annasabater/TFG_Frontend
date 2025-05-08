@@ -2,45 +2,51 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:SkyNet/services/auth_service.dart';
 
+typedef VoidCallback = void Function();
+
 class SocketService {
-  // Para competiciones (/jocs)
+  static VoidCallback? onGameStarted;
   static String? currentUserEmail;
+  static String? currentUserColor;
   static String? currentSessionId;
   static IO.Socket? _socket;
-
-  // Para chat (/chat)
   static IO.Socket? _chatSocket;
 
-  /// Tras login en AuthService, llama a esto con el email del usuario.
+  static const Map<String, String> _colorMapping = {
+    'dron_azul1@upc.edu':     'azul',
+    'dron_verde1@upc.edu':    'verde',
+    'dron_rojo1@upc.edu':     'rojo',
+    'dron_amarillo1@upc.edu': 'amarillo',
+  };
+
+  /// Tras login, llama a esto con el email. NO lanza excepción.
   static void setUserEmail(String email) {
-    final e = email.trim().toLowerCase();
-    currentUserEmail = e;
-    const mapping = {
-      'dron_azul1@upc.edu':    'azul',
-      'dron_verde1@upc.edu':   'verde',
-      'dron_rojo1@upc.edu':    'rojo',
-      'dron_amarillo1@upc.edu':'amarillo',
-    };
-    currentSessionId = mapping[e];
-    if (currentSessionId == null) {
-      throw Exception('Usuario no autorizado para competir');
-    }
+    currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// JWT para WS
+  /// Antes de initWaitingSocket(), valida si está autorizado para competir.
+  /// SÍ lanza excepción si el email no está en el map.
+  static void setCompetitionUserEmail(String email) {
+    final e = email.trim().toLowerCase();
+    currentUserEmail = e;
+    currentUserColor = _colorMapping[e];
+    if (currentUserColor == null) {
+      throw Exception('Usuario no autorizado para competir');
+    }
+    // Siempre la misma sesión:
+    currentSessionId = '1';
+  }
+
   static Future<String> _getJwt() => AuthService().token;
-
-  /// Base URL para WS (quita '/api')
   static String get _wsBaseUrl => AuthService().webSocketBaseUrl;
-
-  /// Permite usar el socket de juego en DroneControlPage
   static IO.Socket? get socketInstance => _socket;
 
-  //----------------------------------------------------------------------  
-  // Sala de espera y juego (/jocs)  
-  //----------------------------------------------------------------------
+  /// Registra un callback para cuando llegue game_started en /jocs
+  static void registerOnGameStarted(VoidCallback callback) {
+    onGameStarted = callback;
+  }
 
-  /// Conecta (o reutiliza) /jocs y se une a la sesión.
+  /// Conecta (o reutiliza) al namespace /jocs y emite el join.
   static Future<IO.Socket> initWaitingSocket() async {
     if (_socket != null && _socket!.connected) return _socket!;
 
@@ -51,34 +57,36 @@ class SocketService {
     _socket = IO.io(
       '$_wsBaseUrl/jocs',
       IO.OptionBuilder()
-        .setTransports(['websocket'])
-        .setAuth({'token': token})
-        .disableAutoConnect()
-        .build(),
+          .setTransports(['websocket'])
+          .setAuth({'token': token})
+          .disableAutoConnect()
+          .build(),
     );
 
     _socket!
       ..onConnect((_) {
-        print('⚡ Connected to /jocs');
+        print('⚡ Connected to /jocs (sessionId=$sid)');
         _socket!.emit('join', {'sessionId': sid});
       })
       ..on('waiting', (data) => print('Waiting: ${data['msg']}'))
-      ..on('game_started', (_) => print('Game started'))
+      ..on('game_started', (_) {
+        print('🚀 Game started');
+        onGameStarted?.call();
+      })
       ..onConnectError((err) => print('Jocs connect error: $err'))
-      ..onError((err)        => print('Jocs socket error: $err'));
+      ..onError((err) => print('Jocs socket error: $err'));
 
     _socket!.connect();
     return _socket!;
   }
 
-  /// Tras game_started, reconecta (útil para DroneControlPage)
+  /// Desconecta y reconecta (útil tras game_started)
   static Future<IO.Socket> initGameSocket() async {
     _socket?.disconnect();
     return await initWaitingSocket();
   }
 
-  /// Envía comando al servidor de juego.
-  /// El payload debe incluir lo que necesites, el sessionId se añade aquí.
+  /// Envía un comando 'control'
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
       print('⚠️ Game socket not connected');
@@ -91,45 +99,37 @@ class SocketService {
     });
   }
 
-  /// Desconecta el WS de /jocs.
+  /// Limpia todo
   static void dispose() {
     _socket?.disconnect();
     _socket = null;
+    onGameStarted = null;
     currentUserEmail = null;
+    currentUserColor = null;
     currentSessionId = null;
   }
 
-  //----------------------------------------------------------------------  
-  // Chat (/chat)  
-  //----------------------------------------------------------------------
-
-  /// Conecta (o reutiliza) el socket de chat.
+  // --------------------- Chat ---------------------
   static Future<IO.Socket> initChatSocket() async {
     if (_chatSocket != null && _chatSocket!.connected) return _chatSocket!;
-
     final token = await _getJwt();
-
     _chatSocket = IO.io(
       '$_wsBaseUrl/chat',
       IO.OptionBuilder()
-        .setTransports(['websocket'])
-        .setAuth({'token': token})
-        .disableAutoConnect()
-        .build(),
+          .setTransports(['websocket'])
+          .setAuth({'token': token})
+          .disableAutoConnect()
+          .build(),
     );
-
     _chatSocket!
       ..onConnect((_) => print('⚡ Connected to /chat'))
       ..on('new_message', (data) => print('New msg: $data'))
       ..onConnectError((err) => print('Chat connect error: $err'))
-      ..onError((err)        => print('Chat socket error: $err'));
-
+      ..onError((err) => print('Chat socket error: $err'));
     _chatSocket!.connect();
     return _chatSocket!;
   }
 
-  /// Envía un mensaje al chat.
-  /// Usa el `senderId` y `receiverId` que tú pases.
   static void sendChatMessage({
     required String senderId,
     required String receiverId,
@@ -146,12 +146,10 @@ class SocketService {
     });
   }
 
-  /// Registra callback para nuevos mensajes entrantes.
-  static void onNewMessage(void Function(dynamic message) callback) {
+  static void onNewMessage(void Function(dynamic) callback) {
     _chatSocket?.on('new_message', callback);
   }
 
-  /// Desconecta el WS de chat.
   static void disposeChat() {
     _chatSocket?.disconnect();
     _chatSocket = null;
