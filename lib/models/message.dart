@@ -1,3 +1,5 @@
+
+//lib/models/message.dart
 class Message {
   final String id;
   final String senderId;

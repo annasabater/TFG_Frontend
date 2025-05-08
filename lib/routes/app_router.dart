@@ -14,9 +14,10 @@ import 'package:SkyNet/screens/jocs_page.dart';
 import 'package:SkyNet/screens/waiting_room_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/screens/mapa_screen.dart';
-import 'package:SkyNet/screens/chat_select_screen.dart';
+import 'package:SkyNet/screens/chat_list_screen.dart';
 import 'package:SkyNet/screens/chat_screen.dart';
 import 'package:SkyNet/services/auth_service.dart';
+import 'package:SkyNet/screens/search_user_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/' : '/login',
@@ -97,19 +98,24 @@ final GoRouter appRouter = GoRouter(
           builder: (_, __) => const MapaScreen(),
         ),
         GoRoute(
-          path: 'chat',
-          name: 'chat',
-          builder: (_, __) => const ChatSelectScreen(),
-          routes: [
-            GoRoute(
-              path: ':userId',
-              name: 'chatUser',
-              builder: (context, state) {
-                final userId = state.pathParameters['userId']!;
-                return ChatScreen(userId: userId);
-              },
-            ),
-          ],
+        path: '/chat',
+        name: 'chatList',
+        builder: (_, __) => const ChatListScreen(),
+        routes: [
+          GoRoute(
+            path: 'search',
+            name: 'chatSearch',
+            builder: (_, __) => const SearchUserScreen(),
+          ),
+          GoRoute(
+            path: ':userId',
+            name: 'chatConversation',
+            builder: (context, state) {
+              final userId = state.pathParameters['userId']!;
+              return ChatScreen(userId: userId);
+            },
+          ),
+        ],
         ),
       ],
     ),

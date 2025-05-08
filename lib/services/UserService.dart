@@ -1,89 +1,100 @@
-//lib/services/UserService.dart
+// lib/services/UserService.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/user.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../models/user.dart';
 import 'auth_service.dart';
 
 class UserService {
+  /// Base URL apuntando al endpoint /users de tu API
   static String get baseUrl {
-  if (kIsWeb) {
-    return 'http://localhost:9000/api/users';
-  } 
-  else if (!kIsWeb && Platform.isAndroid) {
-    return 'http://10.0.2.2:9000/api/users';
-  } 
-  else {
-    return 'http://localhost:9000/api/users';
+    final api = AuthService().baseApiUrl; // ej. http://localhost:9000/api
+    return '$api/users';
   }
-}
 
-//poner paginador
+  /// Obtiene la lista de usuarios, enviando el JWT en el header
   static Future<List<User>> getUsers() async {
-    // Obtener el JWT de AuthService
-    final jwt = await AuthService().token;
-    final response = await http.get(
+    final token = await AuthService().token;
+    final resp = await http.get(
       Uri.parse(baseUrl),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwt',
+        'Authorization': 'Bearer $token',
       },
     );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+    if (resp.statusCode == 200) {
+      final List data = jsonDecode(resp.body);
       return data.map((json) => User.fromJson(json)).toList();
-    } else {
-      throw Exception('Error en carregar usuaris');
     }
+    throw Exception('Error fetching users: ${resp.statusCode}');
   }
 
+  /// Crea un usuario, incluyendo el JWT
   static Future<User> createUser(User user) async {
-    final response = await http.post(
+    final token = await AuthService().token;
+    final resp = await http.post(
       Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: jsonEncode(user.toJson()),
     );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return User.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Error al crear usuari: ${response.statusCode}');
+    if (resp.statusCode == 201 || resp.statusCode == 200) {
+      return User.fromJson(jsonDecode(resp.body));
     }
+    throw Exception('Error creating user: ${resp.statusCode}');
   }
 
+  /// Obtiene un usuario por ID
   static Future<User> getUserById(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl/$id'));
-
-    if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception("Error a l'obtenir usuari: ${response.statusCode}");
+    final token = await AuthService().token;
+    final resp = await http.get(
+      Uri.parse('$baseUrl/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      return User.fromJson(jsonDecode(resp.body));
     }
+    throw Exception('Error fetching user $id: ${resp.statusCode}');
   }
 
+  /// Actualiza un usuario
   static Future<User> updateUser(String id, User user) async {
-    final response = await http.put(
+    final token = await AuthService().token;
+    final resp = await http.put(
       Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: jsonEncode(user.toJson()),
     );
-
-    if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Error actualitzant usuari: ${response.statusCode}');
+    if (resp.statusCode == 200) {
+      return User.fromJson(jsonDecode(resp.body));
     }
+    throw Exception('Error updating user $id: ${resp.statusCode}');
   }
 
+  /// Elimina un usuario por ID
   static Future<bool> deleteUser(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
-
-    if (response.statusCode == 200) {
+    final token = await AuthService().token;
+    final resp = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
       return true;
-    } else {
-      throw Exception('Error eliminant usuari: ${response.statusCode}');
     }
+    if (resp.statusCode == 404) {
+      return false;
+    }
+    throw Exception('Error deleting user $id: ${resp.statusCode}');
   }
 }
