@@ -1,11 +1,14 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:SkyNet/models/user.dart';          
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/provider/theme_provider.dart';
+import 'package:SkyNet/provider/language_provider.dart';
 import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/auth_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,6 +28,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
 
         // Injecta l'usuari desat (si existeix) al provider en arrencar
         ProxyProvider<UserProvider, void>(
@@ -34,13 +38,25 @@ class MyApp extends StatelessWidget {
           },
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+      child: Consumer2<ThemeProvider, LanguageProvider>(
+        builder: (context, themeProvider, languageProvider, _) {
           return MaterialApp.router(
             title: 'S K Y N E T',
             debugShowCheckedModeBanner: false,
             routerConfig: appRouter,
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            locale: languageProvider.currentLocale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en'), // English
+              Locale('es'), // Spanish
+              Locale('ca'), // Catalan
+            ],
             theme: ThemeData(
               useMaterial3: true,
               colorScheme: lightScheme,

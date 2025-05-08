@@ -6,9 +6,11 @@ import 'package:SkyNet/components/my_button.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/models/user.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
+
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -44,50 +46,63 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _refreshRoles() => setState(() {});
 
+  String _getRoleTranslation(String role) {
+    final localizations = AppLocalizations.of(context)!;
+    switch (role) {
+      case 'Administrador':
+        return localizations.roleAdministrator;
+      case 'Usuario':
+        return localizations.roleUser;
+      case 'Empresa':
+        return localizations.roleCompany;
+      case 'Gobierno':
+        return localizations.roleGovernment;
+      default:
+        return role;
+    }
+  }
+
   Future<void> _register() async {
+    final localizations = AppLocalizations.of(context)!;
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim().toLowerCase();
     final pw    = _passwordCtrl.text;
 
     if (name.isEmpty || email.isEmpty || pw.isEmpty) {
-      return _showError('Completa tots els camps');
+      _showError(localizations.emptyFieldsError);
+      return;
     }
     final isUpc = email.endsWith('@upc.edu');
     if (_selectedRole == 'Administrador' && !isUpc) {
-      return _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
+      _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
+      return;
     }
 
     setState(() => _isLoading = true);
 
-    // 1) registro
-    final signRes = await AuthService().signup(
-      userName: name,
-      email:    email,
-      password: pw,
-      role:     _selectedRole,
-    );
-    if (signRes.containsKey('error')) {
-      setState(() => _isLoading = false);
-      return _showError(signRes['error'] as String);
+    try {
+      await AuthService().signup(
+        userName: name,
+        email:    email,
+        password: pw,
+        role:     _selectedRole,
+      );
+      if (mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-
-    // 2) login automático para obtener token
-    final loginRes = await AuthService().login(email, pw);
-    setState(() => _isLoading = false);
-
-    if (loginRes.containsKey('error')) {
-      return _showError('Usuario creado, pero falló el login automático: ${loginRes['error']}');
-    }
-
-    // 3) guardamos user en el provider y navegamos
-    final mapUser = loginRes['user'] as Map<String, dynamic>;
-    context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-    if (context.mounted) context.go('/');
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
     final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
     final roles  = isUpc
         ? _allRoles
@@ -95,16 +110,16 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registra’t')),
+      appBar: AppBar(title: Text(localizations.register)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            MyTextfield(controller: _nameCtrl,  hintText: 'Nom',    obscureText: false),
+            MyTextfield(controller: _nameCtrl,  hintText: localizations.username,    obscureText: false),
             const SizedBox(height: 12),
-            MyTextfield(controller: _emailCtrl, hintText: 'Email',  obscureText: false),
+            MyTextfield(controller: _emailCtrl, hintText: localizations.email,  obscureText: false),
             const SizedBox(height: 12),
-            MyTextfield(controller: _passwordCtrl, hintText: 'Contrasenya', obscureText: true),
+            MyTextfield(controller: _passwordCtrl, hintText: localizations.password, obscureText: true),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedRole,
@@ -113,14 +128,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 fillColor: colors.surfaceVariant,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                labelText: localizations.role,
               ),
-              items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+              items: roles.map((r) => DropdownMenuItem(
+                value: r,
+                child: Text(_getRoleTranslation(r)),
+              )).toList(),
               onChanged: (v) => setState(() => _selectedRole = v!),
             ),
             const SizedBox(height: 24),
             _isLoading
               ? CircularProgressIndicator(color: colors.primary)
-              : MyButton(onTap: _register, text: 'Registrarse'),
+              : MyButton(onTap: _register, text: localizations.register),
           ],
         ),
       ),
@@ -128,13 +147,17 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _showError(String msg) {
+    final localizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Error'),
+        title: Text(localizations.error),
         content: Text(msg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localizations.ok),
+          ),
         ],
       ),
     );

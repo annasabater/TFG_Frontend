@@ -7,53 +7,56 @@ import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/models/user.dart';
 import 'package:SkyNet/services/socket_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({Key? key}) : super(key: key);
 
-  final emailController    = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   Future<void> _signUserIn(BuildContext context) async {
-    final auth     = AuthService();
-    final email    = emailController.text.trim().toLowerCase();
-    final password = passwordController.text;
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final localizations = AppLocalizations.of(context)!;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError(context, 'El email y la contraseña no pueden estar vacíos.');
+      _showError(context, localizations.emptyFieldsError);
       return;
     }
 
-    final result = await auth.login(email, password);
-    if (result.containsKey('error')) {
-      _showError(context, result['error'] as String);
-      return;
-    }
-
-    final mapUser = result['user'] as Map<String, dynamic>;
-    context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-
-    // Inicializamos el socket SOLO cuando el usuario vaya a competir
-    // try {
-    //   SocketService.setUserEmail(email);
-    // } catch (e) {
-    //   _showError(context, e.toString());
-    //   return;
-    // }
-
-    if (context.mounted) {
-      context.go('/');
+    try {
+      final result = await AuthService().login(email, password);
+      if (result.containsKey('error')) {
+        if (context.mounted) {
+          _showError(context, result['error'] as String);
+        }
+        return;
+      }
+      final mapUser = result['user'] as Map<String, dynamic>;
+      if (context.mounted) {
+        context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+        context.go('/');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showError(context, e.toString());
+      }
     }
   }
 
   void _showError(BuildContext ctx, String msg) {
+    final localizations = AppLocalizations.of(ctx)!;
     showDialog(
       context: ctx,
       builder: (_) => AlertDialog(
-        title: const Text('Error'),
+        title: Text(localizations.error),
         content: Text(msg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(localizations.ok),
+          ),
         ],
       ),
     );
@@ -62,6 +65,8 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -77,34 +82,59 @@ class LoginPage extends StatelessWidget {
                   height: 120,
                 ),
                 const SizedBox(height: 25),
-                Text('Benvingut!', style: TextStyle(
-                  color: colors.onBackground,
-                  fontSize: 24, fontWeight: FontWeight.bold,
-                )),
+                Text(
+                  localizations.welcome,
+                  style: TextStyle(
+                    color: colors.onBackground,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 25),
-                MyTextfield(controller: emailController, hintText: 'Email', obscureText: false),
+                MyTextfield(
+                  controller: emailController,
+                  hintText: localizations.email,
+                  obscureText: false,
+                ),
                 const SizedBox(height: 12),
-                MyTextfield(controller: passwordController, hintText: 'Contrasenya', obscureText: true),
+                MyTextfield(
+                  controller: passwordController,
+                  hintText: localizations.password,
+                  obscureText: true,
+                ),
                 const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {},
-                    child: Text('Has oblidat la contrasenya?', style: TextStyle(color: colors.onSurfaceVariant)),
+                    child: Text(
+                      localizations.forgotPassword,
+                      style: TextStyle(color: colors.onSurfaceVariant),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 25),
-                MyButton(onTap: () => _signUserIn(context), text: 'Entrar'),
+                MyButton(
+                  onTap: () => _signUserIn(context),
+                  text: localizations.login,
+                ),
                 const SizedBox(height: 25),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Encara no ets membre? ', style: TextStyle(color: colors.onSurfaceVariant)),
+                    Text(
+                      localizations.notAMember,
+                      style: TextStyle(color: colors.onSurfaceVariant),
+                    ),
                     GestureDetector(
                       onTap: () => context.go('/register'),
-                      child: Text('Registra\'t', style: TextStyle(
-                        color: colors.primary, fontWeight: FontWeight.bold
-                      )),
+                      child: Text(
+                        localizations.register,
+                        style: TextStyle(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
