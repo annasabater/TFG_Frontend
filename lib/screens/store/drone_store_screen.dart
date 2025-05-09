@@ -1,14 +1,16 @@
 // lib/screens/store/drone_store_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:go_router/go_router.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
-import 'drone_list_screen.dart';
+import 'all_tab.dart';
+import 'favorites_tab.dart';
+import 'my_drones_tab.dart';
 
-/// Pantalla principal de la botiga de drons
 class DroneStoreScreen extends StatefulWidget {
-  const DroneStoreScreen({super.key});
+  const DroneStoreScreen({Key? key}) : super(key: key);
 
   @override
   State<DroneStoreScreen> createState() => _DroneStoreScreenState();
@@ -16,41 +18,53 @@ class DroneStoreScreen extends StatefulWidget {
 
 class _DroneStoreScreenState extends State<DroneStoreScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tab;
-  late final DroneProvider _prov;
-  late final UserProvider  _userProv;
+  late final TabController _tabController;
+  late final DroneProvider _droneProv;
+  late final UserProvider _userProv;
 
   @override
   void initState() {
     super.initState();
-    _prov     = context.read<DroneProvider>();
-    _userProv = context.read<UserProvider>();
-    _tab      = TabController(length: 3, vsync: this);
-    _loadExtraLists();
+    _droneProv = context.read<DroneProvider>();
+    _userProv  = context.read<UserProvider>();
+    _tabController = TabController(length: 3, vsync: this);
+
+    // Carreguem totes les llistes inicials
+    _droneProv.loadDrones();
+    _loadExtras();
   }
 
-  Future<void> _loadExtraLists() async {
+  Future<void> _loadExtras() async {
     final uid = _userProv.currentUser?.id;
-    if (uid == null || uid.isEmpty) return;
-    await Future.wait([
-      _prov.loadFavorites(uid),
-      _prov.loadMyDrones(uid),
-    ]);
+    if (uid != null && uid.isNotEmpty) {
+      await Future.wait([
+        _droneProv.loadFavorites(uid),
+        _droneProv.loadMyDrones(uid),
+      ]);
+    }
   }
 
   @override
   void dispose() {
-    _tab.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Botiga de drons'),
+        title: const Text('Botiga'),
         bottom: TabBar(
-          controller: _tab,
+          controller: _tabController,
+          labelColor: scheme.onPrimary,
+          unselectedLabelColor: scheme.onPrimary.withOpacity(0.7),
+          indicatorColor: scheme.secondary,
+          indicatorWeight: 4,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
           tabs: const [
             Tab(text: 'Tots'),
             Tab(text: 'Favorits'),
@@ -59,81 +73,19 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
         ),
       ),
       body: TabBarView(
-        controller: _tab,
+        controller: _tabController,
         children: const [
-          DroneListScreen(),   // llista completa
-          _FavoritesTab(),
-          _MyDronesTab(),
+          AllTab(),
+          FavoritesTab(),
+          MyDronesTab(),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/store/add'),
+        tooltip: 'Nou anunci',
+        child: const Icon(Icons.add),
       ),
     );
   }
 }
 
-/* ---------------------- PESTANYA “FAVORITS” ---------------------- */
-
-class _FavoritesTab extends StatelessWidget {
-  const _FavoritesTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<DroneProvider>(
-      builder: (_, p, __) {
-        if (p.isLoading)   return const Center(child: CircularProgressIndicator());
-        if (p.error != null) return Center(child: Text(p.error!));
-        if (p.favorites.isEmpty) return const Center(child: Text('Sense favorits'));
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: p.favorites.length,
-          itemBuilder: (_, i) => _FavTile(drone: p.favorites[i]),
-        );
-      },
-    );
-  }
-}
-
-class _FavTile extends StatelessWidget {
-  final drone;
-  const _FavTile({required this.drone});
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-        leading: const Icon(Icons.star, color: Colors.amber),
-        title:  Text(drone.model),
-        subtitle: Text('${drone.price} €'),
-      );
-}
-
-/* ---------------------- PESTANYA “ELS MEUS” ---------------------- */
-
-class _MyDronesTab extends StatelessWidget {
-  const _MyDronesTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<DroneProvider>(
-      builder: (_, p, __) {
-        if (p.isLoading)   return const Center(child: CircularProgressIndicator());
-        if (p.error != null) return Center(child: Text(p.error!));
-        if (p.myDrones.isEmpty) return const Center(child: Text('Encara no tens anuncis'));
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: p.myDrones.length,
-          itemBuilder: (_, i) => _MyTile(drone: p.myDrones[i]),
-        );
-      },
-    );
-  }
-}
-
-class _MyTile extends StatelessWidget {
-  final drone;
-  const _MyTile({required this.drone});
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-        leading: const Icon(Icons.flight_takeoff),
-        title:  Text(drone.model),
-        subtitle: Text('${drone.price} € • ${(drone.status ?? 'pending')}'),
-      );
-}

@@ -1,0 +1,41 @@
+//lib/screens/store/favorites_tab.dart
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../provider/drone_provider.dart';
+import '../../models/drone.dart';
+import 'package:go_router/go_router.dart';
+
+
+class FavoritesTab extends StatelessWidget {
+  const FavoritesTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<DroneProvider>(
+      builder: (_, prov, __) {
+        if (prov.isLoading) return const Center(child: CircularProgressIndicator());
+        if (prov.error != null) return Center(child: Text(prov.error!));
+        if (prov.favorites.isEmpty) return const Center(child: Text('Sense favorits'));
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: prov.favorites.length,
+          itemBuilder: (_, i) {
+            final drone = prov.favorites[i];
+            return ListTile(
+              leading: const Icon(Icons.star, color: Colors.amber),
+              title: Text(drone.model),
+              subtitle: Text('${drone.price.toStringAsFixed(0)} €'),
+              onTap: () => context.pushNamed(
+                'droneDetail',
+                pathParameters: {'id': drone.id},
+                extra: drone,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}

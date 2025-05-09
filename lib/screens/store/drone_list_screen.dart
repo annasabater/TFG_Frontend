@@ -1,13 +1,17 @@
+//lib/screens/store/drone_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import '../../models/drone.dart';
 import '../../models/drone_query.dart';
 import '../../provider/drone_provider.dart';
 
+enum ListSource { all, favorites, mine }
+
 class DroneListScreen extends StatefulWidget {
-  const DroneListScreen({super.key});
+  final String categoryFilter;
+  const DroneListScreen({super.key, this.categoryFilter = 'all'});
 
   @override
   State<DroneListScreen> createState() => _DroneListScreenState();
@@ -21,71 +25,73 @@ class _DroneListScreenState extends State<DroneListScreen> {
   void initState() {
     super.initState();
     _prov = context.read<DroneProvider>();
-    _prov.loadDrones();
+    _load();
   }
 
-  Future<void> _onRefresh() => _prov.loadDrones();
+  Future<void> _load() async {
+    if (widget.categoryFilter == 'all') {
+      await _prov.loadDrones();
+    } else {
+      await _prov.loadDronesFiltered(
+          DroneQuery(category: widget.categoryFilter));
+    }
+  }
+
+  Future<void> _onRefresh() => _load();
 
   void _onSearch(String query) {
     final q = query.trim();
-    if (q.isEmpty) {
-      _prov.loadDrones();
-    } else {
-      _prov.loadDronesFiltered(const DroneQuery(q: ''));
-      // si vols filtrar de debò: DroneQuery(q: q)
-    }
+    _prov.loadDronesFiltered(DroneQuery(q: q, category: widget.categoryFilter));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Cerca per model, ubicació…',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchCtrl.clear();
-                    _prov.loadDrones();
-                  },
-                ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: TextField(
+            controller: _searchCtrl,
+            decoration: InputDecoration(
+              hintText: 'Cerca per model, ubicació…',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchCtrl.clear();
+                  _load();
+                },
               ),
-              onSubmitted: _onSearch,
             ),
+            onSubmitted: _onSearch,
           ),
-          const Divider(height: 1),
+        ),
+        const Divider(height: 1),
 
-          Expanded(
-            child: Consumer<DroneProvider>(
-              builder: (_, p, __) {
-                if (p.isLoading) return const Center(child: CircularProgressIndicator());
-                if (p.error != null) return Center(child: Text(p.error!));
-                if (p.drones.isEmpty) return const Center(child: Text('No hi ha anuncis'));
+        Expanded(
+          child: Consumer<DroneProvider>(
+            builder: (_, p, __) {
+              if (p.isLoading)         return const Center(child: CircularProgressIndicator());
+              if (p.error != null)     return Center(child: Text(p.error!));
+              if (p.drones.isEmpty)    return const Center(child: Text('No hi ha anuncis'));
 
-                return RefreshIndicator(
-                  onRefresh: _onRefresh,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: p.drones.length,
-                    itemBuilder: (_, i) => _DroneTile(drone: p.drones[i]),
-                  ),
-                );
-              },
-            ),
+              return RefreshIndicator(
+                onRefresh: _onRefresh,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: p.drones.length,
+                  itemBuilder: (_, i) => _DroneTile(drone: p.drones[i]),
+                ),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-/* ------------------ tile d’un anunci ------------------ */
+
 class _DroneTile extends StatelessWidget {
   final Drone drone;
   const _DroneTile({required this.drone});
@@ -114,7 +120,7 @@ class _DroneTile extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.pushNamed(
           'droneDetail',
-          pathParameters: {'id': drone.id},   
+          pathParameters: {'id': drone.id},
           extra: drone,
         ),
       ),

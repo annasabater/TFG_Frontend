@@ -19,6 +19,7 @@ import 'package:SkyNet/screens/store/drone_store_screen.dart';
 import 'package:SkyNet/screens/store/drone_detail_screen.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/models/drone.dart';
+import 'package:SkyNet/screens/store/add_drone_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/' : '/login',
@@ -76,19 +77,20 @@ final GoRouter appRouter = GoRouter(
 
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
 
-        /* -------------- Botiga de drons ----------- */
+       /* -------------- Botiga ----------- */
         GoRoute(
           path: 'store',
           builder: (_, __) => const DroneStoreScreen(),
-
-          /// rutes internes de la botiga
           routes: [
+            GoRoute(
+              path: 'add',
+              name: 'addDrone',
+              builder: (_, __) => const AddDroneScreen(),
+            ),
             GoRoute(
               path: 'dron/:id',
               name: 'droneDetail',
-              /// rebem l’objecte via `extra`
-              builder: (ctx, state) =>
-                  DroneDetailScreen(drone: state.extra! as Drone),
+              builder: (ctx, state) => DroneDetailScreen(drone: state.extra! as Drone),
             ),
           ],
         ),

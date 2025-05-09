@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-
+import '../models/shipping_info.dart';
 import '../models/drone.dart';
 import '../models/drone_query.dart';
 import 'auth_service.dart';
@@ -121,4 +121,49 @@ class DroneService {
     final data = jsonDecode(resp.body) as List;
     return data.map((e) => Drone.fromJson(e)).toList();
   }
+
+  /* -------------- compra -------------- */
+static Future<Drone> purchaseDrone(
+  String id,
+  ShippingInfo info,
+) async {
+  final jwt = await AuthService().token;
+  final resp = await http.post(
+    Uri.parse('$_base/drones/$id/purchase'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $jwt',
+    },
+    body: jsonEncode(info.toJson()),
+  );
+  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+  return Drone.fromJson(jsonDecode(resp.body));
+}
+
+/* -------------- marcar VENUT -------------- */
+static Future<Drone> markSold(String id) async {
+  final jwt = await AuthService().token;
+  final resp = await http.put(
+    Uri.parse('$_base/drones/$id/sold'),
+    headers: {'Authorization': 'Bearer $jwt'},
+  );
+  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+  return Drone.fromJson(jsonDecode(resp.body));
+}
+
+/* -------------- update -------------- */
+static Future<Drone> updateDrone(String id, Drone d) async {
+  final jwt = await AuthService().token;
+  final resp = await http.put(
+    Uri.parse('$_base/drones/$id'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $jwt',
+    },
+    body: jsonEncode(d.toJson()),
+  );
+  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+  return Drone.fromJson(jsonDecode(resp.body));
+}
+
 }

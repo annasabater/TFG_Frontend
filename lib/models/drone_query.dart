@@ -1,4 +1,5 @@
 //lib/models/drone_query.dart
+
 /// Paràmetres de filtre per a GET /api/drones
 class DroneQuery {
   final String? q, category, condition, location;
@@ -27,4 +28,27 @@ class DroneQuery {
         if (page != null) 'page': page.toString(),
         if (limit != null) 'limit': limit.toString(),
       };
+
+  /// Permet actualitzar nuls i pàgina (afegit)
+  DroneQuery copyWith({
+    String? q,
+    String? category,
+    String? condition,
+    String? location,
+    double? priceMin,
+    double? priceMax,
+    int? page,
+    int? limit,
+  }) {
+    return DroneQuery(
+      q: q ?? this.q,
+      category: category ?? this.category,
+      condition: condition ?? this.condition,
+      location: location ?? this.location,
+      priceMin: priceMin ?? this.priceMin,
+      priceMax: priceMax ?? this.priceMax,
+      page: page ?? this.page,
+      limit: limit ?? this.limit,
+    );
+  }
 }
