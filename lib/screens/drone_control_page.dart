@@ -109,15 +109,16 @@ class DroneControlPage extends StatelessWidget {
 }
 */
 
-
 // lib/screens/drone_control_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
+import 'package:go_router/go_router.dart';
 import '../services/socket_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class DroneControlPage extends StatefulWidget {
   const DroneControlPage({Key? key}) : super(key: key);
+
   @override
   State<DroneControlPage> createState() => _DroneControlPageState();
 }
@@ -132,23 +133,30 @@ class _DroneControlPageState extends State<DroneControlPage> {
     // Reutilizamos el socket ya abierto en WaitingRoomPage
     _socket = SocketService.socketInstance;
 
-    // Escuchamos actualizaciones de estado si existen
     _socket
-      ?..on('state_update', (data) {
+      ?..on('start_game_from_professor', (_) {
+        // Cuando Python emita el evento, navegamos a la página de control
+        context.go('/jocs/control');
+      })
+      ..on('state_update', (data) {
         setState(() => _gameState = Map<String, dynamic>.from(data));
       })
-      ..onDisconnect((_) => print('🔌 Desconectado del juego'));
+      ..on('disconnect', (_) {
+        print('🔌 Desconectado del juego');
+      });
   }
 
   @override
   void dispose() {
-    // Cerramos todo al salir de aquí
-    SocketService.dispose();
+    // Limpiamos solo los listeners de este page
+    _socket
+      ?..off('start_game_from_professor')
+      ..off('state_update')
+      ..off('disconnect');
     super.dispose();
   }
 
   void _onJoystickMove(String stickId, Offset offset) {
-    // Enviamos comando de movimiento
     SocketService.sendCommand('move', {
       'stick': stickId,
       'dx': offset.dx,
@@ -157,7 +165,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
   }
 
   void _fireBullet(String type) {
-    // Enviamos comando de disparo
     SocketService.sendCommand('fire', {'type': type});
   }
 
@@ -169,14 +176,14 @@ class _DroneControlPageState extends State<DroneControlPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Mostrar estado arriba a la izquierda
+            // Estado en la esquina superior izquierda
             Positioned(
               top: 16,
               left: 16,
               child: Text('Estado: $status', style: const TextStyle(fontSize: 16)),
             ),
 
-            // Botones de bala arriba a la derecha
+            // Botones de disparo en la esquina superior derecha
             Positioned(
               top: 30,
               right: 16,
@@ -191,7 +198,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
               ),
             ),
 
-            // Dos joysticks abajo
+            // Joysticks en la parte inferior
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(

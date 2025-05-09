@@ -1,4 +1,4 @@
-
+//lib/models/game.dart
 class Game {
   final String id;
   final String name;

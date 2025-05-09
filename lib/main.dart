@@ -9,6 +9,7 @@ import 'package:SkyNet/provider/language_provider.dart';
 import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:SkyNet/provider/drone_provider.dart';   
 
 void main() {
   runApp(const MyApp());
@@ -29,8 +30,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => DroneProvider()),
 
-        // Injecta l'usuari desat (si existeix) al provider en arrencar
         ProxyProvider<UserProvider, void>(
           update: (_, prov, __) {
             final raw = AuthService().currentUser; 

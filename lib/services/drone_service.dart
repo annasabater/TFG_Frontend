@@ -1,81 +1,124 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/drone.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+
+import '../models/drone.dart';
+import '../models/drone_query.dart';
+import 'auth_service.dart';
 
 class DroneService {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:9000/api/drones';
-    } else if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:9000/api/drones';
-    } else {
-      return 'http://localhost:9000/api/drones';
-    }
+  /* ------------ configuració bàsica ------------ */
+
+  static String get _base {
+    if (kIsWeb)             return 'http://localhost:9000/api';
+    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
+    return 'http://localhost:9000/api';
   }
 
-  /// GET /api/drones
-  static Future<List<Drone>> getDrones() async {
-    final response = await http.get(Uri.parse(baseUrl));
+  static Uri _dronesUri([DroneQuery? q]) =>
+      Uri.parse('$_base/drones').replace(queryParameters: q?.toQueryParams());
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => Drone.fromJson(json)).toList();
-    } else {
-      throw Exception('Error cargando drones: ${response.statusCode}');
-    }
+  /* ------------ operacions principals ---------- */
+
+  /// ✔️ ara és estàtic
+  static Future<List<Drone>> getDrones([DroneQuery? q]) async {
+    final resp = await http.get(_dronesUri(q));
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    final data = jsonDecode(resp.body) as List;
+    return data.map((e) => Drone.fromJson(e)).toList();
   }
 
-  /// POST /api/drones
-  static Future<Drone> createDrone(Drone drone) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(drone.toJson()),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return Drone.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Error creando drone: ${response.statusCode}');
-    }
-  }
-
-  /// GET /api/drones/:id
   static Future<Drone> getDroneById(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl/$id'));
-
-    if (response.statusCode == 200) {
-      return Drone.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Error obteniendo drone: ${response.statusCode}');
-    }
+    final resp = await http.get(Uri.parse('$_base/drones/$id'));
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
   }
 
-  /// PUT /api/drones/:id
-  static Future<Drone> updateDrone(String id, Drone drone) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(drone.toJson()),
+  static Future<Drone> createDrone(Drone d) async {
+    final jwt  = await AuthService().token;
+    final resp = await http.post(
+      _dronesUri(),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+      body: jsonEncode(d.toJson()),
     );
-
-    if (response.statusCode == 200) {
-      return Drone.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Error actualizando drone: ${response.statusCode}');
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
+      throw Exception('Error ${resp.statusCode}');
     }
+    return Drone.fromJson(jsonDecode(resp.body));
   }
 
-  /// DELETE /api/drones/:id
   static Future<bool> deleteDrone(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    final jwt = await AuthService().token;
+    final resp = await http.delete(
+      Uri.parse('$_base/drones/$id'),
+      headers: {'Authorization': 'Bearer $jwt'},
+    );
+    return resp.statusCode == 200;
+  }
 
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      throw Exception('Error eliminando drone: ${response.statusCode}');
-    }
+  /* ------------------- reviews ------------------ */
+
+  static Future<Drone> addReview({
+    required String droneId,
+    required String userId,
+    required int rating,
+    required String comment,
+  }) async {
+    final jwt = await AuthService().token;
+    final resp = await http.post(
+      Uri.parse('$_base/drones/$droneId/review'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+      body: jsonEncode({'userId': userId, 'rating': rating, 'comment': comment}),
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
+  }
+
+  /* -------------- favorits / meus -------------- */
+
+  static Future<List<Drone>> getFavorites(String userId) async {
+    final jwt = await AuthService().token;
+    final resp = await http.get(
+      Uri.parse('$_base/users/$userId/favourites'),
+      headers: {'Authorization': 'Bearer $jwt'},
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    final data = jsonDecode(resp.body) as List;
+    return data.map((e) => Drone.fromJson(e)).toList();
+  }
+
+  static Future<void> addFavorite(String userId, String droneId) async {
+    final jwt = await AuthService().token;
+    final resp = await http.post(
+      Uri.parse('$_base/users/$userId/favourites/$droneId'),
+      headers: {'Authorization': 'Bearer $jwt'},
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+  }
+
+  static Future<void> removeFavorite(String userId, String droneId) async {
+    final jwt = await AuthService().token;
+    final resp = await http.delete(
+      Uri.parse('$_base/users/$userId/favourites/$droneId'),
+      headers: {'Authorization': 'Bearer $jwt'},
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+  }
+
+  static Future<List<Drone>> getMyDrones(String userId, {String? status}) async {
+    final jwt = await AuthService().token;
+    final uri = Uri.parse('$_base/users/$userId/my-drones')
+        .replace(queryParameters: {if (status != null) 'status': status});
+    final resp = await http.get(uri, headers: {'Authorization': 'Bearer $jwt'});
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    final data = jsonDecode(resp.body) as List;
+    return data.map((e) => Drone.fromJson(e)).toList();
   }
 }

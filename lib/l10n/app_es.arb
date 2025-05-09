@@ -20,6 +20,7 @@
     "lightMode": "Modo Claro",
     "darkMode": "Modo Oscuro",
     "home": "Inicio",
+    "store": "Tienda",
     "users": "Usuarios",
     "createUser": "Crear Usuario",
     "deleteUser": "Eliminar Usuario",

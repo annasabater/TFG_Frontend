@@ -1,4 +1,5 @@
 // lib/services/socket_service.dart
+
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:SkyNet/services/auth_service.dart';
 
@@ -19,13 +20,12 @@ class SocketService {
     'dron_amarillo1@upc.edu': 'amarillo',
   };
 
-  /// Tras login, llama a esto con el email. NO lanza excepción.
+  /// Tras login, llama a esto con el email.
   static void setUserEmail(String email) {
     currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// Antes de initWaitingSocket(), valida si está autorizado para competir.
-  /// SÍ lanza excepción si el email no está en el map.
+  /// Valida email de competidor. Fija currentSessionId='1'.
   static void setCompetitionUserEmail(String email) {
     final e = email.trim().toLowerCase();
     currentUserEmail = e;
@@ -33,7 +33,6 @@ class SocketService {
     if (currentUserColor == null) {
       throw Exception('Usuario no autorizado para competir');
     }
-    // Siempre la misma sesión:
     currentSessionId = '1';
   }
 
@@ -41,12 +40,12 @@ class SocketService {
   static String get _wsBaseUrl => AuthService().webSocketBaseUrl;
   static IO.Socket? get socketInstance => _socket;
 
-  /// Registra un callback para cuando llegue game_started en /jocs
+  /// Registra el callback para cuando llegue 'game_started'
   static void registerOnGameStarted(VoidCallback callback) {
     onGameStarted = callback;
   }
 
-  /// Conecta (o reutiliza) al namespace /jocs y emite el join.
+  /// Conecta (o reutiliza) al namespace /jocs y emite 'join'
   static Future<IO.Socket> initWaitingSocket() async {
     if (_socket != null && _socket!.connected) return _socket!;
 
@@ -68,13 +67,13 @@ class SocketService {
         print('⚡ Connected to /jocs (sessionId=$sid)');
         _socket!.emit('join', {'sessionId': sid});
       })
-      ..on('waiting', (data) => print('Waiting: ${data['msg']}'))
+      ..on('waiting', (data) => print('🕒 Waiting: ${data['msg']}'))
       ..on('game_started', (_) {
-        print('🚀 Game started');
+        print('🚀 Game started (SocketService)');
         onGameStarted?.call();
       })
-      ..onConnectError((err) => print('Jocs connect error: $err'))
-      ..onError((err) => print('Jocs socket error: $err'));
+      ..onConnectError((err) => print('❌ Jocs connect error: $err'))
+      ..onError((err) => print('❌ Jocs socket error: $err'));
 
     _socket!.connect();
     return _socket!;
@@ -86,7 +85,7 @@ class SocketService {
     return await initWaitingSocket();
   }
 
-  /// Envía un comando 'control'
+  /// Envía comando 'control'
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
       print('⚠️ Game socket not connected');

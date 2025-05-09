@@ -24,6 +24,7 @@
     "users": "Users",
     "createUser": "Create User",
     "deleteUser": "Delete User",
+    "store": "Store",
     "profile": "Profile",
     "games": "Games",
     "map": "Map",

@@ -1,36 +1,35 @@
-//lib/screens/waiting_room_page.dart
+// lib/screens/waiting_room_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/services/socket_service.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class WaitingRoomPage extends StatefulWidget {
   const WaitingRoomPage({Key? key}) : super(key: key);
+
   @override
   State<WaitingRoomPage> createState() => _WaitingRoomPageState();
 }
 
 class _WaitingRoomPageState extends State<WaitingRoomPage> {
-  IO.Socket? _socket;
   String _waitingMsg = 'Esperando a que el profesor inicie la partida…';
 
   @override
   void initState() {
     super.initState();
 
-    // Validar email para competición (lanza excepción si no autorizado)
+    // 1) Validar que el usuario está autorizado como competidor
     try {
       final email = context.read<UserProvider>().currentUser!.email;
       SocketService.setCompetitionUserEmail(email);
     } catch (e) {
-      // Mostrar error y volver al home
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Error'),
+            title: const Text('Acceso denegado'),
             content: Text(e.toString()),
             actions: [
               TextButton(
@@ -44,26 +43,30 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       return;
     }
 
-    // Registrar callback para game_started
-    SocketService.registerOnGameStarted(() async {
-      await SocketService.initGameSocket();
-      if (context.mounted) context.go('/jocs/control');
+    // 2) Registrar callback ANTES de conectar
+    SocketService.registerOnGameStarted(() {
+      if (context.mounted) {
+        context.go('/jocs/control');
+      }
     });
 
-    // Conectar al socket de sala de espera
+    // 3) Conectar y suscribirnos sólo a 'waiting'
     _initSocket();
   }
 
   Future<void> _initSocket() async {
     try {
-      _socket = await SocketService.initWaitingSocket();
-      _socket!
-        ..on('waiting', (data) {
-          if (data is Map<String, dynamic> && data.containsKey('msg')) {
-            setState(() => _waitingMsg = data['msg'] as String);
-          }
-        });
-      // El event 'game_started' lo manejará el callback de arriba.
+      final socket = await SocketService.initWaitingSocket();
+      socket.on('waiting', (data) {
+        if (data is Map<String, dynamic> && data.containsKey('msg')) {
+          setState(() => _waitingMsg = data['msg'] as String);
+        }
+      });
+
+      // ahora escuchamos 'disconnect' así:
+      socket.on('disconnect', (_) {
+        print('🔌 Desconectado del namespace /jocs');
+      });
     } catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
@@ -81,6 +84,14 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
         );
       });
     }
+  }
+
+  @override
+  void dispose() {
+    SocketService.socketInstance
+      ?..off('waiting')
+      ..off('disconnect');
+    super.dispose();
   }
 
   @override

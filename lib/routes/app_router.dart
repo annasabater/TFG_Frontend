@@ -1,5 +1,3 @@
-// lib/routes/app_router.dart
-
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
 import 'package:SkyNet/screens/auth/register_screen.dart';
@@ -16,106 +14,96 @@ import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/screens/mapa_screen.dart';
 import 'package:SkyNet/screens/chat_list_screen.dart';
 import 'package:SkyNet/screens/chat_screen.dart';
-import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/screens/search_user_screen.dart';
+import 'package:SkyNet/screens/store/drone_store_screen.dart';
+import 'package:SkyNet/screens/store/drone_detail_screen.dart';
+import 'package:SkyNet/services/auth_service.dart';
+import 'package:SkyNet/models/drone.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/' : '/login',
   routes: [
+    /* ------------------- Auth ------------------- */
     GoRoute(
       path: '/login',
-      name: 'login',
       builder: (_, __) => LoginPage(),
     ),
     GoRoute(
       path: '/register',
-      name: 'register',
       builder: (_, __) => const RegisterPage(),
     ),
+
+    /* ------------------- Home (pare) ------------- */
     GoRoute(
       path: '/',
-      name: 'home',
       builder: (_, __) => const HomeScreen(),
+
+      /* ----------- sub-rutes de Home -------------- */
       routes: [
         GoRoute(
           path: 'details',
-          name: 'details',
           builder: (_, __) => const DetailsScreen(),
           routes: [
             GoRoute(
               path: 'imprimir',
-              name: 'imprimir',
               builder: (_, __) => const ImprimirScreen(),
             ),
           ],
         ),
-        GoRoute(
-          path: 'editar',
-          name: 'editar',
-          builder: (_, __) => const EditarScreen(),
-        ),
-        GoRoute(
-          path: 'borrar',
-          name: 'borrar',
-          builder: (_, __) => const BorrarScreen(),
-        ),
+        GoRoute(path: 'editar', builder: (_, __) => const EditarScreen()),
+        GoRoute(path: 'borrar', builder: (_, __) => const BorrarScreen()),
+
         GoRoute(
           path: 'profile',
-          name: 'profile',
           builder: (_, __) => const PerfilScreen(),
           routes: [
             GoRoute(
               path: 'edit',
-              name: 'editProfile',
               builder: (_, __) => const EditProfileScreen(),
             ),
           ],
         ),
 
-        // ----------------- JOCS -----------------
+        /* -------------- Joc amb sockets ----------- */
         GoRoute(
           path: 'jocs',
-          name: 'jocs',
           builder: (_, __) => const JocsPage(),
           routes: [
-            // Al pulsar "Competencia" va directamente a la sala de espera
+            GoRoute(path: 'open',    builder: (_, __) => const WaitingRoomPage()),
+            GoRoute(path: 'control', builder: (_, __) => const DroneControlPage()),
+          ],
+        ),
+
+        GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
+
+        /* -------------- Botiga de drons ----------- */
+        GoRoute(
+          path: 'store',
+          builder: (_, __) => const DroneStoreScreen(),
+
+          /// rutes internes de la botiga
+          routes: [
             GoRoute(
-              path: 'open',
-              name: 'jocsOpen',
-              builder: (_, __) => const WaitingRoomPage(),
-            ),
-            // Al recibir 'game_started' navega a /jocs/control
-            GoRoute(
-              path: 'control',
-              name: 'jocsControl',
-              builder: (_, __) => const DroneControlPage(),
+              path: 'dron/:id',
+              name: 'droneDetail',
+              /// rebem l’objecte via `extra`
+              builder: (ctx, state) =>
+                  DroneDetailScreen(drone: state.extra! as Drone),
             ),
           ],
         ),
+
+        /* -------------- Xat ----------------------- */
         GoRoute(
-          path: 'mapa',
-          name: 'mapa',
-          builder: (_, __) => const MapaScreen(),
-        ),
-        GoRoute(
-        path: '/chat',
-        name: 'chatList',
-        builder: (_, __) => const ChatListScreen(),
-        routes: [
-          GoRoute(
-            path: 'search',
-            name: 'chatSearch',
-            builder: (_, __) => const SearchUserScreen(),
-          ),
-          GoRoute(
-            path: ':userId',
-            name: 'chatConversation',
-            builder: (context, state) {
-              final userId = state.pathParameters['userId']!;
-              return ChatScreen(userId: userId);
-            },
-          ),
-        ],
+          path: 'chat',
+          builder: (_, __) => const ChatListScreen(),
+          routes: [
+            GoRoute(path: 'search',  builder: (_, __) => const SearchUserScreen()),
+            GoRoute(
+              path: ':userId',
+              builder: (ctx, st) => ChatScreen(userId: st.pathParameters['userId']!),
+            ),
+          ],
         ),
       ],
     ),

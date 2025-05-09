@@ -39,7 +39,7 @@ class DroneProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-
+/*
   /// Carga un solo drone por ID y lo deja en selectedDrone
   Future<void> loadDrone(String id) async {
     _setLoading(true);
@@ -115,5 +115,5 @@ class DroneProvider with ChangeNotifier {
       _setLoading(false);
       return false;
     }
-  }
+  }*/
 }

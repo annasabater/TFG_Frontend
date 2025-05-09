@@ -26,6 +26,7 @@
     "profile": "Perfil",
     "games": "Jocs",
     "map": "Mapa",
+    "store": "Botiga",
     "chat": "Xat",
     "reloadUsers": "Recarregar Usuaris",
     "welcomeMessage": "Benvinguts a l'App Demo de Flutter",

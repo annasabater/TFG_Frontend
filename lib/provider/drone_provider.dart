@@ -1,44 +1,53 @@
 import 'package:flutter/material.dart';
+
 import '../models/drone.dart';
+import '../models/drone_query.dart';
 import '../services/drone_service.dart';
 
 class DroneProvider with ChangeNotifier {
+  /* ---------------- Estat ---------------- */
+
   List<Drone> _drones = [];
-  bool _isLoading = false;
+  List<Drone> _favorites = [];
+  List<Drone> _myDrones = [];
+
+  bool   _isLoading = false;
   String? _error;
 
-  List<Drone> get drones => _drones;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  /* ---------------- Getters ---------------- */
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
+  List<Drone> get drones     => _drones;
+  List<Drone> get favorites  => _favorites;
+  List<Drone> get myDrones   => _myDrones;
 
-  void _setError(String? errorMessage) {
-    _error = errorMessage;
-    notifyListeners();
-  }
+  bool   get isLoading => _isLoading;
+  String? get error     => _error;
 
-  /// Carga todos los drones desde el backend
+  /* ---------------- Helpers interns ---------------- */
+
+  void _setLoading(bool v)   { _isLoading = v; notifyListeners(); }
+  void _setError(String? e)  { _error     = e; notifyListeners(); }
+
+  /* ====================================================================== */
+  /*                          CRUD bàsic (llista)                           */
+  /* ====================================================================== */
+
   Future<void> loadDrones() async {
-    _setLoading(true);
-    _setError(null);
-
-    try {
-      _drones = await DroneService.getDrones();
-    } catch (e) {
-      _setError('Error loading drones: $e');
-      _drones = [];
-    } finally {
-      _setLoading(false);
-    }
+    _setLoading(true); _setError(null);
+    try   { _drones = await DroneService.getDrones(); }
+    catch (e) { _setError('Error loading drones: $e'); _drones = []; }
+    finally   { _setLoading(false); }
   }
 
-  /// Crea un nuevo drone y lo añade a la lista local
+  Future<void> loadDronesFiltered(DroneQuery q) async {
+    _setLoading(true); _setError(null);
+    try   { _drones = await DroneService.getDrones(q); }
+    catch (e) { _setError('Error: $e'); _drones = []; }
+    finally   { _setLoading(false); }
+  }
+
   Future<bool> createDrone({
-    required String sellerId,
+    required String ownerId,
     required String model,
     required double price,
     String? description,
@@ -48,74 +57,104 @@ class DroneProvider with ChangeNotifier {
     String? contact,
     String? category,
   }) async {
-    _setLoading(true);
-    _setError(null);
-
+    _setLoading(true); _setError(null);
     try {
       final newDrone = Drone(
-        id: '', // el backend asignará el ID
-        sellerId: sellerId,
-        model: model,
-        price: price,
+        id        : '',          // el backend ho posa
+        ownerId   : ownerId,
+        model     : model,
+        price     : price,
         description: description,
-        type: type,
-        condition: condition,
-        location: location,
-        contact: contact,
-        category: category,
-        createdAt: null,
-        images: [],
+        type      : type,
+        condition : condition,
+        location  : location,
+        contact   : contact,
+        category  : category,
+        images    : const [],
+        createdAt : null,
       );
       final created = await DroneService.createDrone(newDrone);
       _drones.add(created);
       notifyListeners();
-      _setLoading(false);
       return true;
     } catch (e) {
       _setError('Error creating drone: $e');
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  /// Elimina un drone por su ID
   Future<bool> deleteDroneById(String id) async {
-    _setLoading(true);
-    _setError(null);
-
+    _setLoading(true); _setError(null);
     try {
-      final success = await DroneService.deleteDrone(id);
-      if (success) {
-        _drones.removeWhere((d) => d.id == id);
-        notifyListeners();
-      }
-      _setLoading(false);
-      return success;
+      final ok = await DroneService.deleteDrone(id);
+      if (ok) { _drones.removeWhere((d) => d.id == id); notifyListeners(); }
+      return ok;
     } catch (e) {
       _setError('Error deleting drone: $e');
-      _setLoading(false);
+      return false;
+    } finally { _setLoading(false); }
+  }
+
+  /* ====================================================================== */
+  /*                               Reviews                                  */
+  /* ====================================================================== */
+
+  Future<bool> addReview(String droneId, int rating,
+      String comment, String userId) async {
+    try {
+      final updated = await DroneService.addReview(
+        droneId: droneId,
+        userId : userId,
+        rating : rating,
+        comment: comment,
+      );
+      final i = _drones.indexWhere((d) => d.id == droneId);
+      if (i != -1) _drones[i] = updated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Error adding review: $e');
       return false;
     }
   }
 
-  /// Elimina un drone por su modelo
-  Future<bool> deleteDroneByModel(String model) async {
-    _setLoading(true);
-    _setError(null);
+  /* ====================================================================== */
+  /*                               Favorits                                 */
+  /* ====================================================================== */
 
+  Future<void> loadFavorites(String userId) async {
+    _setLoading(true);
+    try   { _favorites = await DroneService.getFavorites(userId); }
+    catch (e) { _setError('Error loading favs: $e'); _favorites = []; }
+    finally   { _setLoading(false); }
+  }
+
+  Future<void> toggleFavorite(String userId, Drone drone) async {
+    final already = _favorites.any((d) => d.id == drone.id);
     try {
-      final toDelete = _drones.firstWhere((d) => d.model == model);
-      final success = await DroneService.deleteDrone(toDelete.id);
-      if (success) {
-        _drones.removeWhere((d) => d.model == model);
-        notifyListeners();
+      if (already) {
+        await DroneService.removeFavorite(userId, drone.id);
+        _favorites.removeWhere((d) => d.id == drone.id);
+      } else {
+        await DroneService.addFavorite(userId, drone.id);
+        _favorites.add(drone);
       }
-      _setLoading(false);
-      return success;
+      notifyListeners();
     } catch (e) {
-      _setError('Error deleting drone by model: $e');
-      _setLoading(false);
-      return false;
+      _setError('Error updating favs: $e');
     }
+  }
+
+  /* ====================================================================== */
+  /*                               Els meus                                 */
+  /* ====================================================================== */
+
+  Future<void> loadMyDrones(String userId, {String? status}) async {
+    _setLoading(true);
+    try   { _myDrones = await DroneService.getMyDrones(userId, status: status); }
+    catch (e) { _setError('Error: $e'); _myDrones = []; }
+    finally   { _setLoading(false); }
   }
 }
