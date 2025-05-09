@@ -32,12 +32,10 @@ class DroneDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _DetailBody(drone: drone),
-
           const SizedBox(height: 16),
           if (canBuy)
             ElevatedButton.icon(
@@ -50,13 +48,13 @@ class DroneDetailScreen extends StatelessWidget {
                 if (context.mounted) {
                   final msg = ok ? 'Compra confirmada!' : 'Error de compra';
                   ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(msg)));
+                    SnackBar(content: Text(msg)),
+                  );
                 }
               },
             ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         icon : const Icon(Icons.rate_review),
         label: const Text('Nova ressenya'),
@@ -136,7 +134,7 @@ class DroneDetailScreen extends StatelessWidget {
                   5,
                   (i) => DropdownMenuItem(
                     value: i + 1,
-                    child: Text('${i + 1} estrelles'),
+                    child: Text('\${i + 1} estrelles'),
                   ),
                 ),
                 onChanged: (v) => setState(() => rating = v!),
@@ -166,13 +164,17 @@ class DroneDetailScreen extends StatelessWidget {
   }
 }
 
-/* -------------------------------------------------------------------- */
-/*                          Cos (detall bàsic)                          */
-/* -------------------------------------------------------------------- */
-
 class _DetailBody extends StatelessWidget {
   final Drone drone;
   const _DetailBody({required this.drone});
+
+  String humanCategory(String cat) {
+    switch (cat) {
+      case 'venta':    return 'Compra drons';
+      case 'alquiler': return 'Servei';
+      default:         return cat;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +210,7 @@ class _DetailBody extends StatelessWidget {
         Text(drone.model,
             style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 4),
-        Text('${drone.price.toStringAsFixed(0)} €',
+        Text('\${drone.price.toStringAsFixed(0)} €',
             style: Theme.of(context)
                 .textTheme
                 .titleLarge
@@ -220,7 +222,7 @@ class _DetailBody extends StatelessWidget {
         Wrap(
           spacing: 12,
           children: [
-            _InfoChip(Icons.category,  drone.category ?? '-'),
+            _InfoChip(Icons.category,  humanCategory(drone.category ?? '-')),
             _InfoChip(Icons.event,     drone.type     ?? '-'),
             _InfoChip(Icons.grade,     drone.condition?? '-'),
             _InfoChip(Icons.place,     drone.location ?? '-'),
@@ -228,7 +230,7 @@ class _DetailBody extends StatelessWidget {
         ),
         const Divider(height: 32),
 
-        Text('Valoracions (${drone.ratings.length})',
+        Text('Valoracions (\${drone.ratings.length})',
             style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
 

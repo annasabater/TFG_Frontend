@@ -88,9 +88,8 @@ class _AllTabState extends State<AllTab> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
               _catChip('all', 'Totes'),
-              _catChip('drones', 'Compra drons'),
-              _catChip('services', 'Serveis'),
-              _catChip('gear', 'Material'),
+              _catChip('venta', 'Compra drons'),
+              _catChip('alquiler', 'Serveis'),
             ],
           ),
         ),

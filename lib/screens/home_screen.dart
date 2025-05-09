@@ -1,6 +1,6 @@
 // lib/screens/home_screen.dart
+
 import 'package:flutter/material.dart';
-//import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/widgets/Layout.dart';
@@ -18,10 +18,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Carregar usuaris quan la pàgina es carrega
-    Future.microtask(() => 
+    Future.microtask(() =>
       Provider.of<UserProvider>(context, listen: false).loadUsers()
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -54,43 +55,63 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Títol de benvinguda
                             Text(
                               localizations.welcomeMessage,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
                             ),
+
                             const SizedBox(height: 12),
+
+                            // Descripció global de l'app
                             Text(
                               localizations.appDescription,
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
+
                             const SizedBox(height: 24),
+
+                            // Encapçalament de mòduls
                             Text(
                               localizations.features,
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
+
+                            const SizedBox(height: 8),
+
+                            // Elements de cada mòdul
+                            _buildFeatureItem(
+                              context,
+                              localizations.gamesFeatureTitle,
+                              localizations.gamesFeatureDescription,
+                              Icons.videogame_asset,
+                            ),
                             const SizedBox(height: 8),
                             _buildFeatureItem(
-                              context, 
-                              localizations.usersFeatureTitle, 
-                              localizations.usersFeatureDescription,
+                              context,
+                              localizations.chatFeatureTitle,
+                              localizations.chatFeatureDescription,
+                              Icons.chat_bubble,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildFeatureItem(
+                              context,
+                              localizations.socialFeatureTitle,
+                              localizations.socialFeatureDescription,
                               Icons.people,
                             ),
                             const SizedBox(height: 8),
                             _buildFeatureItem(
-                              context, 
-                              localizations.apiFeatureTitle,
-                              localizations.apiFeatureDescription,
-                              Icons.api,
-                            ),
-                            const SizedBox(height: 8),
-                            _buildFeatureItem(
-                              context, 
-                              localizations.stateFeatureTitle, 
-                              localizations.stateFeatureDescription,
-                              Icons.sync_alt,
+                              context,
+                              localizations.storeFeatureTitle,
+                              localizations.storeFeatureDescription,
+                              Icons.storefront,
                             ),
                           ],
                         ),
@@ -107,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFeatureItem(BuildContext context, String title, String description, IconData icon) {
+  Widget _buildFeatureItem(
+      BuildContext context, String title, String description, IconData icon) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

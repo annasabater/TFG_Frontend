@@ -23,8 +23,8 @@ class _AddDroneScreenState extends State<AddDroneScreen> {
   final _priceCtrl = TextEditingController();
   final _locCtrl   = TextEditingController();
 
-  String _category  = 'drones';
-  String _condition = 'new';
+  String _category  = 'venta';
+  String _condition = 'nuevo';
   final List<File> _images = [];
 
   Future<void> _pickImage() async {
@@ -78,9 +78,8 @@ class _AddDroneScreenState extends State<AddDroneScreen> {
                 value: _category,
                 decoration: const InputDecoration(labelText: 'Categoria'),
                 items: const [
-                  DropdownMenuItem(value: 'drones',   child: Text('Compra drons')),
-                  DropdownMenuItem(value: 'services', child: Text('Serveis / Alquiler')),
-                  DropdownMenuItem(value: 'gear',     child: Text('Compra material')),
+                  DropdownMenuItem(value: 'venta',   child: Text('Compra drons')),
+                  DropdownMenuItem(value: 'alquiler', child: Text('Serveis / Lloguer')),
                 ],
                 onChanged: (v) => setState(() => _category = v!),
               ),
@@ -89,9 +88,8 @@ class _AddDroneScreenState extends State<AddDroneScreen> {
                 value: _condition,
                 decoration: const InputDecoration(labelText: 'Estat'),
                 items: const [
-                  DropdownMenuItem(value: 'new',     child: Text('Nou')),
-                  DropdownMenuItem(value: 'likeNew', child: Text('Com nou')),
-                  DropdownMenuItem(value: 'used',    child: Text('Usat')),
+                  DropdownMenuItem(value: 'nuevo',     child: Text('Nou')),
+                  DropdownMenuItem(value: 'usado', child: Text('Usat')),
                 ],
                 onChanged: (v) => setState(() => _condition = v!),
               ),
