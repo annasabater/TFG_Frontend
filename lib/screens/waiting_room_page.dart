@@ -24,10 +24,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   }
 
   Future<void> _setupSocket() async {
-    // 1️⃣ Aseguramos login dinámico y asignación de jwt + conexión al namespace /jocs
     _socket = await SocketService.initWaitingSocket();
-
-    // 2️⃣ Luego nos suscribimos a los eventos que nos interesan
     _socket!
       ..on('waiting', (data) {
         if (data is Map && data.containsKey('msg')) {
@@ -36,7 +33,6 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       })
       ..on('game_started', (_) {
         if (context.mounted) {
-          // Una vez arrancado el juego, navegamos a la pantalla de control
           context.go('/jocs/control/${widget.sessionId}');
         }
       });
@@ -44,7 +40,6 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   @override
   void dispose() {
-    // Nos desuscribimos de los eventos para evitar fugas
     _socket
       ?..off('waiting')
       ..off('game_started');

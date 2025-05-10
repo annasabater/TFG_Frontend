@@ -1,9 +1,11 @@
+//lib/screens/search_user_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../provider/users_provider.dart';
 import '../models/user.dart';
-import '../widgets/language_selector.dart';  // ← importar
+import '../widgets/language_selector.dart';  
 
 class SearchUserScreen extends StatefulWidget {
   const SearchUserScreen({Key? key}) : super(key: key);

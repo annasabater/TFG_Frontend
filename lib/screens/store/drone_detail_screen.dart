@@ -68,7 +68,7 @@ class DroneDetailScreen extends StatelessWidget {
     );
   }
 
-  /* ------------------ diàleg compra ------------------ */
+
   Future<ShippingInfo?> _showPurchaseDialog(BuildContext ctx) {
     final addressCtrl = TextEditingController();
     final phoneCtrl   = TextEditingController();
@@ -114,7 +114,7 @@ class DroneDetailScreen extends StatelessWidget {
     );
   }
 
-  /* ------------------ diàleg ressenya ------------------ */
+
   Future<(int,String)?> _showAddReviewDialog(BuildContext ctx) async {
     final ctrl = TextEditingController();
     int rating = 5;

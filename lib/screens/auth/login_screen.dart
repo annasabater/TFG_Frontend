@@ -1,4 +1,5 @@
-// lib/screens/login_page.dart
+// lib/screens/auth/login_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -34,13 +35,10 @@ class LoginPage extends StatelessWidget {
       }
       final mapUser = result['user'] as Map<String, dynamic>;
       if (context.mounted) {
-        // Guardamos el usuario en el provider
         context.read<UserProvider>().setCurrentUser(
           User.fromJson(mapUser),
         );
-        // Solo guardamos email, sin validar color
         SocketService.setUserEmail(mapUser['email'] as String);
-        // Vamos al home
         context.go('/');
       }
     } catch (e) {

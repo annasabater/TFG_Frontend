@@ -1,3 +1,5 @@
+//lib/screens/drone_service.dart
+
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -8,8 +10,6 @@ import '../models/drone_query.dart';
 import 'auth_service.dart';
 
 class DroneService {
-  /* ------------ configuració bàsica ------------ */
-
   static String get _base {
     if (kIsWeb)             return 'http://localhost:9000/api';
     if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
@@ -19,9 +19,6 @@ class DroneService {
   static Uri _dronesUri([DroneQuery? q]) =>
       Uri.parse('$_base/drones').replace(queryParameters: q?.toQueryParams());
 
-  /* ------------ operacions principals ---------- */
-
-  /// ✔️ ara és estàtic
   static Future<List<Drone>> getDrones([DroneQuery? q]) async {
     final resp = await http.get(_dronesUri(q));
     if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
@@ -60,8 +57,6 @@ class DroneService {
     return resp.statusCode == 200;
   }
 
-  /* ------------------- reviews ------------------ */
-
   static Future<Drone> addReview({
     required String droneId,
     required String userId,
@@ -81,7 +76,6 @@ class DroneService {
     return Drone.fromJson(jsonDecode(resp.body));
   }
 
-  /* -------------- favorits / meus -------------- */
 
   static Future<List<Drone>> getFavorites(String userId) async {
     final jwt = await AuthService().token;
@@ -122,7 +116,7 @@ class DroneService {
     return data.map((e) => Drone.fromJson(e)).toList();
   }
 
-  /* -------------- compra -------------- */
+
 static Future<Drone> purchaseDrone(
   String id,
   ShippingInfo info,
@@ -140,7 +134,6 @@ static Future<Drone> purchaseDrone(
   return Drone.fromJson(jsonDecode(resp.body));
 }
 
-/* -------------- marcar VENUT -------------- */
 static Future<Drone> markSold(String id) async {
   final jwt = await AuthService().token;
   final resp = await http.put(
@@ -151,7 +144,6 @@ static Future<Drone> markSold(String id) async {
   return Drone.fromJson(jsonDecode(resp.body));
 }
 
-/* -------------- update -------------- */
 static Future<Drone> updateDrone(String id, Drone d) async {
   final jwt = await AuthService().token;
   final resp = await http.put(
@@ -165,5 +157,4 @@ static Future<Drone> updateDrone(String id, Drone d) async {
   if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
   return Drone.fromJson(jsonDecode(resp.body));
 }
-
 }

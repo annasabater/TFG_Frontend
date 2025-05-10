@@ -1,4 +1,5 @@
-// details_screen.dart
+//lib/screens/details_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:SkyNet/widgets/Layout.dart';
 import '../provider/users_provider.dart';

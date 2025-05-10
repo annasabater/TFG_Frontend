@@ -26,7 +26,6 @@ class SocketService {
     'dron_amarillo1@upc.edu': 'amarillo',
   };
 
-  /// Carga el .env una sola vez
   static Future<void> _ensureEnvLoaded() async {
     if (_envLoaded) return;
     await dotenv.load(fileName: '.env');
@@ -68,7 +67,6 @@ class SocketService {
       throw Exception('Session o email no definido');
     }
 
-    // ==== LOGIN DINÁMICO ====
     final colorKey = _colorMapping[email]!;
     final envEmailKey = 'DRON_${colorKey.toUpperCase()}_EMAIL';
     final envPwdKey   = 'DRON_${colorKey.toUpperCase()}_PASSWORD';
@@ -110,16 +108,16 @@ class SocketService {
 
     _socket!
       ..onConnect((_) {
-        debugPrint('⚡ Connected to /jocs (sessionId=$sid)');
+        debugPrint('Connected to /jocs (sessionId=$sid)');
         _socket!.emit('join', {'sessionId': sid});
       })
-      ..on('waiting', (data) => debugPrint('🕒 Waiting: ${data['msg']}'))
+      ..on('waiting', (data) => debugPrint('Waiting: ${data['msg']}'))
       ..on('game_started', (_) {
-        debugPrint('🚀 Game started (SocketService)');
+        debugPrint('Game started (SocketService)');
         onGameStarted?.call();
       })
-      ..onConnectError((err) => debugPrint('❌ Jocs connect error: $err'))
-      ..onError((err)        => debugPrint('❌ Jocs socket error: $err'));
+      ..onConnectError((err) => debugPrint('Jocs connect error: $err'))
+      ..onError((err)        => debugPrint('Jocs socket error: $err'));
 
     _socket!.connect();
     return _socket!;
@@ -132,7 +130,7 @@ class SocketService {
 
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
-      debugPrint('⚠️ Game socket not connected');
+      debugPrint('Game socket not connected');
       return;
     }
     _socket!.emit('control', {
@@ -150,14 +148,12 @@ class SocketService {
     currentSessionId = null;
   }
 
-  // --------------------- Chat ---------------------
 
-  /// Inicia el socket de chat (/chat) usando login dinámico también
+  /// Inicia el socket de chat (/chat)
   static Future<IO.Socket> initChatSocket() async {
     await _ensureEnvLoaded();
     if (_chatSocket != null && _chatSocket!.connected) return _chatSocket!;
 
-    // ==== LOGIN DINÁMICO PARA CHAT ====
     final email = currentUserEmail;
     if (email == null) {
       throw Exception('Email no definido para chat');
@@ -190,7 +186,6 @@ class SocketService {
     if (jwt == null || jwt.isEmpty) {
       throw Exception('No se obtuvo JWT para chat (dron $colorKey)');
     }
-    // ==== FIN LOGIN DINÁMICO PARA CHAT ====
 
     _chatSocket = IO.io(
       '$_wsBaseUrl/chat',
@@ -202,10 +197,10 @@ class SocketService {
     );
 
     _chatSocket!
-      ..onConnect((_)        => debugPrint('⚡ Connected to /chat'))
-      ..on('new_message',    (data) => debugPrint('📩 New msg: $data'))
-      ..onConnectError((err) => debugPrint('❌ Chat connect error: $err'))
-      ..onError((err)        => debugPrint('❌ Chat socket error: $err'));
+      ..onConnect((_)        => debugPrint('Connected to /chat'))
+      ..on('new_message',    (data) => debugPrint('New msg: $data'))
+      ..onConnectError((err) => debugPrint('Chat connect error: $err'))
+      ..onError((err)        => debugPrint('Chat socket error: $err'));
 
     _chatSocket!.connect();
     return _chatSocket!;
@@ -217,7 +212,7 @@ class SocketService {
     required String content,
   }) {
     if (_chatSocket == null || !_chatSocket!.connected) {
-      debugPrint('⚠️ Chat socket not connected');
+      debugPrint('Chat socket not connected');
       return;
     }
     _chatSocket!.emit('send_message', {

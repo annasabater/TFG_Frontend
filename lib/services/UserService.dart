@@ -1,4 +1,5 @@
 // lib/services/UserService.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
@@ -7,13 +8,12 @@ import '../models/user.dart';
 import 'auth_service.dart';
 
 class UserService {
-  /// Base URL apuntando al endpoint /users de tu API
   static String get baseUrl {
-    final api = AuthService().baseApiUrl; // ej. http://localhost:9000/api
+    final api = AuthService().baseApiUrl; 
     return '$api/users';
   }
 
-  /// Obtiene la lista de usuarios, enviando el JWT en el header
+  /// Obtiene la lista de usuarios, enviando el JWT 
   static Future<List<User>> getUsers() async {
     final token = await AuthService().token;
     final resp = await http.get(

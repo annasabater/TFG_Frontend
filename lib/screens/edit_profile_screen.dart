@@ -1,4 +1,4 @@
-// lib/screens/auth/edit_profile_screen.dart
+// lib/screens/edit_profile_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

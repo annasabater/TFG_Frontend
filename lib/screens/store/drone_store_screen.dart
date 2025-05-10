@@ -26,12 +26,10 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
   void initState() {
     super.initState();
 
-    // Agafem els providers però NO fem still notifyListeners() aquí
     _droneProv     = context.read<DroneProvider>();
     _userProv      = context.read<UserProvider>();
     _tabController = TabController(length: 3, vsync: this);
 
-    // Ajornem la càrrega de dades fins després del primer build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _droneProv.loadDrones();
       _loadExtras();

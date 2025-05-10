@@ -1,3 +1,5 @@
+//lib/screens/drone_control_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:go_router/go_router.dart';
@@ -86,11 +88,11 @@ class _DroneControlPageState extends State<DroneControlPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(
+          /*  Positioned(
               top: 16,
               left: 16,
               child: Text('Estado: $_status', style: const TextStyle(fontSize: 16)),
-            ),
+            ),*/
             Positioned(
               top: 30,
               right: 16,
