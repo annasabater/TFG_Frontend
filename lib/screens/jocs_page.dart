@@ -1,40 +1,8 @@
-//jocs_page.dart
-/*
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-class JocsPage extends StatelessWidget {
-  const JocsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Jocs'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ListTile(
-            leading: const Icon(Icons.sports_esports),
-            title: const Text('Competencia'),
-            onTap: () {
-              context.go('/jocs/competencia');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/
-
-// lib/screens/jocs_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../provider/users_provider.dart';
+import '../services/socket_service.dart';
 
 class JocsPage extends StatelessWidget {
   const JocsPage({Key? key}) : super(key: key);
@@ -42,6 +10,7 @@ class JocsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompetitor = context.watch<UserProvider>().isCompetitor;
+    final email = context.read<UserProvider>().currentUser!.email;
     return Scaffold(
       appBar: AppBar(title: const Text('Juegos')),
       body: SingleChildScrollView(
@@ -62,9 +31,12 @@ class JocsPage extends StatelessWidget {
               title: 'COMPETÈNCIA',
               image: 'assets/competencia.png',
               buttonText: 'Entrar',
-              onTap: () {
+              onTap: () async {
                 if (isCompetitor) {
-                  context.go('/jocs/open');
+                  SocketService.setCompetitionUserEmail(email);
+                  await SocketService.initWaitingSocket();
+                  final sid = SocketService.currentSessionId!;
+                  context.go('/jocs/open/$sid');
                 } else {
                   showDialog(
                     context: context,
@@ -101,7 +73,13 @@ class JocsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGameCard(BuildContext context, {required String title, required String image, required String buttonText, required VoidCallback onTap}) {
+  Widget _buildGameCard(
+      BuildContext context, {
+      required String title,
+      required String image,
+      required String buttonText,
+      required VoidCallback onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -133,4 +111,3 @@ class JocsPage extends StatelessWidget {
     );
   }
 }
-

@@ -24,7 +24,6 @@ import 'package:SkyNet/screens/store/add_drone_screen.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/' : '/login',
   routes: [
-    /* ------------------- Auth ------------------- */
     GoRoute(
       path: '/login',
       builder: (_, __) => LoginPage(),
@@ -34,12 +33,10 @@ final GoRouter appRouter = GoRouter(
       builder: (_, __) => const RegisterPage(),
     ),
 
-    /* ------------------- Home (pare) ------------- */
     GoRoute(
       path: '/',
       builder: (_, __) => const HomeScreen(),
 
-      /* ----------- sub-rutes de Home -------------- */
       routes: [
         GoRoute(
           path: 'details',
@@ -65,19 +62,29 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        /* -------------- Joc amb sockets ----------- */
         GoRoute(
           path: 'jocs',
           builder: (_, __) => const JocsPage(),
           routes: [
-            GoRoute(path: 'open',    builder: (_, __) => const WaitingRoomPage()),
-            GoRoute(path: 'control', builder: (_, __) => const DroneControlPage()),
+            GoRoute(
+              path: 'open/:sessionId',
+              builder: (ctx, state) {
+                final sid = state.pathParameters['sessionId']!;
+                return WaitingRoomPage(sessionId: sid);
+              },
+            ),
+            GoRoute(
+              path: 'control/:sessionId',
+              builder: (ctx, state) {
+                final sid = state.pathParameters['sessionId']!;
+                return DroneControlPage(sessionId: sid);
+              },
+            ),
           ],
         ),
 
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
 
-       /* -------------- Botiga ----------- */
         GoRoute(
           path: 'store',
           builder: (_, __) => const DroneStoreScreen(),
@@ -95,7 +102,6 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        /* -------------- Xat ----------------------- */
         GoRoute(
           path: 'chat',
           builder: (_, __) => const ChatListScreen(),

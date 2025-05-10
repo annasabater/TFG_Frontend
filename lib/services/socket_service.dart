@@ -1,17 +1,23 @@
 // lib/services/socket_service.dart
 
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:SkyNet/services/auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 typedef VoidCallback = void Function();
 
 class SocketService {
+  static bool _envLoaded = false;
   static VoidCallback? onGameStarted;
   static String? currentUserEmail;
-  static String? currentUserColor;
   static String? currentSessionId;
   static IO.Socket? _socket;
   static IO.Socket? _chatSocket;
+  static late String serverUrl;
+  static late String jwt;
+  static late String chatJwt;
 
   static const Map<String, String> _colorMapping = {
     'dron_azul1@upc.edu':     'azul',
@@ -20,39 +26,79 @@ class SocketService {
     'dron_amarillo1@upc.edu': 'amarillo',
   };
 
-  /// Tras login, llama a esto con el email.
+  /// Carga el .env una sola vez
+  static Future<void> _ensureEnvLoaded() async {
+    if (_envLoaded) return;
+    await dotenv.load(fileName: '.env');
+    _envLoaded = true;
+    serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
+  }
+
   static void setUserEmail(String email) {
     currentUserEmail = email.trim().toLowerCase();
   }
 
-  /// Valida email de competidor. Fija currentSessionId='1'.
   static void setCompetitionUserEmail(String email) {
     final e = email.trim().toLowerCase();
-    currentUserEmail = e;
-    currentUserColor = _colorMapping[e];
-    if (currentUserColor == null) {
+    if (!_colorMapping.containsKey(e)) {
       throw Exception('Usuario no autorizado para competir');
     }
+    currentUserEmail = e;
     currentSessionId = '1';
   }
 
-  static Future<String> _getJwt() => AuthService().token;
-  static String get _wsBaseUrl => AuthService().webSocketBaseUrl;
   static IO.Socket? get socketInstance => _socket;
+  static String get _wsBaseUrl {
+    final raw = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
+    return raw.replaceFirst(RegExp(r'^http'), 'ws');
+ }
 
-  /// Registra el callback para cuando llegue 'game_started'
   static void registerOnGameStarted(VoidCallback callback) {
     onGameStarted = callback;
   }
 
-  /// Conecta (o reutiliza) al namespace /jocs y emite 'join'
+  /// Inicia el socket de espera (/jocs)
   static Future<IO.Socket> initWaitingSocket() async {
+    await _ensureEnvLoaded();
     if (_socket != null && _socket!.connected) return _socket!;
 
-    final token = await _getJwt();
     final sid = currentSessionId;
-    if (sid == null) throw Exception('sessionId no definido');
+    final email = currentUserEmail;
+    if (sid == null || email == null) {
+      throw Exception('Session o email no definido');
+    }
 
+    // ==== LOGIN DINÁMICO ====
+    final colorKey = _colorMapping[email]!;
+    final envEmailKey = 'DRON_${colorKey.toUpperCase()}_EMAIL';
+    final envPwdKey   = 'DRON_${colorKey.toUpperCase()}_PASSWORD';
+
+    final droneEmail = dotenv.env[envEmailKey];
+    final dronePwd   = dotenv.env[envPwdKey];
+    if (droneEmail == null || dronePwd == null) {
+      throw Exception('Faltan credenciales en .env: '
+          '$envEmailKey o $envPwdKey');
+    }
+
+    final loginUrl = '${dotenv.env['SERVER_URL']}/api/auth/login';
+    final resp = await http.post(
+      Uri.parse(loginUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': droneEmail,
+        'password': dronePwd,
+      }),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Login fallido para $colorKey: ${resp.body}');
+    }
+    final data = jsonDecode(resp.body) as Map<String, dynamic>;
+    final token = data['accesstoken'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('No se obtuvo accesstoken para dron $colorKey');
+    }
+    jwt = token;
+    
     _socket = IO.io(
       '$_wsBaseUrl/jocs',
       IO.OptionBuilder()
@@ -64,31 +110,29 @@ class SocketService {
 
     _socket!
       ..onConnect((_) {
-        print('⚡ Connected to /jocs (sessionId=$sid)');
+        debugPrint('⚡ Connected to /jocs (sessionId=$sid)');
         _socket!.emit('join', {'sessionId': sid});
       })
-      ..on('waiting', (data) => print('🕒 Waiting: ${data['msg']}'))
+      ..on('waiting', (data) => debugPrint('🕒 Waiting: ${data['msg']}'))
       ..on('game_started', (_) {
-        print('🚀 Game started (SocketService)');
+        debugPrint('🚀 Game started (SocketService)');
         onGameStarted?.call();
       })
-      ..onConnectError((err) => print('❌ Jocs connect error: $err'))
-      ..onError((err) => print('❌ Jocs socket error: $err'));
+      ..onConnectError((err) => debugPrint('❌ Jocs connect error: $err'))
+      ..onError((err)        => debugPrint('❌ Jocs socket error: $err'));
 
     _socket!.connect();
     return _socket!;
   }
 
-  /// Desconecta y reconecta (útil tras game_started)
   static Future<IO.Socket> initGameSocket() async {
     _socket?.disconnect();
-    return await initWaitingSocket();
+    return initWaitingSocket();
   }
 
-  /// Envía comando 'control'
   static void sendCommand(String action, Map<String, dynamic> payload) {
     if (_socket == null || !_socket!.connected) {
-      print('⚠️ Game socket not connected');
+      debugPrint('⚠️ Game socket not connected');
       return;
     }
     _socket!.emit('control', {
@@ -98,33 +142,71 @@ class SocketService {
     });
   }
 
-  /// Limpia todo
   static void dispose() {
     _socket?.disconnect();
     _socket = null;
     onGameStarted = null;
     currentUserEmail = null;
-    currentUserColor = null;
     currentSessionId = null;
   }
 
   // --------------------- Chat ---------------------
+
+  /// Inicia el socket de chat (/chat) usando login dinámico también
   static Future<IO.Socket> initChatSocket() async {
+    await _ensureEnvLoaded();
     if (_chatSocket != null && _chatSocket!.connected) return _chatSocket!;
-    final token = await _getJwt();
+
+    // ==== LOGIN DINÁMICO PARA CHAT ====
+    final email = currentUserEmail;
+    if (email == null) {
+      throw Exception('Email no definido para chat');
+    }
+    final colorKey = _colorMapping[email]!;
+    final envEmailKey = 'DRON_${colorKey.toUpperCase()}_EMAIL';
+    final envPwdKey   = 'DRON_${colorKey.toUpperCase()}_PASSWORD';
+
+    final droneEmail = dotenv.env[envEmailKey];
+    final dronePwd   = dotenv.env[envPwdKey];
+    if (droneEmail == null || dronePwd == null) {
+      throw Exception('Faltan credenciales en .env: '
+          '$envEmailKey o $envPwdKey');
+    }
+
+    final loginUrl = '${dotenv.env['SERVER_URL']}/api/auth/login';
+    final resp = await http.post(
+      Uri.parse(loginUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': droneEmail,
+        'password': dronePwd,
+      }),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Login chat fallido para $colorKey: ${resp.body}');
+    }
+    final data = jsonDecode(resp.body) as Map<String, dynamic>;
+    final jwt = data['accesstoken'] as String?;
+    if (jwt == null || jwt.isEmpty) {
+      throw Exception('No se obtuvo JWT para chat (dron $colorKey)');
+    }
+    // ==== FIN LOGIN DINÁMICO PARA CHAT ====
+
     _chatSocket = IO.io(
       '$_wsBaseUrl/chat',
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .setAuth({'token': token})
+          .setAuth({'token': jwt})
           .disableAutoConnect()
           .build(),
     );
+
     _chatSocket!
-      ..onConnect((_) => print('⚡ Connected to /chat'))
-      ..on('new_message', (data) => print('New msg: $data'))
-      ..onConnectError((err) => print('Chat connect error: $err'))
-      ..onError((err) => print('Chat socket error: $err'));
+      ..onConnect((_)        => debugPrint('⚡ Connected to /chat'))
+      ..on('new_message',    (data) => debugPrint('📩 New msg: $data'))
+      ..onConnectError((err) => debugPrint('❌ Chat connect error: $err'))
+      ..onError((err)        => debugPrint('❌ Chat socket error: $err'));
+
     _chatSocket!.connect();
     return _chatSocket!;
   }
@@ -135,7 +217,7 @@ class SocketService {
     required String content,
   }) {
     if (_chatSocket == null || !_chatSocket!.connected) {
-      print('⚠️ Chat socket not connected');
+      debugPrint('⚠️ Chat socket not connected');
       return;
     }
     _chatSocket!.emit('send_message', {

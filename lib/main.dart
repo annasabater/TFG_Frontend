@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:SkyNet/services/socket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -10,8 +11,13 @@ import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:SkyNet/provider/drone_provider.dart';   
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  SocketService.serverUrl = dotenv.env['SERVER_URL']!;
   runApp(const MyApp());
 }
 

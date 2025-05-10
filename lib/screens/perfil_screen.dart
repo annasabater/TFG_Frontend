@@ -21,6 +21,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     _loadUser();
   }
 
+
   Future<void> _loadUser() async {
     final auth = AuthService();
     final currentUser = auth.currentUser;
