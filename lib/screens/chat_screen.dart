@@ -1,9 +1,10 @@
-//lib/screens/chat_screen.dart
+// lib/screens/chat_screen.dart
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+
 import '../provider/users_provider.dart';
 import '../models/user.dart';
 import '../models/message.dart';
@@ -19,19 +20,32 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _controller = TextEditingController();
-  final ScrollController _scroll = ScrollController();
-  final List<_ChatMessage> _messages = [];
+  final _controller = TextEditingController();
+  final _scroll = ScrollController();
+  final _messages = <_ChatMessage>[];
   late final UserProvider _provider;
   User? _currentUser;
+  bool _loadingUser = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _provider = Provider.of<UserProvider>(context, listen: false);
-      _currentUser = _provider.currentUser;
+      final user = _provider.currentUser;
+      debugPrint('ChatScreen: currentUser = $user');
 
+      if (user == null) {
+        setState(() => _loadingUser = false);
+        return;
+      }
+
+      setState(() {
+        _currentUser = user;
+        _loadingUser = false;
+      });
+
+      SocketService.setUserEmail(user.email);
       await SocketService.initChatSocket();
       SocketService.onNewMessage(_handleNewMessage);
 
@@ -45,18 +59,18 @@ class _ChatScreenState extends State<ChatScreen> {
     final partnerId = msg.senderId == _currentUser!.id
         ? msg.receiverId
         : msg.senderId;
-    _provider.addConversation(partnerId);
 
-    setState(() {
-      _messages.add(_ChatMessage(
-        senderId: msg.senderId,
-        text: msg.content,
-        timestamp: msg.timestamp ?? DateTime.now(),
-      ));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _provider.addConversation(partnerId);
+      setState(() {
+        _messages.add(_ChatMessage(
+          senderId: msg.senderId,
+          text: msg.content,
+          timestamp: msg.timestamp ?? DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
     });
-
-    // Scroll al final
-    _scrollToBottom();
   }
 
   Future<void> _loadHistory() async {
@@ -74,7 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
         },
       );
       if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body) as List<dynamic>;
+        final data = (jsonDecode(resp.body) as List<dynamic>);
         final history = data.map((m) {
           final created = m['createdAt'] ?? m['timestamp'];
           return _ChatMessage(
@@ -95,29 +109,13 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty || _currentUser == null) return;
 
-    final jwt = await AuthService().token;
-    final url = Uri.parse('${AuthService().baseApiUrl}/messages');
-    final resp = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwt',
-      },
-      body: jsonEncode({
-        'senderId': _currentUser!.id,
-        'receiverId': widget.userId,
-        'content': text,
-      }),
+    SocketService.sendChatMessage(
+      senderId:   _currentUser!.id!,
+      receiverId: widget.userId,
+      content:    text,
     );
 
-    if (resp.statusCode == 201) {
-      _controller.clear();
-      // El callback onNewMessage añadirá y desplazará
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error enviando mensaje')),
-      );
-    }
+    _controller.clear();
   }
 
   void _scrollToBottom() {
@@ -140,11 +138,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_currentUser == null) {
+    // Mientras determinamos si hay usuario
+    if (_loadingUser) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    if (_currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Chat')),
+        body: const Center(child: Text('No estás logueado')),
+      );
+    }
+
+    // Ya tenemos usuario: construimos chat
     final peer = _provider.users.firstWhere(
       (u) => u.id == widget.userId,
       orElse: () => User(id: '', userName: 'Unknown', email: '', role: ''),
@@ -159,7 +167,7 @@ class _ChatScreenState extends State<ChatScreen> {
               controller: _scroll,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
-              itemBuilder: (ctx, i) {
+              itemBuilder: (_, i) {
                 final msg = _messages[i];
                 final isMe = msg.senderId == _currentUser!.id;
                 return Align(
@@ -186,14 +194,15 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration:
-                        const InputDecoration(hintText: 'Escribe un mensaje...'),
+                    decoration: const InputDecoration(
+                      hintText: 'Escribe un mensaje...',
+                    ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),

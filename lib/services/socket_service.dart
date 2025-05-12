@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:SkyNet/services/auth_service.dart';
 
 typedef VoidCallback = void Function();
 
@@ -151,68 +152,41 @@ class SocketService {
 
   /// Inicia el socket de chat (/chat)
   static Future<IO.Socket> initChatSocket() async {
-    await _ensureEnvLoaded();
-    if (_chatSocket != null && _chatSocket!.connected) return _chatSocket!;
-
-    final email = currentUserEmail;
-    if (email == null) {
-      throw Exception('Email no definido para chat');
-    }
-    final colorKey = _colorMapping[email]!;
-    final envEmailKey = 'DRON_${colorKey.toUpperCase()}_EMAIL';
-    final envPwdKey   = 'DRON_${colorKey.toUpperCase()}_PASSWORD';
-
-    final droneEmail = dotenv.env[envEmailKey];
-    final dronePwd   = dotenv.env[envPwdKey];
-    if (droneEmail == null || dronePwd == null) {
-      throw Exception('Faltan credenciales en .env: '
-          '$envEmailKey o $envPwdKey');
+    if (_chatSocket != null && _chatSocket!.connected) {
+      return _chatSocket!;
     }
 
-    final loginUrl = '${dotenv.env['SERVER_URL']}/api/auth/login';
-    final resp = await http.post(
-      Uri.parse(loginUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': droneEmail,
-        'password': dronePwd,
-      }),
-    );
-    if (resp.statusCode != 200) {
-      throw Exception('Login chat fallido para $colorKey: ${resp.body}');
-    }
-    final data = jsonDecode(resp.body) as Map<String, dynamic>;
-    final jwt = data['accesstoken'] as String?;
-    if (jwt == null || jwt.isEmpty) {
-      throw Exception('No se obtuvo JWT para chat (dron $colorKey)');
-    }
+    final token = await AuthService().token;
+    final base = AuthService().webSocketBaseUrl;        
+    final url  = base.replaceFirst(RegExp(r'^http'), 'ws') + '/chat';
 
     _chatSocket = IO.io(
-      '$_wsBaseUrl/chat',
+      url,
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .setAuth({'token': jwt})
+          .setAuth({'token': token})
           .disableAutoConnect()
           .build(),
     );
 
     _chatSocket!
-      ..onConnect((_)        => debugPrint('Connected to /chat'))
-      ..on('new_message',    (data) => debugPrint('New msg: $data'))
-      ..onConnectError((err) => debugPrint('Chat connect error: $err'))
-      ..onError((err)        => debugPrint('Chat socket error: $err'));
+      ..onConnect((_)    => print('Connected to /chat'))
+      ..on('new_message', (data) => print('New msg: $data'))
+      ..onConnectError((err) => print('Chat connect error: $err'))
+      ..onError((err)       => print('Chat socket error: $err'));
 
     _chatSocket!.connect();
     return _chatSocket!;
   }
 
+  /// Envía un mensaje por WS
   static void sendChatMessage({
     required String senderId,
     required String receiverId,
     required String content,
   }) {
     if (_chatSocket == null || !_chatSocket!.connected) {
-      debugPrint('Chat socket not connected');
+      print('Chat socket not connected');
       return;
     }
     _chatSocket!.emit('send_message', {
@@ -230,4 +204,5 @@ class SocketService {
     _chatSocket?.disconnect();
     _chatSocket = null;
   }
+
 }

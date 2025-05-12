@@ -1,3 +1,5 @@
+//lib/screens/chat_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -19,15 +21,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final provider = Provider.of<UserProvider>(context, listen: false);
-      provider.initData();
       _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<UserProvider>().initData();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<UserProvider>(context);
+    final provider = context.watch<UserProvider>();
     final convIds = provider.conversationUserIds;
     final convUsers = provider.users.where((u) => convIds.contains(u.id)).toList();
 
@@ -54,7 +57,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     return ListTile(
                       leading: CircleAvatar(
                         child: Text(
-                          user.userName.isNotEmpty ? user.userName[0].toUpperCase() : '?',
+                          user.userName.isNotEmpty
+                              ? user.userName[0].toUpperCase()
+                              : '?',
                         ),
                       ),
                       title: Text(user.userName),

@@ -166,7 +166,7 @@ class AuthService {
     return {'success': true};
   }
 
-  /// Logout local.
+  /// Logout local
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt');
