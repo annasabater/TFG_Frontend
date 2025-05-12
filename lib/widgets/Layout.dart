@@ -31,8 +31,12 @@ class LayoutWrapper extends StatelessWidget {
           const LanguageSelector(),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, _) => IconButton(
-              icon: Icon(themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode),
-              tooltip: themeProvider.isDarkMode ? localizations.lightMode : localizations.darkMode,
+              icon: Icon(
+                themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode
+              ),
+              tooltip: themeProvider.isDarkMode
+                  ? localizations.lightMode
+                  : localizations.darkMode,
               onPressed: () => themeProvider.toggleTheme(),
             ),
           ),
@@ -42,38 +46,57 @@ class LayoutWrapper extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.surface,
         children: [
           _header(context),
+
+          // Siempre: Home
           _buildNavItem(context, localizations.home, Icons.home, '/'),
 
-          if (!restricted) ...[
-            _buildNavItem(context, localizations.users, Icons.info_outline, '/details'),
-
+          if (restricted) ...[
+            // Usuarios restringidos sólo ven Home, Games y Chat
+            _buildNavItem(
+              context, localizations.games, Icons.sports_esports, '/jocs'),
+            _buildNavItem(
+              context, localizations.chat, Icons.chat, '/chat'),
+          ] else ...[
+            // Resto de usuarios (no ven Games)
+            _buildNavItem(
+              context, localizations.users, Icons.info_outline, '/details'),
             if (admin)
-              _buildNavItem(context, localizations.createUser, Icons.person_add, '/editar'),
-
+              _buildNavItem(
+                context, localizations.createUser, Icons.person_add, '/editar'),
             if (admin)
-              _buildNavItem(context, localizations.deleteUser, Icons.delete_outline, '/borrar'),
-
-            _buildNavItem(context, localizations.profile, Icons.account_circle, '/profile'),
+              _buildNavItem(
+                context, localizations.deleteUser, Icons.delete_outline, '/borrar'),
+            _buildNavItem(
+              context, localizations.profile, Icons.account_circle, '/profile'),
+            _buildNavItem(
+              context, localizations.map, Icons.map, '/mapa'),
+            _buildNavItem(
+              context, localizations.chat, Icons.chat, '/chat'),
+            _buildNavItem(
+              context, localizations.store, Icons.store, '/store'),
           ],
 
-          _buildNavItem(context, localizations.games, Icons.sports_esports, '/jocs'),
-          _buildNavItem(context, localizations.map, Icons.map, '/mapa'),
-          _buildNavItem(context, localizations.chat, Icons.chat, '/chat'),
-          _buildNavItem(context, localizations.store, Icons.store, '/store'),
           const Divider(),
-          _reloadButton(context),
+
+          // Sólo usuarios NO restringidos ven el botón de recarga
+          if (!restricted) _reloadButton(context),
+
           _logoutButton(context),
         ],
       ),
       body: Container(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.1),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceVariant
+            .withOpacity(0.1),
         child: child,
       ),
     );
   }
 
   DrawerHeader _header(BuildContext context) => DrawerHeader(
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+        decoration:
+            BoxDecoration(color: Theme.of(context).colorScheme.primary),
         child: SingleChildScrollView(
           child: Center(
             child: Column(
@@ -91,14 +114,17 @@ class LayoutWrapper extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: 8),
-                const Icon(Icons.people_alt_rounded, size: 30, color: Colors.white),
+                const Icon(Icons.people_alt_rounded,
+                    size: 30, color: Colors.white),
                 const SizedBox(height: 8),
-                Text('S K Y N E T',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    )),
+                Text(
+                  'S K Y N E T',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -116,7 +142,9 @@ class LayoutWrapper extends StatelessWidget {
         },
         icon: const Icon(Icons.refresh),
         label: Text(localizations.reloadUsers),
-        style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(45)),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(45),
+        ),
       ),
     );
   }
@@ -144,20 +172,35 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 
-  ListTile _buildNavItem(BuildContext context, String title, IconData icon, String route) {
-    final isSelected = GoRouterState.of(context).uri.toString() == route;
+  ListTile _buildNavItem(
+    BuildContext context,
+    String title,
+    IconData icon,
+    String route,
+  ) {
+    final isSelected =
+        GoRouterState.of(context).uri.toString() == route;
     final scheme = Theme.of(context).colorScheme;
 
     return ListTile(
-      leading: Icon(icon, color: isSelected ? scheme.primary : scheme.onSurface),
-      title: Text(title,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? scheme.primary : scheme.onSurface,
-          )),
+      leading: Icon(
+        icon,
+        color: isSelected ? scheme.primary : scheme.onSurface,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight:
+              isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? scheme.primary : scheme.onSurface,
+        ),
+      ),
       selected: isSelected,
-      selectedTileColor: scheme.primaryContainer.withOpacity(0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      selectedTileColor:
+          scheme.primaryContainer.withOpacity(0.3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
       onTap: () {
         Navigator.pop(context);
         context.go(route);
