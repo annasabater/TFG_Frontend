@@ -12,7 +12,7 @@ class UserService {
     return 'http://localhost:9000/api/users';
   } 
   else if (!kIsWeb && Platform.isAndroid) {
-    return 'http://10.0.2.2:9000/api/users';
+    return 'http://192.168.56.1:9000/api/users';
   } 
   else {
     return 'http://localhost:9000/api/users';

@@ -82,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
     // 3) guardamos user en el provider y navegamos
     final mapUser = loginRes['user'] as Map<String, dynamic>;
     context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-    if (context.mounted) context.go('/');
+    if (context.mounted) context.go('/login');
   }
 
   @override

@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:SkyNet/geolocation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// Import condicional para web
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+
 
 class MapaScreen extends StatefulWidget {
   const MapaScreen({Key? key}) : super(key: key);
@@ -27,61 +26,21 @@ class _MapaScreenState extends State<MapaScreen> {
     _getLocation();
   }
 
-  Future<void> _getLocation() async {
+  _getLocation() async {
+  setState(() => _loading = true);
+  try {
+    final latLng = await getCurrentPosition();
     setState(() {
-      _loading = true;
-      _error = null;
+      _currentPosition = latLng as LatLng?;
+      _loading = false;
     });
-    if (kIsWeb) {
-      // WEB: usar la API JS
-      try {
-        html.window.navigator.geolocation.getCurrentPosition().then((pos) {
-          setState(() {
-            _currentPosition = LatLng(
-              (pos.coords?.latitude as double?) ?? 41.3888,
-              (pos.coords?.longitude as double?) ?? 2.159,
-            );
-            _loading = false;
-          });
-        }).catchError((e) {
-          setState(() {
-            _error = 'Permís de localització denegat o error en web.';
-            _loading = false;
-          });
-        });
-      } catch (e) {
-        setState(() {
-          _error = 'Error obtenint la localització (web): $e';
-          _loading = false;
-        });
-      }
-    } else {
-      // MÓVIL: usar Geolocator
-      try {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
-          setState(() {
-            _error = 'Permís de localització denegat.';
-            _loading = false;
-          });
-          return;
-        }
-        final pos = await Geolocator.getCurrentPosition();
-        setState(() {
-          _currentPosition = LatLng(pos.latitude, pos.longitude);
-          _loading = false;
-        });
-      } catch (e) {
-        setState(() {
-          _error = 'Error obtenint la localització: $e';
-          _loading = false;
-        });
-      }
-    }
+  } catch (e) {
+    setState(() {
+      _error = 'Error obteniendo ubicación: $e';
+      _loading = false;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {

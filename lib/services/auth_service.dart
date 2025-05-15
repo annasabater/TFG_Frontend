@@ -50,7 +50,7 @@ class AuthService {
   /// URL base REST (incluye '/api').
   String get baseApiUrl {
     if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
+    if (Platform.isAndroid) return 'http://192.168.56.1:9000/api';
     return 'http://localhost:9000/api';
   }
 
