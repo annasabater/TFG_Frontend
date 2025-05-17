@@ -1,54 +1,50 @@
-// lib/components/my_button.dart
-
+// my_button.dart (simplificado)
 import 'package:flutter/material.dart';
 
-class MyButton extends StatefulWidget {
-  final VoidCallback? onTap;
+class MyButton extends StatelessWidget {
+  final VoidCallback onTap;
   final String text;
+  final Color? color;
+  final Color? textColor;
+  final double? borderRadius;
+  final double? height;
+  final double? fontSize;
+  final FontWeight? fontWeight;
 
   const MyButton({
     Key? key,
     required this.onTap,
     required this.text,
+    this.color,
+    this.textColor,
+    this.borderRadius,
+    this.height,
+    this.fontSize,
+    this.fontWeight,
   }) : super(key: key);
-
-  @override
-  _MyButtonState createState() => _MyButtonState();
-}
-
-class _MyButtonState extends State<MyButton> {
-  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          margin: const EdgeInsets.symmetric(horizontal: 25),
-          decoration: BoxDecoration(
-            color: _isHovered ? colors.primary : colors.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: _isHovered ? colors.primary : colors.primaryContainer,
-              width: 2,
-            ),
+    return SizedBox(
+      width: double.infinity,
+      height: height ?? 50,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color ?? colors.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius ?? 20),
           ),
-          child: Center(
-            child: Text(
-              widget.text,
-              style: TextStyle(
-                color: _isHovered ? colors.onPrimary : colors.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+          elevation: 6,
+          shadowColor: Colors.black45,
+        ),
+        onPressed: onTap,
+        child: Text(
+          text,
+          style: TextStyle(
+            color: textColor ?? Colors.white,
+            fontSize: fontSize ?? 18,
+            fontWeight: fontWeight ?? FontWeight.w600,
           ),
         ),
       ),
