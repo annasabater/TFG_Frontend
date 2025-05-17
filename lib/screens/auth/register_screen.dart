@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:SkyNet/components/my_textfield.dart';
-import 'package:SkyNet/components/my_button.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -27,10 +25,39 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     'Gobierno',
   ];
 
+  // Variables para validar la contraseña
+  bool _hasMinLength = false;  // mínimo 8 caracteres
+  bool _hasMaxLength = false;  // máximo 20 caracteres
+  bool _hasLowercase = false;
+  bool _hasUppercase = false;
+  bool _hasNumber = false;
+  bool _hasSpecialChar = false;
+
+  // Validaciones visuales para username y email
+  bool _isUsernameValid = false;
+  bool _isEmailValid = false;
+
   @override
   void initState() {
     super.initState();
-    _emailCtrl.addListener(_refreshRoles);
+
+    _nameCtrl.addListener(() {
+      setState(() {
+        _isUsernameValid = _nameCtrl.text.trim().length >= 3;
+      });
+    });
+
+    _emailCtrl.addListener(() {
+      setState(() {
+        _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(_emailCtrl.text.trim());
+      });
+      _refreshRoles();
+    });
+
+    _passwordCtrl.addListener(() {
+      _validatePassword(_passwordCtrl.text);
+    });
+
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() {
         _visible = true;
@@ -48,6 +75,17 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   }
 
   void _refreshRoles() => setState(() {});
+
+  void _validatePassword(String pw) {
+    setState(() {
+      _hasMinLength = pw.length >= 8;
+      _hasMaxLength = pw.length <= 20;
+      _hasLowercase = RegExp(r'[a-z]').hasMatch(pw);
+      _hasUppercase = RegExp(r'[A-Z]').hasMatch(pw);
+      _hasNumber = RegExp(r'[0-9]').hasMatch(pw);
+      _hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(pw);
+    });
+  }
 
   String _getRoleTranslation(String role) {
     final localizations = AppLocalizations.of(context)!;
@@ -75,6 +113,23 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _showError(localizations.emptyFieldsError);
       return;
     }
+
+    // Validaciones username y email
+    if (!_isUsernameValid) {
+      _showError('El nombre de usuario debe tener al menos 3 caracteres');
+      return;
+    }
+    if (!_isEmailValid) {
+      _showError('El email no tiene un formato válido');
+      return;
+    }
+
+    // Contraseña debe cumplir todas las condiciones
+    if (!(_hasMinLength && _hasMaxLength && _hasLowercase && _hasUppercase && _hasNumber && _hasSpecialChar)) {
+      _showError('La contraseña no cumple todos los requisitos');
+      return;
+    }
+
     final isUpc = email.endsWith('@upc.edu');
     if (_selectedRole == 'Administrador' && !isUpc) {
       _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
@@ -115,6 +170,43 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
             child: Text(localizations.ok),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCheckItem(bool conditionMet, String text) {
+    return Row(
+      children: [
+        Icon(
+          conditionMet ? Icons.check_circle : Icons.cancel,
+          color: conditionMet ? Colors.green : Colors.red,
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: TextStyle(color: conditionMet ? Colors.green : Colors.red)),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String hintText, IconData prefixIcon, bool isValid) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixIcon: Icon(prefixIcon),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 3),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide(color: Colors.red, width: 3),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide(color: Colors.red, width: 3),
       ),
     );
   }
@@ -202,27 +294,47 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                           ),
                         ),
                         const SizedBox(height: 40),
-                        MyTextfield(
+
+                        // Username
+                        TextFormField(
                           controller: _nameCtrl,
-                          hintText: localizations.username,
-                          obscureText: false,
-                          prefixIcon: Icons.person_outline,
+                          decoration: _inputDecoration(localizations.username, Icons.person_outline, _isUsernameValid),
                         ),
                         const SizedBox(height: 25),
-                        MyTextfield(
+
+                        // Email
+                        TextFormField(
                           controller: _emailCtrl,
-                          hintText: localizations.email,
-                          obscureText: false,
-                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: _inputDecoration(localizations.email, Icons.email_outlined, _isEmailValid),
                         ),
                         const SizedBox(height: 25),
-                        MyTextfield(
+
+                        // Password
+                        TextFormField(
                           controller: _passwordCtrl,
-                          hintText: localizations.password,
                           obscureText: true,
-                          prefixIcon: Icons.lock_outline,
+                          decoration: InputDecoration(
+                            hintText: localizations.password,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildCheckItem(_hasMinLength, 'Min 8 characters'),
+                            _buildCheckItem(_hasMaxLength, 'Max 20 characters'),
+                            _buildCheckItem(_hasLowercase, 'At least one lowercase letter'),
+                            _buildCheckItem(_hasUppercase, 'At least one uppercase letter'),
+                            _buildCheckItem(_hasNumber, 'At least one number'),
+                            _buildCheckItem(_hasSpecialChar, 'At least one special character'),
+                          ],
                         ),
                         const SizedBox(height: 25),
+
                         DropdownButtonFormField<String>(
                           value: _selectedRole,
                           decoration: InputDecoration(
@@ -242,19 +354,30 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                           onChanged: (v) => setState(() => _selectedRole = v!),
                         ),
                         const SizedBox(height: 40),
+
                         _isLoading
                             ? Center(child: CircularProgressIndicator(color: colors.primary))
-                            : MyButton(
-                                onTap: _register,
-                                text: localizations.register,
-                                color: colors.primary,
-                                textColor: Colors.white,
-                                borderRadius: 25,
-                                height: 55,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
+                            : ElevatedButton(
+                                onPressed: _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colors.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  minimumSize: const Size(double.infinity, 55),
+                                ),
+                                child: Text(
+                                  localizations.register,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
+
                         const SizedBox(height: 40),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -288,6 +411,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
           ),
         ],
       ),
-    );
-  }
+   );
+}
 }
