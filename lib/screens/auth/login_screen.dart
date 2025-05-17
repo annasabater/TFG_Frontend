@@ -21,6 +21,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
   bool _obscurePassword = true;
+  String? _errorMessage;  // Aquí almacenamos el error para mostrarlo en pantalla
 
   @override
   void initState() {
@@ -38,14 +39,20 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final loc = AppLocalizations.of(context)!;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError(context, loc.emptyFieldsError);
+      setState(() {
+        _errorMessage = loc.emptyFieldsError;
+      });
       return;
     }
 
     try {
       final result = await AuthService().login(email, password);
       if (result.containsKey('error')) {
-        if (context.mounted) _showError(context, result['error'] as String);
+        if (context.mounted) {
+          setState(() {
+            _errorMessage = result['error'] as String;
+          });
+        }
         return;
       }
 
@@ -56,25 +63,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         context.go('/');
       }
     } catch (e) {
-      if (context.mounted) _showError(context, e.toString());
+      if (context.mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     }
-  }
-
-  void _showError(BuildContext ctx, String msg) {
-    final loc = AppLocalizations.of(ctx)!;
-    showDialog(
-      context: ctx,
-      builder: (_) => AlertDialog(
-        title: Text(loc.error),
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(loc.ok),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -191,7 +185,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+                        // Aquí mostramos el error si existe
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: colors.error,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         MyButton(
                           onTap: () => _signUserIn(context),
                           text: loc.login,
