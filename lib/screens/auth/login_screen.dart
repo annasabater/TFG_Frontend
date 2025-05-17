@@ -20,6 +20,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -83,94 +84,114 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final isWide = MediaQuery.of(context).size.width > 700;
 
     return Scaffold(
+      backgroundColor: colors.background,
       body: Row(
         children: [
           if (isWide)
             Expanded(
               flex: 3,
               child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 1500),
                 opacity: _visible ? 1.0 : 0.0,
                 curve: Curves.easeInOut,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Image.asset(
-                      'assets/barcelona2.png',
-                      fit: BoxFit.cover,
-                      height: double.infinity,
-                      width: double.infinity,
-                    ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  child: Image.asset(
+                    'assets/barcelona2.png',
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    width: double.infinity,
                   ),
                 ),
               ),
             ),
           Expanded(
-            flex: 4,
+            flex: 3,
             child: Center(
               child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 1500),
                 opacity: _visible ? 1.0 : 0.0,
                 curve: Curves.easeInOut,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(30),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 420),
                     padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withOpacity(0.97),
                       borderRadius: BorderRadius.circular(35),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
-                          blurRadius: 40,
+                          blurRadius: 30,
                           offset: const Offset(0, 15),
                         ),
                       ],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Image.asset('assets/logo_skynet.png', width: 100, height: 100),
-                        const SizedBox(height: 25),
-                        Text(
-                          loc.welcome,
-                          style: TextStyle(
-                            color: colors.primary,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
+                        Center(
+                          child: Image.asset(
+                            'assets/logo_skynet.png',
+                            width: 100,
+                            height: 100,
                           ),
                         ),
                         const SizedBox(height: 30),
+                        Text(
+                          loc.welcome,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colors.primary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        // Campo email con tu MyTextfield personalizado
                         MyTextfield(
                           controller: emailController,
                           hintText: loc.email,
                           obscureText: false,
                           prefixIcon: Icons.email_outlined,
                         ),
-                        const SizedBox(height: 20),
-                        MyTextfield(
+                        const SizedBox(height: 25),
+                        // Campo contraseña con TextField estándar para usar suffixIcon
+                        TextField(
                           controller: passwordController,
-                          hintText: loc.password,
-                          obscureText: true,
-                          prefixIcon: Icons.lock_outline,
-                        ),
-                        const SizedBox(height: 15),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              loc.forgotPassword,
-                              style: TextStyle(
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            hintText: loc.password,
+                            prefixIcon: Icon(Icons.lock_outline, color: colors.onSurfaceVariant),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
                                 color: colors.primary.withOpacity(0.7),
-                                fontWeight: FontWeight.w600,
                               ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            filled: true,
+                            fillColor: colors.surface.withOpacity(0.05),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide.none,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 40),
                         MyButton(
                           onTap: () => _signUserIn(context),
                           text: loc.login,
@@ -181,7 +202,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 40),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
