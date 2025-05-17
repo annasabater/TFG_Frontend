@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 280,
                   width: double.infinity,
                   child: Image.asset(
-                    'assets/drones_banner.jpg',
+                    'assets/drones_banner.webp',
                     fit: BoxFit.cover,
                   ),
                 ),

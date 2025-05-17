@@ -25,6 +25,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
   final List<String> _roles = ['Administrador', 'Usuario', 'Empresa', 'Gobierno'];
   String _selectedRole = 'Usuario';
 
+  // Variables para validar la contraseña
+  bool _hasMinLength = false;  // mínimo 8 caracteres
+  bool _hasMaxLength = false;  // máximo 20 caracteres
+  bool _hasLowercase = false;
+  bool _hasUppercase = false;
+  bool _hasNumber = false;
+  bool _hasSpecialChar = false;
+
   late AnimationController _animController;
   late Animation<double> _fadeInAnim;
 
@@ -39,6 +47,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     );
     _fadeInAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
     _animController.forward();
+
+    _passwordCtrl.addListener(() {
+      _validatePassword(_passwordCtrl.text);
+    });
   }
 
   @override
@@ -48,6 +60,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
+  }
+
+  void _validatePassword(String pw) {
+    setState(() {
+      _hasMinLength = pw.length >= 8;
+      _hasMaxLength = pw.length <= 20;
+      _hasLowercase = RegExp(r'[a-z]').hasMatch(pw);
+      _hasUppercase = RegExp(r'[A-Z]').hasMatch(pw);
+      _hasNumber = RegExp(r'[0-9]').hasMatch(pw);
+      _hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(pw);
+    });
   }
 
   Future<void> _loadUser() async {
@@ -66,6 +89,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     setState(() => _loadingUser = false);
   }
 
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> _update() async {
     final name = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
@@ -74,6 +102,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
 
     if (name.isEmpty || email.isEmpty) {
       return _showError('El nom i email son obligatoris.');
+    }
+
+    if (!_isValidEmail(email)) {
+      return _showError('El email no tiene un formato válido.');
+    }
+
+    // Contraseña debe cumplir todas las condiciones
+    if (pw.isNotEmpty && !(_hasMinLength && _hasMaxLength && _hasLowercase && _hasUppercase && _hasNumber && _hasSpecialChar)) {
+      return _showError('La contraseña no cumple todos los requisitos');
     }
 
     setState(() => _isUpdating = true);
@@ -126,6 +163,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     } else {
       _showError(res['error'] ?? 'No se pudo eliminar la cuenta');
     }
+  }
+
+  Widget _buildCheckItem(bool conditionMet, String text) {
+    return Row(
+      children: [
+        Icon(
+          conditionMet ? Icons.check_circle : Icons.cancel,
+          color: conditionMet ? Colors.green : Colors.red,
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: TextStyle(color: conditionMet ? Colors.green : Colors.red)),
+      ],
+    );
   }
 
   Widget _buildProfileImage() {
@@ -251,6 +302,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
                         hintText: 'Nova contrasenya',
                         obscureText: true,
                         prefixIcon: Icons.lock_outline,
+                      ),
+                      const SizedBox(height: 10),
+
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildCheckItem(_hasMinLength, 'Min 8 characters'),
+                          _buildCheckItem(_hasMaxLength, 'Max 20 characters'),
+                          _buildCheckItem(_hasLowercase, 'At least one lowercase letter'),
+                          _buildCheckItem(_hasUppercase, 'At least one uppercase letter'),
+                          _buildCheckItem(_hasNumber, 'At least one number'),
+                          _buildCheckItem(_hasSpecialChar, 'At least one special character'),
+                        ],
                       ),
                       const SizedBox(height: 20),
 
