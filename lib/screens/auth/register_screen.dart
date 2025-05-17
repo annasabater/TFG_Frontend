@@ -1,13 +1,8 @@
-//lib/screens/auth/register_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:SkyNet/components/my_textfield.dart';
 import 'package:SkyNet/components/my_button.dart';
 import 'package:SkyNet/services/auth_service.dart';
-import 'package:SkyNet/provider/users_provider.dart';
-import 'package:SkyNet/models/user.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -17,11 +12,13 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMixin {
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _visible = false;
+  String _selectedRole = 'Usuario';
 
   static const _allRoles = [
     'Administrador',
@@ -29,12 +26,16 @@ class _RegisterPageState extends State<RegisterPage> {
     'Empresa',
     'Gobierno',
   ];
-  String _selectedRole = 'Usuario';
 
   @override
   void initState() {
     super.initState();
     _emailCtrl.addListener(_refreshRoles);
+    Future.delayed(const Duration(milliseconds: 200), () {
+      setState(() {
+        _visible = true;
+      });
+    });
   }
 
   @override
@@ -101,53 +102,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final localizations = AppLocalizations.of(context)!;
-    final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
-    final roles  = isUpc
-        ? _allRoles
-        : _allRoles.where((r) => r != 'Administrador').toList();
-    if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(localizations.register)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            MyTextfield(controller: _nameCtrl,  hintText: localizations.username,    obscureText: false),
-            const SizedBox(height: 12),
-            MyTextfield(controller: _emailCtrl, hintText: localizations.email,  obscureText: false),
-            const SizedBox(height: 12),
-            MyTextfield(controller: _passwordCtrl, hintText: localizations.password, obscureText: true),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedRole,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: colors.surfaceVariant,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                labelText: localizations.role,
-              ),
-              items: roles.map((r) => DropdownMenuItem(
-                value: r,
-                child: Text(_getRoleTranslation(r)),
-              )).toList(),
-              onChanged: (v) => setState(() => _selectedRole = v!),
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-              ? CircularProgressIndicator(color: colors.primary)
-              : MyButton(onTap: _register, text: localizations.register),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showError(String msg) {
     final localizations = AppLocalizations.of(context)!;
     showDialog(
@@ -159,6 +113,178 @@ class _RegisterPageState extends State<RegisterPage> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(localizations.ok),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
+    final isWide = MediaQuery.of(context).size.width > 700;
+
+    final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
+    final roles  = isUpc
+        ? _allRoles
+        : _allRoles.where((r) => r != 'Administrador').toList();
+    if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
+
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: Row(
+        children: [
+          if (isWide)
+            Expanded(
+              flex: 3,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 1500),
+                opacity: _visible ? 1.0 : 0.0,
+                curve: Curves.easeInOut,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  child: Image.asset(
+                    'assets/barcelona.jpg',
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    width: double.infinity,
+                  ),
+                ),
+              ),
+            ),
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 1500),
+                opacity: _visible ? 1.0 : 0.0,
+                curve: Curves.easeInOut,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.97),
+                      borderRadius: BorderRadius.circular(35),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 30,
+                          offset: const Offset(0, 15),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Image.asset(
+                            'assets/logo_skynet.png',
+                            width: 100,
+                            height: 100,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        Text(
+                          localizations.register,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colors.primary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        MyTextfield(
+                          controller: _nameCtrl,
+                          hintText: localizations.username,
+                          obscureText: false,
+                          prefixIcon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 25),
+                        MyTextfield(
+                          controller: _emailCtrl,
+                          hintText: localizations.email,
+                          obscureText: false,
+                          prefixIcon: Icons.email_outlined,
+                        ),
+                        const SizedBox(height: 25),
+                        MyTextfield(
+                          controller: _passwordCtrl,
+                          hintText: localizations.password,
+                          obscureText: true,
+                          prefixIcon: Icons.lock_outline,
+                        ),
+                        const SizedBox(height: 25),
+                        DropdownButtonFormField<String>(
+                          value: _selectedRole,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: colors.surface.withOpacity(0.05),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            labelText: localizations.role,
+                          ),
+                          items: roles.map((r) => DropdownMenuItem(
+                            value: r,
+                            child: Text(_getRoleTranslation(r)),
+                          )).toList(),
+                          onChanged: (v) => setState(() => _selectedRole = v!),
+                        ),
+                        const SizedBox(height: 40),
+                        _isLoading
+                            ? Center(child: CircularProgressIndicator(color: colors.primary))
+                            : MyButton(
+                                onTap: _register,
+                                text: localizations.register,
+                                color: colors.primary,
+                                textColor: Colors.white,
+                                borderRadius: 25,
+                                height: 55,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        const SizedBox(height: 40),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              localizations.login,
+                              style: TextStyle(
+                                color: colors.onSurfaceVariant,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => context.go('/login'),
+                              child: Text(
+                                localizations.login,
+                                style: TextStyle(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
