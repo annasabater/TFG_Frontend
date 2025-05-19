@@ -60,7 +60,7 @@ class SocketService {
   /// Inicia el socket de espera (/jocs)
   static Future<IO.Socket> initWaitingSocket() async {
     await _ensureEnvLoaded();
-    if (_socket != null && _socket!.connected) return _socket!;
+    if (_socket != null) return _socket!; 
 
     final sid = currentSessionId;
     final email = currentUserEmail;
