@@ -1,5 +1,3 @@
-// lib/screens/chat_screen.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -40,12 +38,9 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
-      setState(() {
-        _currentUser = user;
-        _loadingUser = false;
-      });
+      _currentUser = user;
+      setState(() => _loadingUser = false);
 
-      SocketService.setUserEmail(user.email);
       await SocketService.initChatSocket();
       SocketService.onNewMessage(_handleNewMessage);
 
@@ -109,23 +104,36 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty || _currentUser == null) return;
 
+    final msg = _ChatMessage(
+      senderId: _currentUser!.id!,
+      text: text,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      _messages.add(msg);
+    });
+    _scrollToBottom();
+
     SocketService.sendChatMessage(
-      senderId:   _currentUser!.id!,
+      senderId: _currentUser!.id!,
       receiverId: widget.userId,
-      content:    text,
+      content: text,
     );
 
     _controller.clear();
   }
 
   void _scrollToBottom() {
-    if (_scroll.hasClients) {
-      _scroll.animateTo(
-        _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -138,7 +146,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Mientras determinamos si hay usuario
     if (_loadingUser) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -152,7 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
-    // Ya tenemos usuario: construimos chat
     final peer = _provider.users.firstWhere(
       (u) => u.id == widget.userId,
       orElse: () => User(id: '', userName: 'Unknown', email: '', role: ''),
@@ -201,7 +207,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: const InputDecoration(
-                      hintText: 'Escribe un mensaje...',
+                      hintText: 'Escribe un mensaje...'
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
