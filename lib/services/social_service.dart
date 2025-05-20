@@ -193,6 +193,22 @@ class SocialService {
     return List<Map<String, dynamic>>.from(jsonDecode(res.body));
   }
 
+  /* ══════ Obtener - Actualizar - Borrar un post ══════ */
+
+static Future<Post> getPostById(String id) async {
+  final uid = AuthService().currentUser?['_id'];
+  final res = await http.get(Uri.parse('$_base/posts/$id'),
+      headers: await _headers());
+  _throwIfNot200(res);
+  return Post.fromJson(jsonDecode(res.body), uid);
+}
+
+static Future<void> deletePost(String id) async {
+  final res = await http.delete(Uri.parse('$_base/posts/$id'),
+      headers: await _headers());
+  _throwIfNot200(res);
+}
+
   /* ═════════════ Posts por usuario ═════════════ */
   static Future<List<Post>> getPostsByUser(
     String userId, {

@@ -11,9 +11,10 @@ import 'package:SkyNet/screens/social/explore_screen.dart';
 import 'package:SkyNet/screens/social/create_post_screen.dart';
 import 'package:SkyNet/screens/social/post_detail_screen.dart';
 import 'package:SkyNet/screens/social/user_profile_screen.dart';
+import 'package:SkyNet/screens/social/edit_post_screen.dart';   // ← NUEVO
 import 'package:SkyNet/screens/edit_profile_screen.dart';
 
-/* ──────────── Otras pantallas existentes ──────────── */
+/* ──────────── Otras pantallas ──────────── */
 import 'package:SkyNet/screens/home_screen.dart';
 import 'package:SkyNet/screens/details_screen.dart';
 import 'package:SkyNet/screens/editar_screen.dart';
@@ -32,30 +33,42 @@ import 'package:SkyNet/screens/store/add_drone_screen.dart';
 
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/models/drone.dart';
+import 'package:SkyNet/models/post.dart';                       // ← NUEVO
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: AuthService().isLoggedIn ? '/feed' : '/login',
+  initialLocation: AuthService().isLoggedIn ? '/explore' : '/login',
   routes: [
-    /* ─────────── Login & Register ─────────── */
+    /* ───────── Login & Register ───────── */
     GoRoute(path: '/login',    builder: (_, __) => LoginPage()),
     GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
 
-    /* ─────────── Shell/Home (opcional) ─────────── */
+    /* ───────── Home (shell) ───────── */
     GoRoute(
       path: '/',
-      builder: (_, __) => const HomeScreen(),   // si tu Home contiene el BottomNav
+      builder: (_, __) => const HomeScreen(),
       routes: [
-        /* ==== 1) Social ==== */
+        /* ========== SOCIAL ========== */
         GoRoute(path: 'feed',    builder: (_, __) => const FeedScreen()),
         GoRoute(path: 'explore', builder: (_, __) => const ExploreScreen()),
         GoRoute(path: 'create',  builder: (_, __) => const CreatePostScreen()),
         GoRoute(
           path: 'posts/:pid',
-          builder: (ctx, st) => PostDetailScreen(postId: st.pathParameters['pid']!),
+          builder: (ctx, st) =>
+              PostDetailScreen(postId: st.pathParameters['pid']!),
+          routes: [
+            /* ---------- EDIT POST ---------- */
+            GoRoute(
+              path: 'edit',
+              builder: (ctx, st) => EditPostScreen(
+                post: st.extra! as Post,               // recibe el Post
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: 'u/:uid',
-          builder: (ctx, st) => UserProfileScreen(userId: st.pathParameters['uid']!),
+          builder: (ctx, st) =>
+              UserProfileScreen(userId: st.pathParameters['uid']!),
         ),
 
         /* Perfil propio */
@@ -63,16 +76,18 @@ final GoRouter appRouter = GoRouter(
           path: 'profile',
           builder: (_, __) => const PerfilScreen(),
           routes: [
-            GoRoute(path: 'edit', builder: (_, __) => const EditProfileScreen()),
+            GoRoute(path: 'edit',
+                builder: (_, __) => const EditProfileScreen()),
           ],
         ),
 
-        /* ==== 2) Resto de rutas que ya tenías ==== */
+        /* ========== RESTO DE RUTAS ========== */
         GoRoute(
           path: 'details',
           builder: (_, __) => const DetailsScreen(),
           routes: [
-            GoRoute(path: 'imprimir', builder: (_, __) => const ImprimirScreen()),
+            GoRoute(path: 'imprimir',
+                builder: (_, __) => const ImprimirScreen()),
           ],
         ),
         GoRoute(path: 'editar', builder: (_, __) => const EditarScreen()),
@@ -83,13 +98,13 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: 'open/:sessionId',
-              builder: (ctx, st) =>
-                  WaitingRoomPage(sessionId: st.pathParameters['sessionId']!),
+              builder: (ctx, st) => WaitingRoomPage(
+                  sessionId: st.pathParameters['sessionId']!),
             ),
             GoRoute(
               path: 'control/:sessionId',
-              builder: (ctx, st) =>
-                  DroneControlPage(sessionId: st.pathParameters['sessionId']!),
+              builder: (ctx, st) => DroneControlPage(
+                  sessionId: st.pathParameters['sessionId']!),
             ),
           ],
         ),
@@ -98,7 +113,10 @@ final GoRouter appRouter = GoRouter(
           path: 'store',
           builder: (_, __) => const DroneStoreScreen(),
           routes: [
-            GoRoute(path: 'add', name: 'addDrone', builder: (_, __) => const AddDroneScreen()),
+            GoRoute(
+                path: 'add',
+                name: 'addDrone',
+                builder: (_, __) => const AddDroneScreen()),
             GoRoute(
               path: 'dron/:id',
               name: 'droneDetail',
@@ -111,7 +129,8 @@ final GoRouter appRouter = GoRouter(
           path: 'chat',
           builder: (_, __) => const ChatListScreen(),
           routes: [
-            GoRoute(path: 'search', builder: (_, __) => const SearchUserScreen()),
+            GoRoute(path: 'search',
+                builder: (_, __) => const SearchUserScreen()),
             GoRoute(
               path: ':userId',
               builder: (ctx, st) =>
@@ -123,4 +142,3 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
-

@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -61,6 +60,8 @@ class MyApp extends StatelessWidget {
           title: 'S K Y N E T',
           debugShowCheckedModeBanner: false,
           routerConfig: appRouter,
+          // Ahora arrancamos directamente en Explore en vez de Feed:
+          // esto lo configuras en app_router.dart con initialLocation: '/explore'
           themeMode: themeProv.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           locale: langProv.currentLocale,
           localizationsDelegates: const [
