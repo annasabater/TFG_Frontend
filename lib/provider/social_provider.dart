@@ -1,16 +1,16 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';      // WidgetsBinding
 import '../models/post.dart';
 import '../services/social_service.dart';
 
-/// Provider que gestiona el estado del feed y de explore
-class SocialProvider with ChangeNotifier {
-  /* ─────────────── FEED (gente que sigo) ─────────────── */
+/// Provider que gestiona Feed y Explore.
+class SocialProvider extends ChangeNotifier {
+  /* ═════════════ FEED ═════════════ */
   final List<Post> _feed = [];
-  int _feedPage = 1;
-  bool _feedLoading = false;
+  int  _feedPage        = 1;
+  bool _feedLoading     = false;
 
-  List<Post> get feed => _feed;
-  bool get feedLoading => _feedLoading;
+  List<Post> get feed        => List.unmodifiable(_feed);
+  bool       get feedLoading => _feedLoading;
 
   Future<void> loadFeed({bool refresh = false}) async {
     if (_feedLoading) return;
@@ -22,20 +22,25 @@ class SocialProvider with ChangeNotifier {
       _feedPage = 1;
     }
 
-    final fetched = await SocialService.getFeed(page: _feedPage);
-    _feed.addAll(fetched);
-    _feedPage++;
-    _feedLoading = false;
-    notifyListeners();
+    try {
+      final items = await SocialService.getFeed(page: _feedPage);
+      _feed.addAll(items);
+      _feedPage++;
+    } finally {
+      _feedLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
+    }
   }
 
-  /* ─────────────── EXPLORE (todos los posts) ─────────────── */
+  /* ═════════════ EXPLORE ═════════════ */
   final List<Post> _explore = [];
-  int _explorePage = 1;
-  bool _exploreLoading = false;
+  int  _explorePage        = 1;
+  bool _exploreLoading     = false;
 
-  List<Post> get explore => _explore;
-  bool get exploreLoading => _exploreLoading;
+  List<Post> get explore        => List.unmodifiable(_explore);
+  bool       get exploreLoading => _exploreLoading;
 
   Future<void> loadExplore({bool refresh = false}) async {
     if (_exploreLoading) return;
@@ -47,23 +52,32 @@ class SocialProvider with ChangeNotifier {
       _explorePage = 1;
     }
 
-    final fetched = await SocialService.getExplore(page: _explorePage);
-    _explore.addAll(fetched);
-    _explorePage++;
-    _exploreLoading = false;
-    notifyListeners();
+    try {
+      final items = await SocialService.getExplore(page: _explorePage);
+      _explore.addAll(items);
+      _explorePage++;
+    } finally {
+      _exploreLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
+    }
   }
 
-  /* ─────────────── Like / Unlike ─────────────── */
+  /* ═════════════ Like / Unlike (optimista) ═════════════ */
   Future<void> toggleLike(Post p) async {
-    await SocialService.like(p.id);
-    if (p.likedByMe) {
-      p.likedByMe = false;
-      p.likes--;
-    } else {
-      p.likedByMe = true;
-      p.likes++;
-    }
+    // Optimistic UI
+    p.likedByMe ? p.likes-- : p.likes++;
+    p.likedByMe = !p.likedByMe;
     notifyListeners();
+
+    try {
+      await SocialService.like(p.id);
+    } catch (_) {
+      // rollback
+      p.likedByMe ? p.likes-- : p.likes++;
+      p.likedByMe = !p.likedByMe;
+      notifyListeners();
+    }
   }
 }

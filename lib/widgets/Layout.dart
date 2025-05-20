@@ -1,4 +1,3 @@
-// lib/widgets/Layout.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -17,18 +16,17 @@ class LayoutWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usersProv   = context.watch<UserProvider>();
-    final restricted  = usersProv.isRestricted;
-    final admin       = usersProv.isAdmin;
-    final loc         = AppLocalizations.of(context)!;
-    final scheme      = Theme.of(context).colorScheme;
+    final usersProv  = context.watch<UserProvider>();
+    final restricted = usersProv.isRestricted;
+    final admin      = usersProv.isAdmin;
+    final loc        = AppLocalizations.of(context)!;
+    final scheme     = Theme.of(context).colorScheme;
 
-    /* ------------- helpers para saber ruta seleccionada ------------- */
-    bool _isRoute(String r) => GoRouterState.of(context).uri.toString() == r;
-    bool _isSocialRoute() =>
-        _isRoute('/feed') || _isRoute('/explore') || _isRoute('/create');
+    /* helpers */
+    bool isRoute(String r) => GoRouterState.of(context).uri.toString() == r;
+    bool isSocialRoute() =>
+        isRoute('/feed') || isRoute('/explore') || isRoute('/create');
 
-    /* ------------- UI ------------- */
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -36,71 +34,76 @@ class LayoutWrapper extends StatelessWidget {
           const LanguageSelector(),
           Consumer<ThemeProvider>(
             builder: (_, t, __) => IconButton(
-              icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
-              tooltip: t.isDarkMode ? loc.lightMode : loc.darkMode,
+              icon    : Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              tooltip : t.isDarkMode ? loc.lightMode : loc.darkMode,
               onPressed: () => t.toggleTheme(),
             ),
           ),
         ],
       ),
 
-      /* ============== Drawer ============== */
-      drawer: NavigationDrawer(
-        backgroundColor: scheme.surface,
-        children: [
-          _header(scheme),
+      /* ───────── Drawer scrollable ───────── */
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            _header(scheme),
 
-          /* HOME */
-          _navItem(context, loc.home, Icons.home, '/', _isRoute('/')),
+            _navItem(context, loc.home, Icons.home, '/', isRoute('/')),
 
-          /* --------------- SOCIAL MEDIA --------------- */
-          ExpansionTile(
-            initiallyExpanded: _isSocialRoute(),
-            leading: Icon(Icons.people, color: scheme.onSurface),
-            title: Text('Social Media',
+            ExpansionTile(
+              initiallyExpanded: isSocialRoute(),
+              leading: const Icon(Icons.people),
+              title: Text(
+                'Social Media',
                 style: TextStyle(
-                    fontWeight:
-                        _isSocialRoute() ? FontWeight.bold : FontWeight.normal,
-                    color: _isSocialRoute()
-                        ? scheme.primary
-                        : scheme.onSurface)),
-            childrenPadding: const EdgeInsets.only(left: 16),
-            children: [
-              _navItem(context, 'Feed', Icons.dynamic_feed, '/feed',
-                  _isRoute('/feed')),
-              _navItem(context, 'Explorar', Icons.explore, '/explore',
-                  _isRoute('/explore')),
-              _navItem(context, 'Nuevo post', Icons.add_a_photo, '/create',
-                  _isRoute('/create')),
+                  fontWeight: isSocialRoute()
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                  color:
+                      isSocialRoute() ? scheme.primary : scheme.onSurface,
+                ),
+              ),
+              childrenPadding: const EdgeInsets.only(left: 16),
+              children: [
+                _navItem(context, 'Feed', Icons.dynamic_feed, '/feed',
+                    isRoute('/feed')),
+                _navItem(context, 'Explorar', Icons.explore, '/explore',
+                    isRoute('/explore')),
+                _navItem(context, 'Nuevo post', Icons.add_a_photo, '/create',
+                    isRoute('/create')),
+              ],
+            ),
+
+            if (restricted) ...[
+              _navItem(context, loc.games, Icons.sports_esports, '/jocs',
+                  isRoute('/jocs')),
+              _navItem(context, loc.chat, Icons.chat, '/chat',
+                  isRoute('/chat')),
+            ] else ...[
+              _navItem(context, loc.users, Icons.info_outline, '/details',
+                  isRoute('/details')),
+              if (admin)
+                _navItem(context, loc.createUser, Icons.person_add, '/editar',
+                    isRoute('/editar')),
+              if (admin)
+                _navItem(context, loc.deleteUser, Icons.delete_outline,
+                    '/borrar', isRoute('/borrar')),
+              _navItem(context, loc.profile, Icons.account_circle, '/profile',
+                  isRoute('/profile')),
+              _navItem(context, loc.map, Icons.map, '/mapa',
+                  isRoute('/mapa')),
+              _navItem(context, loc.chat, Icons.chat, '/chat',
+                  isRoute('/chat')),
+              _navItem(context, loc.store, Icons.store, '/store',
+                  isRoute('/store')),
             ],
-          ),
 
-          if (restricted) ...[
-            _navItem(context, loc.games, Icons.sports_esports, '/jocs',
-                _isRoute('/jocs')),
-            _navItem(context, loc.chat, Icons.chat, '/chat',
-                _isRoute('/chat')),
-          ] else ...[
-            _navItem(context, loc.users, Icons.info_outline, '/details',
-                _isRoute('/details')),
-            if (admin)
-              _navItem(context, loc.createUser, Icons.person_add, '/editar',
-                  _isRoute('/editar')),
-            if (admin)
-              _navItem(context, loc.deleteUser, Icons.delete_outline, '/borrar',
-                  _isRoute('/borrar')),
-            _navItem(context, loc.profile, Icons.account_circle, '/profile',
-                _isRoute('/profile')),
-            _navItem(context, loc.map, Icons.map, '/mapa', _isRoute('/mapa')),
-            _navItem(context, loc.chat, Icons.chat, '/chat', _isRoute('/chat')),
-            _navItem(context, loc.store, Icons.store, '/store',
-                _isRoute('/store')),
+            const Divider(),
+            if (!restricted) _reloadButton(context, loc),
+            _logoutButton(context, loc),
           ],
-
-          const Divider(),
-          if (!restricted) _reloadButton(context, loc),
-          _logoutButton(context, loc),
-        ],
+        ),
       ),
 
       body: Container(
@@ -110,36 +113,48 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 
-  /* ────────────────── Drawer Header ────────────────── */
+  /* ───────── Drawer Header protegido contra overflow ───────── */
   DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
         decoration: BoxDecoration(color: scheme.primary),
         margin: EdgeInsets.zero,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/logo_skynet.png', width: 80),
-            const SizedBox(height: 8),
-            const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
-            const SizedBox(height: 8),
-            Text('S K Y N E T',
-                style: TextStyle(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 160),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/logo_skynet.png', width: 80),
+                const SizedBox(height: 8),
+                const Icon(Icons.people_alt_rounded,
+                    color: Colors.white, size: 30),
+                const SizedBox(height: 8),
+                Text(
+                  'S K Y N E T',
+                  style: TextStyle(
                     color: scheme.onPrimary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 20)),
-          ],
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 
-  /* ────────────────── Items ────────────────── */
   ListTile _navItem(BuildContext ctx, String title, IconData icon, String route,
       bool selected) {
     final scheme = Theme.of(ctx).colorScheme;
     return ListTile(
-      leading: Icon(icon, color: selected ? scheme.primary : scheme.onSurface),
-      title: Text(title,
-          style: TextStyle(
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              color: selected ? scheme.primary : scheme.onSurface)),
+      leading: Icon(icon,
+          color: selected ? scheme.primary : scheme.onSurface),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          color: selected ? scheme.primary : scheme.onSurface,
+        ),
+      ),
       selected: selected,
       selectedTileColor: scheme.primaryContainer.withOpacity(.30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -150,7 +165,6 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 
-  /* ────────────────── Botones especiales ────────────────── */
   Padding _reloadButton(BuildContext ctx, AppLocalizations loc) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: ElevatedButton.icon(
@@ -158,7 +172,7 @@ class LayoutWrapper extends StatelessWidget {
             ctx.read<UserProvider>().loadUsers();
             Navigator.pop(ctx);
           },
-          icon: const Icon(Icons.refresh),
+          icon : const Icon(Icons.refresh),
           label: Text(loc.reloadUsers),
         ),
       );
@@ -174,7 +188,7 @@ class LayoutWrapper extends StatelessWidget {
               ctx.go('/login');
             }
           },
-          icon: const Icon(Icons.logout),
+          icon : const Icon(Icons.logout),
           label: Text(loc.logout),
         ),
       );
