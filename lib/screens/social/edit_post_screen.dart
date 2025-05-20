@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/post.dart';
+import '../../services/social_service.dart';
 
 class EditPostScreen extends StatelessWidget {
   final Post post;
@@ -23,11 +24,11 @@ class EditPostScreen extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () async {
-                // Llama a tu endpoint PUT /posts/:id aquí
-                Navigator.pop(context);
+                await SocialService.updatePost(post.id, descCtrl.text.trim());
+                if (context.mounted) Navigator.pop(context);
               },
               child: const Text('Guardar cambios'),
-            )
+            ),
           ],
         ),
       ),

@@ -22,10 +22,7 @@ class LayoutWrapper extends StatelessWidget {
     final loc        = AppLocalizations.of(context)!;
     final scheme     = Theme.of(context).colorScheme;
 
-    /* helpers */
     bool isRoute(String r) => GoRouterState.of(context).uri.toString() == r;
-    bool isSocialRoute() =>
-        isRoute('/feed') || isRoute('/explore') || isRoute('/create');
 
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +39,6 @@ class LayoutWrapper extends StatelessWidget {
         ],
       ),
 
-      /* ───────── Drawer scrollable ───────── */
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -51,52 +47,21 @@ class LayoutWrapper extends StatelessWidget {
 
             _navItem(context, loc.home, Icons.home, '/', isRoute('/')),
 
-            ExpansionTile(
-              initiallyExpanded: isSocialRoute(),
-              leading: const Icon(Icons.people),
-              title: Text(
-                'Social Media',
-                style: TextStyle(
-                  fontWeight: isSocialRoute()
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  color:
-                      isSocialRoute() ? scheme.primary : scheme.onSurface,
-                ),
-              ),
-              childrenPadding: const EdgeInsets.only(left: 16),
-              children: [
-                _navItem(context, 'Feed', Icons.dynamic_feed, '/feed',
-                    isRoute('/feed')),
-                _navItem(context, 'Explorar', Icons.explore, '/explore',
-                    isRoute('/explore')),
-                _navItem(context, 'Nuevo post', Icons.add_a_photo, '/create',
-                    isRoute('/create')),
-              ],
-            ),
+            _navItem(context, 'Xarxes Socials', Icons.people, '/xarxes', isRoute('/xarxes')),
 
             if (restricted) ...[
-              _navItem(context, loc.games, Icons.sports_esports, '/jocs',
-                  isRoute('/jocs')),
-              _navItem(context, loc.chat, Icons.chat, '/chat',
-                  isRoute('/chat')),
+              _navItem(context, loc.games, Icons.sports_esports, '/jocs', isRoute('/jocs')),
+              _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
             ] else ...[
-              _navItem(context, loc.users, Icons.info_outline, '/details',
-                  isRoute('/details')),
+              _navItem(context, loc.users, Icons.info_outline, '/details', isRoute('/details')),
               if (admin)
-                _navItem(context, loc.createUser, Icons.person_add, '/editar',
-                    isRoute('/editar')),
+                _navItem(context, loc.createUser, Icons.person_add, '/editar', isRoute('/editar')),
               if (admin)
-                _navItem(context, loc.deleteUser, Icons.delete_outline,
-                    '/borrar', isRoute('/borrar')),
-              _navItem(context, loc.profile, Icons.account_circle, '/profile',
-                  isRoute('/profile')),
-              _navItem(context, loc.map, Icons.map, '/mapa',
-                  isRoute('/mapa')),
-              _navItem(context, loc.chat, Icons.chat, '/chat',
-                  isRoute('/chat')),
-              _navItem(context, loc.store, Icons.store, '/store',
-                  isRoute('/store')),
+                _navItem(context, loc.deleteUser, Icons.delete_outline, '/borrar', isRoute('/borrar')),
+              _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
+              _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
+              _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
+              _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
             ],
 
             const Divider(),
@@ -113,7 +78,6 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 
-  /* ───────── Drawer Header protegido contra overflow ───────── */
   DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
         decoration: BoxDecoration(color: scheme.primary),
         margin: EdgeInsets.zero,
@@ -125,8 +89,7 @@ class LayoutWrapper extends StatelessWidget {
               children: [
                 Image.asset('assets/logo_skynet.png', width: 80),
                 const SizedBox(height: 8),
-                const Icon(Icons.people_alt_rounded,
-                    color: Colors.white, size: 30),
+                const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
                 const SizedBox(height: 8),
                 Text(
                   'S K Y N E T',
@@ -142,12 +105,10 @@ class LayoutWrapper extends StatelessWidget {
         ),
       );
 
-  ListTile _navItem(BuildContext ctx, String title, IconData icon, String route,
-      bool selected) {
+  ListTile _navItem(BuildContext ctx, String title, IconData icon, String route, bool selected) {
     final scheme = Theme.of(ctx).colorScheme;
     return ListTile(
-      leading: Icon(icon,
-          color: selected ? scheme.primary : scheme.onSurface),
+      leading: Icon(icon, color: selected ? scheme.primary : scheme.onSurface),
       title: Text(
         title,
         style: TextStyle(

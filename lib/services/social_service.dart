@@ -209,6 +209,29 @@ static Future<void> deletePost(String id) async {
   _throwIfNot200(res);
 }
 
+static Future<List<Post>> getMyPosts() async {
+  final uid = AuthService().currentUser?['_id'];
+  final res = await http.get(Uri.parse('$_base/posts/mine'), headers: await _headers());
+  _throwIfNot200(res);
+  final data = jsonDecode(res.body) as List;
+  return data.map((x) => Post.fromJson(x, uid)).toList();
+}
+
+static Future<void> updatePost(String postId, String description) async {
+  final res = await http.put(Uri.parse('$_base/posts/$postId'),
+      headers: await _headers(),
+      body: jsonEncode({'description': description}));
+  _throwIfNot200(res);
+}
+
+static Future<List<Post>> getFeedFromFollowing({int page = 1}) async {
+  final uid = AuthService().currentUser?['_id'];
+  final res = await http.get(Uri.parse('$_base/posts/following?page=$page'), headers: await _headers());
+  _throwIfNot200(res);
+  final data = jsonDecode(res.body) as List;
+  return data.map((x) => Post.fromJson(x, uid)).toList();
+}
+
   /* ═════════════ Posts por usuario ═════════════ */
   static Future<List<Post>> getPostsByUser(
     String userId, {

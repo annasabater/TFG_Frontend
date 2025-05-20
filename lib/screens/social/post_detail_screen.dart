@@ -63,7 +63,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         final confirm = await _confirmDelete(context, loc);
                         if (confirm) {
                           await SocialService.deletePost(post.id);
-                          if (mounted) context.pop();
+                          if (mounted) context.go('/profile');
                         }
                         break;
                     }

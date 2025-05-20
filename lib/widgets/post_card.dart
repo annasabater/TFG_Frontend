@@ -3,9 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../models/post.dart';
-import 'video_player_widget.dart';   // wrapper del paquete video_player
+import 'video_player_widget.dart';
 
-/// Tarjeta – estilo Instagram – que se usa tanto en Feed como en Explore
 class PostCard extends StatelessWidget {
   final Post post;
   final VoidCallback onLike;
@@ -27,15 +26,17 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /* ─────────────── Cabecera ─────────────── */
             ListTile(
               leading: CircleAvatar(child: Text(post.authorName[0])),
-              title: Text(post.authorName),
+              title: GestureDetector(
+                onTap: () => context.go('/u/${post.authorId}'),
+                child: Text(
+                  post.authorName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
               subtitle: Text(timeago.format(post.createdAt, locale: 'es')),
-              onTap: () => context.go('/u/${post.authorId}'),
             ),
-
-            /* ─────────────── Media ─────────────── */
             (post.mediaType == 'image')
                 ? Image.network(
                     post.mediaUrl,
@@ -48,8 +49,6 @@ class PostCard extends StatelessWidget {
                     aspectRatio: 16 / 9,
                     child: VideoPlayerWidget(url: post.mediaUrl),
                   ),
-
-            /* ─────────────── Acciones ─────────────── */
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -58,9 +57,7 @@ class PostCard extends StatelessWidget {
                     icon: Icon(
                       post.likedByMe ? Icons.favorite : Icons.favorite_border,
                     ),
-                    color: post.likedByMe
-                        ? Colors.red
-                        : Theme.of(context).iconTheme.color,
+                    color: post.likedByMe ? Colors.red : null,
                     onPressed: onLike,
                   ),
                   Text('${post.likes}'),
@@ -72,8 +69,6 @@ class PostCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            /* ─────────────── Descripción ─────────────── */
             if (post.description?.isNotEmpty ?? false)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

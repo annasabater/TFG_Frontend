@@ -75,12 +75,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           onPressed: _toggleFollow,
                           child: Text(_following ? 'Siguiendo' : 'Seguir'),
                         ),
-                        const SizedBox(height: 8),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.chat),
                           label: const Text('Mensaje'),
-                          onPressed: () =>
-                              context.go('/chat/${widget.userId}'),
+                          onPressed: () => context.go('/chat/${widget.userId}'),
                         ),
                       ],
                     ),

@@ -27,13 +27,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late final String _myUserId;
   late Future<List<Post>> _postsFuture;
 
-  @override
-  void initState() {
-    super.initState();
-    timeago.setLocaleMessages('es', timeago.EsMessages());
-    _myUserId = AuthService().currentUser?['_id'] ?? '';
-    _loadMyPostsFromFeed();
-  }
+@override
+
+void initState() {
+  super.initState();
+  _postsFuture = SocialService.getMyPosts();  // <-- nuevo endpoint que obtenga solo tus posts
+}
+
 
   void _loadMyPostsFromFeed() {
     _postsFuture = SocialService.getFeed(page: 1).then((allPosts) {
