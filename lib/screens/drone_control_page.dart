@@ -44,22 +44,32 @@ class _DroneControlPageState extends State<DroneControlPage> {
   }
 
   void _connectSocket() {
-    final token = SocketService.jwt;
-    _socket = IO.io(
-      '${SocketService.serverUrl}/jocs',
-      {
-        'transports': ['websocket'],
-        'auth': {'token': token},
-        'autoConnect': false,
-      },
-    )..connect();
+  final token = SocketService.jwt;
+  _socket = IO.io(
+    '${SocketService.serverUrl}/jocs',
+    {
+      'transports': ['websocket'],
+      'auth': {'token': token},
+      'autoConnect': false,
+    },
+  )..connect();
 
-    _socket!
-      ..on('connect', (_) {
-        _socket!.emit('join', {'sessionId': widget.sessionId});
-      })
-      ..on('state_update', _handleStateUpdate);
-  }
+  _socket!
+    ..on('connect', (_) {
+      _socket!.emit('join', {'sessionId': widget.sessionId});
+    })
+    ..on('state_update', _handleStateUpdate)
+    ..on('game_ended', (_) {
+      if (!mounted) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        }
+      });
+    });
+}
+
 
   void _handleStateUpdate(dynamic data) {
     final String action = data['action'] ?? '';
