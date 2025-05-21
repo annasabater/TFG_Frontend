@@ -24,10 +24,13 @@ class _DroneControlPageState extends State<DroneControlPage> {
   bool _mapLocked = true;
   double _currentZoom = 19;
 
-  final Map<String, Marker> _droneMarkers = {};
-  final Map<String, Marker> _bulletMarkers = {};
+  final Map<String, Marker> _droneMarkers   = {};
+  final Map<String, Marker> _bulletMarkers  = {};
   final Map<String, Polygon> _fencePolygons = {};
   final Map<String, Polygon> _obstaclePolys = {};
+
+  // Para asignar color definitivo tras recibir fence_add
+  final Map<String, Color> _droneColors = {};
 
   int _bulletUid = 0;
   Map<String, dynamic>? _myTelemetry;
@@ -35,7 +38,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   Timer? _throttleTimer;
   static const double _deadZone = 0.5;
   static const double _maxSpeed = 1.0;
-  static const Duration _throttlePeriod = Duration(milliseconds: 100);
+  static const Duration _period = Duration(milliseconds: 100);
 
   @override
   void initState() {
@@ -44,41 +47,51 @@ class _DroneControlPageState extends State<DroneControlPage> {
   }
 
   void _connectSocket() {
-  final token = SocketService.jwt;
-  _socket = IO.io(
-    '${SocketService.serverUrl}/jocs',
-    {
-      'transports': ['websocket'],
-      'auth': {'token': token},
-      'autoConnect': false,
-    },
-  )..connect();
+    final token = SocketService.jwt;
+    _socket = IO.io(
+      '${SocketService.serverUrl}/jocs',
+      {
+        'transports': ['websocket'],
+        'auth': {'token': token},
+        'autoConnect': false,
+      },
+    )..connect();
 
-  _socket!
-    ..on('connect', (_) {
-      _socket!.emit('join', {'sessionId': widget.sessionId});
-    })
-    ..on('state_update', _handleStateUpdate)
-    ..on('game_ended', (_) {
-      if (!mounted) return;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    _socket!
+      ..on('connect', (_) {
+        _socket!.emit('join', {'sessionId': widget.sessionId});
+      })
+      ..on('waiting', (data) {
+        if (data is Map && data.containsKey('drones')) {
+          for (final email in data['drones']) {
+            if (!_droneMarkers.containsKey(email)) {
+              _droneMarkers[email] = _emptyDroneMarker();
+              _droneColors[email] = _getColorFromEmail(email);
+            }
+          }
+          setState(() {});
         }
+      })
+      ..on('state_update', _handleStateUpdate)
+      ..on('game_ended', (_) {
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (route) => false);
+          }
+        });
       });
-    });
-}
-
+  }
 
   void _handleStateUpdate(dynamic data) {
-    final String action = data['action'] ?? '';
-    final String drone = data['drone'] ?? '';
+    final action  = data['action'] as String? ?? '';
+    final droneId = data['drone']  as String? ?? '';
     final payload = data['payload'] as Map<String, dynamic>? ?? {};
 
     switch (action) {
       case 'telemetry':
-        _updateDrone(drone, payload);
+        _updateDrone(droneId, payload);
         break;
       case 'bullet_create':
       case 'bullet_move':
@@ -88,7 +101,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
         _bulletMarkers.remove(payload['bulletId']);
         break;
       case 'fence_add':
-        _addFence(payload['geometry'], drone);
+        _addFence(payload['geometry'], droneId);
         break;
       case 'fence_remove':
         _fencePolygons.clear();
@@ -97,73 +110,101 @@ class _DroneControlPageState extends State<DroneControlPage> {
         _addObstacle(payload['geometry']);
         break;
       case 'obstacle_remove':
-        _obstaclePolys.clear();
+        final id = (payload['geometry'] as List)
+            .map((pt) => '${pt['lat']}_${pt['lon']}')
+            .join('_');
+        _obstaclePolys.remove(id);
         break;
     }
-
     setState(() {});
   }
 
   void _updateDrone(String id, Map<String, dynamic> p) {
     final lat = p['lat'] as double;
     final lon = p['lon'] as double;
-    final hdg = p['heading'] as num? ?? 0;
+    final hdg = (p['heading'] as num?)?.toDouble() ?? 0.0;
 
-    final marker = Marker(
+    // Usa el color asignado por fence_add o uno por defecto
+    final color = _droneColors[id] ?? _getColorFromEmail(id);
+
+    _droneMarkers[id] = Marker(
       point: LatLng(lat, lon),
       width: 30,
       height: 30,
       child: Transform.rotate(
-        angle: hdg.toDouble() * pi / 180,
-        child: const Icon(Icons.airplanemode_active, color: Colors.red, size: 30),
+        angle: hdg * pi / 180,
+        child: Icon(Icons.airplanemode_active, color: color, size: 30),
       ),
     );
-    _droneMarkers[id] = marker;
-    if (id == SocketService.currentUserEmail) _myTelemetry = p;
+
+    if (id == SocketService.currentUserEmail) {
+      _myTelemetry = p;
+    }
+  }
+
+  Marker _emptyDroneMarker() => Marker(
+        point: LatLng(0, 0),
+        width: 0,
+        height: 0,
+        child: const SizedBox.shrink(),
+      );
+
+  Color _getColorFromEmail(String email) {
+    if (email.contains('rojo'))     return Colors.red;
+    if (email.contains('azul'))     return Colors.blue;
+    if (email.contains('verde'))    return Colors.green;
+    if (email.contains('amarillo')) return Colors.amber;
+    return Colors.grey;
   }
 
   void _updateBullet(Map<String, dynamic> p, {required bool create}) {
-    final id = p['bulletId'] as String;
-    final lat = p['lat'] as double;
-    final lon = p['lon'] as double;
+    final id  = p['bulletId'] as String;
+    final lat = p['lat']      as double;
+    final lon = p['lon']      as double;
 
     _bulletMarkers[id] = Marker(
       point: LatLng(lat, lon),
       width: 12,
       height: 12,
-      child: const Icon(Icons.fiber_manual_record, color: Colors.black, size: 12),
+      child: const Icon(
+        Icons.fiber_manual_record,
+        color: Colors.black,
+        size: 12,
+      ),
     );
+
     if (!create) setState(() {});
   }
 
-  void _addFence(dynamic geometry, String droneEmail) {
+  void _addFence(dynamic geometry, String drone) {
     if (geometry is! List) return;
-
-    final List<LatLng> points = geometry
+    final pts = geometry
         .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
         .toList();
+    final color = _getColorFromEmail(drone);
+    _droneColors[drone] = color;
 
-    Color color = Colors.grey;
-    if (droneEmail.contains('rojo')) color = Colors.red;
-    else if (droneEmail.contains('azul')) color = Colors.blue;
-    else if (droneEmail.contains('amarillo')) color = Colors.amber;
-    else if (droneEmail.contains('verde')) color = Colors.green;
-
-    _fencePolygons[droneEmail] = Polygon(
-      points: points,
+    _fencePolygons[drone] = Polygon(
+      points: pts,
       color: color.withOpacity(0.25),
       borderColor: color,
       borderStrokeWidth: 3,
     );
   }
 
-  void _addObstacle(List geometry) {
-    final String id = 'obs_${_obstaclePolys.length}';
-    final points = geometry.map<LatLng>((pt) => LatLng(pt['lat'], pt['lon'])).toList();
+  void _addObstacle(dynamic geometry) {
+    if (geometry is! List) return;
+    final id = (geometry as List)
+        .map((pt) => '${pt['lat']}_${pt['lon']}')
+        .join('_');
+    final pts = geometry
+        .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
+        .toList();
+
     _obstaclePolys[id] = Polygon(
-      points: points,
+      points: pts,
       color: Colors.black.withOpacity(0.4),
-      borderColor: Colors.black,
+      borderColor: Colors.grey,
       borderStrokeWidth: 1,
     );
   }
@@ -172,14 +213,15 @@ class _DroneControlPageState extends State<DroneControlPage> {
     final mag = sqrt(off.dx * off.dx + off.dy * off.dy);
     if (mag < _deadZone) return;
     if (_throttleTimer?.isActive ?? false) return;
-    _throttleTimer = Timer(_throttlePeriod, () {});
+    _throttleTimer = Timer(_period, () {});
 
     final nx = off.dx / mag;
     final ny = off.dy / mag;
-    final f = ((mag - _deadZone) / (1 - _deadZone)).clamp(0.0, 1.0) * _maxSpeed;
-
-    final payload = stick == 'left' ? {'dx': nx * f, 'dy': ny * f} : {'dz': ny * f};
+    final f  = ((mag - _deadZone) / (1 - _deadZone)).clamp(0.0, 1.0) * _maxSpeed;
     final action = stick == 'left' ? 'move' : 'throttle';
+    final payload = stick == 'left'
+        ? {'dx': nx * f, 'dy': ny * f}
+        : {'dz': ny * f};
 
     _socket!.emit('control', {
       'sessionId': widget.sessionId,
@@ -199,26 +241,30 @@ class _DroneControlPageState extends State<DroneControlPage> {
     });
   }
 
-  Widget _buildMap() {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        center: LatLng(41.2764478, 1.9886568),
-        zoom: _currentZoom,
-        interactiveFlags: _mapLocked ? InteractiveFlag.none : InteractiveFlag.all,
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          subdomains: const ['server'],
-          userAgentPackageName: 'com.example.seminari_flutter',
+  Widget _buildMap() => FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          center: LatLng(41.2764478, 1.9886568),
+          zoom: _currentZoom,
+          interactiveFlags:
+              _mapLocked ? InteractiveFlag.none : InteractiveFlag.all,
         ),
-        if (_fencePolygons.isNotEmpty) PolygonLayer(polygons: _fencePolygons.values.toList()),
-        if (_obstaclePolys.isNotEmpty) PolygonLayer(polygons: _obstaclePolys.values.toList()),
-        MarkerLayer(markers: [..._droneMarkers.values, ..._bulletMarkers.values]),
-      ],
-    );
-  }
+        children: [
+          TileLayer(
+            urlTemplate:
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            userAgentPackageName: 'com.example.seminari_flutter',
+          ),
+          if (_fencePolygons.isNotEmpty)
+            PolygonLayer(polygons: _fencePolygons.values.toList()),
+          if (_obstaclePolys.isNotEmpty)
+            PolygonLayer(polygons: _obstaclePolys.values.toList()),
+          MarkerLayer(markers: [
+            ..._droneMarkers.values,
+            ..._bulletMarkers.values
+          ]),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +287,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
         child: Stack(
           children: [
             if (_showMap) Positioned.fill(child: _buildMap()),
-
             Positioned(
               top: 16,
               left: 16,
@@ -250,7 +295,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 onPressed: () => setState(() => _showMap = !_showMap),
               ),
             ),
-
             if (_showMap) ...[
               Positioned(
                 top: 70,
@@ -261,7 +305,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
                   onPressed: () {
                     setState(() {
                       _currentZoom += 1;
-                      _mapController.move(_mapController.center, _currentZoom);
+                      _mapController.move(
+                          _mapController.center, _currentZoom);
                     });
                   },
                   child: const Icon(Icons.add),
@@ -276,7 +321,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
                   onPressed: () {
                     setState(() {
                       _currentZoom -= 1;
-                      _mapController.move(_mapController.center, _currentZoom);
+                      _mapController.move(
+                          _mapController.center, _currentZoom);
                     });
                   },
                   child: const Icon(Icons.remove),
@@ -291,13 +337,12 @@ class _DroneControlPageState extends State<DroneControlPage> {
                   onPressed: () {
                     setState(() => _mapLocked = !_mapLocked);
                   },
-                  child: Icon(_mapLocked ? Icons.lock : Icons.lock_open),
+                  child:
+                      Icon(_mapLocked ? Icons.lock : Icons.lock_open),
                 ),
               ),
             ],
-
             telemetryLabel,
-
             Positioned(
               top: 30,
               right: 16,
@@ -311,13 +356,13 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 ],
               ),
             ),
-
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 40),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceEvenly,
                   children: [
                     _joystick('left'),
                     _joystick('right'),
@@ -361,7 +406,10 @@ class _DroneControlPageState extends State<DroneControlPage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
+              BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6,
+                  offset: Offset(0, 3))
             ],
           ),
           child: Padding(
@@ -375,6 +423,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   void dispose() {
     _socket
       ?..off('state_update')
+      ..off('waiting')
       ..dispose();
     _throttleTimer?.cancel();
     super.dispose();

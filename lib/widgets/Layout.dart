@@ -61,9 +61,15 @@ class LayoutWrapper extends StatelessWidget {
               _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
               _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
               _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
+              _navItem(
+                context,
+                loc.spectateGames,          
+                Icons.visibility,
+                '/jocs/spectate',
+                isRoute('/jocs/spectate'),
+              ),
               _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
             ],
-
             const Divider(),
             if (!restricted) _reloadButton(context, loc),
             _logoutButton(context, loc),
