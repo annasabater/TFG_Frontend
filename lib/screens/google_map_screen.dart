@@ -21,6 +21,7 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   String? _searchError;
+  bool _mapReady = false;
   
   // Ubicación inicial del mapa (Barcelona)
   static const CameraPosition _initialPosition = CameraPosition(
@@ -31,22 +32,35 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar datos del mapa, como marcadores, zonas, etc.
-    _loadMapData();
-    _getCurrentLocation();
+    // Verificar si tenemos la API key
+    final apiKey = _apiKey;
+    if (apiKey.isEmpty) {
+      setState(() {
+        _searchError = 'No se encontró la clave API de Google Maps. Asegúrate de configurar el archivo .env';
+      });
+    } else {
+      // Cargamos datos después de un delay para dar tiempo a que Google Maps se inicialice
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _loadMapData();
+        _getCurrentLocation();
+      });
+    }
   }
 
   void _loadMapData() {
-    // Aquí cargarías los marcadores, polígonos, etc. desde tu backend o servicio
-    setState(() {
-      _markers.add(
-        const Marker(
-          markerId: MarkerId('eetac'),
-          position: LatLng(41.2757, 1.9881),
-          infoWindow: InfoWindow(title: 'EETAC', snippet: 'Escuela de ingeniería'),
-        ),
-      );
-    });
+    try {
+      setState(() {
+        _markers.add(
+          const Marker(
+            markerId: MarkerId('eetac'),
+            position: LatLng(41.2757, 1.9881),
+            infoWindow: InfoWindow(title: 'EETAC', snippet: 'Escuela de ingeniería'),
+          ),
+        );
+      });
+    } catch (e) {
+      print('Error al cargar datos del mapa: $e');
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -92,26 +106,35 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
       // Añadir un marcador para la ubicación actual
       final LatLng currentLatLng = LatLng(position.latitude, position.longitude);
       
-      setState(() {
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('currentLocation'),
-            position: currentLatLng,
-            infoWindow: const InfoWindow(title: 'Mi ubicación'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          ),
-        );
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          // Eliminar marcador anterior si existe
+          _markers.removeWhere((marker) => marker.markerId.value == 'currentLocation');
+          
+          _markers.add(
+            Marker(
+              markerId: const MarkerId('currentLocation'),
+              position: currentLatLng,
+              infoWindow: const InfoWindow(title: 'Mi ubicación'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            ),
+          );
+          _isLoading = false;
+        });
 
-      // Mover la cámara a la ubicación actual
-      _controller?.animateCamera(CameraUpdate.newLatLngZoom(currentLatLng, 15));
-      
+        // Mover la cámara a la ubicación actual
+        if (_controller != null && _mapReady) {
+          _controller!.animateCamera(CameraUpdate.newLatLngZoom(currentLatLng, 15));
+        }
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _searchError = 'Error al obtener la ubicación: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _searchError = 'Error al obtener la ubicación: $e';
+        });
+      }
+      print('Error al obtener ubicación: $e');
     }
   }
 
@@ -126,6 +149,14 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
     try {
       // Usamos la API de geocodificación de Google Maps
       final apiKey = _apiKey;
+      if (apiKey.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _searchError = 'No se encontró la clave API de Google Maps';
+        });
+        return;
+      }
+      
       final response = await http.get(
         Uri.parse(
           'https://maps.googleapis.com/maps/api/geocode/json?address=$query&key=$apiKey'
@@ -144,44 +175,54 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
           final latLng = LatLng(lat, lng);
           
           // Añadimos un marcador para el lugar buscado
-          setState(() {
-            // Eliminamos marcadores anteriores de búsqueda
-            _markers.removeWhere((marker) => marker.markerId.value == 'searchResult');
-            
-            _markers.add(
-              Marker(
-                markerId: const MarkerId('searchResult'),
-                position: latLng,
-                infoWindow: InfoWindow(
-                  title: result['formatted_address'],
+          if (mounted) {
+            setState(() {
+              // Eliminamos marcadores anteriores de búsqueda
+              _markers.removeWhere((marker) => marker.markerId.value == 'searchResult');
+              
+              _markers.add(
+                Marker(
+                  markerId: const MarkerId('searchResult'),
+                  position: latLng,
+                  infoWindow: InfoWindow(
+                    title: result['formatted_address'],
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
                 ),
-                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-              ),
-            );
+              );
+              
+              _isLoading = false;
+            });
             
-            _isLoading = false;
-          });
-          
-          // Movemos la cámara al lugar buscado
-          _controller?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
-          
+            // Movemos la cámara al lugar buscado
+            if (_controller != null && _mapReady) {
+              _controller!.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+            }
+          }
         } else {
-          setState(() {
-            _isLoading = false;
-            _searchError = 'No se encontraron resultados';
-          });
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _searchError = 'No se encontraron resultados';
+            });
+          }
         }
       } else {
-        setState(() {
-          _isLoading = false;
-          _searchError = 'Error en la búsqueda: ${response.statusCode}';
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _searchError = 'Error en la búsqueda: ${response.statusCode}';
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _searchError = 'Error en la búsqueda: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _searchError = 'Error en la búsqueda: $e';
+        });
+      }
+      print('Error en la búsqueda: $e');
     }
   }
 
@@ -243,6 +284,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
                   mapType: MapType.normal,
                   onMapCreated: (GoogleMapController controller) {
                     _controller = controller;
+                    setState(() {
+                      _mapReady = true;
+                    });
                   },
                 ),
                 if (_isLoading)
@@ -266,7 +310,9 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
           const SizedBox(height: 16),
           FloatingActionButton(
             onPressed: () {
-              _controller?.animateCamera(CameraUpdate.newCameraPosition(_initialPosition));
+              if (_controller != null && _mapReady) {
+                _controller!.animateCamera(CameraUpdate.newCameraPosition(_initialPosition));
+              }
             },
             tooltip: 'Centro del mapa',
             child: const Icon(Icons.center_focus_strong),

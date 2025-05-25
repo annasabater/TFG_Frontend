@@ -19,6 +19,8 @@ class _MapaScreenState extends State<MapaScreen> {
   LatLng? _currentPosition;
   bool _loading = true;
   String? _error;
+  final MapController _mapController = MapController();
+  bool _mapInitialized = false;
 
   @override
   void initState() {
@@ -26,21 +28,31 @@ class _MapaScreenState extends State<MapaScreen> {
     _getLocation();
   }
 
-  _getLocation() async {
-  setState(() => _loading = true);
-  try {
-    final latLng = await getCurrentPosition();
-    setState(() {
-      _currentPosition = latLng as LatLng?;
-      _loading = false;
-    });
-  } catch (e) {
-    setState(() {
-      _error = 'Error obteniendo ubicación: $e';
-      _loading = false;
-    });
+  Future<void> _getLocation() async {
+    setState(() => _loading = true);
+    try {
+      final latLng = await getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentPosition = latLng as LatLng?;
+          _loading = false;
+        });
+        
+        // Centrar el mapa en la ubicación actual
+        if (_currentPosition != null && _mapInitialized) {
+          _mapController.move(_currentPosition!, 15);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Error obteniendo ubicación: $e';
+          _loading = false;
+        });
+      }
+      print('Error obteniendo ubicación: $e');
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -51,14 +63,26 @@ class _MapaScreenState extends State<MapaScreen> {
           : _error != null
               ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
               : FlutterMap(
+                  mapController: _mapController,
                   options: MapOptions(
-                    center: _currentPosition,
+                    center: _currentPosition ?? const LatLng(41.3851, 2.1734), // Barcelona por defecto
                     zoom: 15,
+                    onMapReady: () {
+                      setState(() {
+                        _mapInitialized = true;
+                      });
+                      if (_currentPosition != null) {
+                        _mapController.move(_currentPosition!, 15);
+                      }
+                    },
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      subdomains: const ['a', 'b', 'c'],
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      // No usar subdominios con OSM para evitar advertencias
+                      // subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.example.SkyNet',
+                      tileProvider: NetworkTileProvider(),
                     ),
                     if (_currentPosition != null)
                       MarkerLayer(
@@ -94,5 +118,10 @@ class _MapaScreenState extends State<MapaScreen> {
         ],
       ),
     );
+  }
+  
+  @override
+  void dispose() {
+    super.dispose();
   }
 } 

@@ -3,10 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:SkyNet/services/auth_service.dart';
+import 'package:SkyNet/web_config.dart';
+import 'package:SkyNet/web_config_web.dart' if (dart.library.io) 'package:SkyNet/web_config_stub.dart';
 
 /* ───── Providers ───── */
 import 'package:SkyNet/provider/users_provider.dart';
@@ -25,7 +28,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
 
+  // Configuración del servidor
   SocketService.serverUrl = dotenv.env['SERVER_URL']!;
+  
+  // En Web, inicializar Google Maps API
+  if (kIsWeb) {
+    // Esto cargará el script de Google Maps de forma asíncrona
+    WebConfig.instance.googleMapsApiKey;
+  }
+  
   runApp(const MyApp());
 }
 
