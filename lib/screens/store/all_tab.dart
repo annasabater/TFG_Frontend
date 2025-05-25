@@ -103,178 +103,82 @@ class _AllTabState extends State<AllTab> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (!isMobile)
-          SizedBox(
-            width: 280,
-            child: StoreSidebar(onApply: _applyFilters),
-          ),
-        Expanded(
-          child: Column(
-            children: [
-              if (isMobile)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.filter_alt),
-                        onPressed: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => StoreSidebar(onApply: _applyFilters, isMobile: true),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-              // Selector de drones por página
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: Row(
-                  children: [
-                    const Text('Drones por página:'),
-                    const SizedBox(width: 8),
-                    DropdownButton<int>(
-                      value: _dronesPerPage,
-                      items: const [5, 10, 20]
-                          .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
-                          .toList(),
-                      onChanged: (v) => _changeDronesPerPage(v),
-                    ),
-                    const Spacer(),
-                    // Paginación
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: _currentPage > 1 ? () => _changePage(_currentPage - 1) : null,
-                    ),
-                    Text('Página $_currentPage'),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: () => _changePage(_currentPage + 1),
-                    ),
-                  ],
-                ),
-              ),
-              // Cercador
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Cerca per model, ubicació…',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        _onSearch('');
-                      },
-                    ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                  ),
-                  onSubmitted: _onSearch,
-                ),
-              ),
-
-              // Categories strip
-              SizedBox(
-                height: 80,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    _catChip('all', 'Totes'),
-                    _catChip('venta', 'Compra drons'),
-                    _catChip('alquiler', 'Serveis'),
-                  ],
-                ),
-              ),
-
-              // Grid de productos
-              Expanded(
-                child: Consumer<DroneProvider>(
-                  builder: (_, prov, __) {
-                    if (prov.isLoading && prov.drones.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (prov.error != null) {
-                      return Center(child: Text(prov.error!));
-                    }
-                    if (prov.drones.isEmpty) {
-                      return const Center(child: Text('No hay anuncios'));
-                    }
-                    // Calcular total de páginas (asumiendo que el backend devuelve el total o puedes estimar)
-                    // Aquí solo ejemplo simple:
-                    final total = prov.drones.length;
-                    _totalPages = (total / _dronesPerPage).ceil().clamp(1, 999);
-                    return RefreshIndicator(
-                      onRefresh: () async => context.read<DroneProvider>().loadDrones(),
-                      child: CustomScrollView(
-                        controller: _scrollCtrl,
-                        slivers: [
-                          SliverPadding(
-                            padding: const EdgeInsets.all(12),
-                            sliver: SliverGrid(
-                              delegate: SliverChildBuilderDelegate(
-                                (_, i) => DroneCard(
-                                  drone: prov.drones[i],
-                                  onTap: () => context.pushNamed(
-                                    'droneDetail',
-                                    pathParameters: {'id': prov.drones[i].id},
-                                    extra: prov.drones[i],
-                                  ),
-                                ),
-                                childCount: prov.drones.length,
-                              ),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: .75,
-                              ),
-                            ),
-                          ),
-                          if (prov.isLoading)
-                            const SliverToBoxAdapter(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 24),
-                                child: Center(child: CircularProgressIndicator()),
-                              ),
-                            ),
-                        ],
-                      ),
+    return Scaffold(
+      drawer: StoreSidebar(onApply: _applyFilters),
+      body: Column(
+        children: [
+          // Barra superior con paginación
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Text('Drones por página:'),
+                const SizedBox(width: 8),
+                DropdownButton<int>(
+                  value: _dronesPerPage,
+                  items: [5, 10, 20].map((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text(value.toString()),
                     );
-                  },
+                  }).toList(),
+                  onChanged: _changeDronesPerPage,
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                if (_currentPage > 1)
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () => _changePage(_currentPage - 1),
+                  ),
+                Text('Página $_currentPage'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _currentPage < _totalPages ? () => _changePage(_currentPage + 1) : null,
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
-  }
 
-  Widget _catChip(String id, String label) {
-    final sel = id == _selectedCat;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: sel,
-        onSelected: (_) {
-          setState(() => _selectedCat = id);
-          _onSearch(_searchCtrl.text);
-        },
+          // Grid de productos
+          Expanded(
+            child: Consumer<DroneProvider>(
+              builder: (_, prov, __) {
+                if (prov.isLoading && prov.drones.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (prov.error != null) {
+                  return Center(child: Text(prov.error!));
+                }
+                if (prov.drones.isEmpty) {
+                  return const Center(child: Text('No hay anuncios'));
+                }
+                
+                return RefreshIndicator(
+                  onRefresh: () async => prov.loadDrones(),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: prov.drones.length,
+                    itemBuilder: (context, i) => DroneCard(
+                      drone: prov.drones[i],
+                      onTap: () => context.pushNamed(
+                        'droneDetail',
+                        pathParameters: {'id': prov.drones[i].id},
+                        extra: prov.drones[i],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
