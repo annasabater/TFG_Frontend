@@ -106,7 +106,11 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
-        GoRoute(path: 'google-map', builder: (_, __) => const GoogleMapScreen()),
+        GoRoute(
+          path: 'google-map',
+          name: 'google-map',
+          builder: (_, __) => const GoogleMapScreen()
+        ),
         GoRoute(
           path: 'store',
           builder: (_, __) => const DroneStoreScreen(),

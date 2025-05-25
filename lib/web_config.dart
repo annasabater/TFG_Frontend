@@ -6,8 +6,11 @@ abstract class WebConfig {
     return _instance!;
   }
 
-  // Implementación definida en la plataforma específica
-  static WebConfig getWebConfig();
+  // Implementación que será sobreescrita en plataformas específicas
+  static WebConfig getWebConfig() {
+    // Esta implementación será reemplazada por la importación específica de la plataforma
+    throw UnimplementedError('getWebConfig() no ha sido implementado');
+  }
 
   String get googleMapsApiKey;
 } 

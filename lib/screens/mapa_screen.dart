@@ -77,7 +77,9 @@ class _MapaScreenState extends State<MapaScreen> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton.extended(
-            onPressed: () => context.push('/google-map'),
+            onPressed: () {
+              context.go('/google-map');
+            },
             label: const Text('Mapa Google'),
             icon: const Icon(Icons.map),
             heroTag: 'google-map',
