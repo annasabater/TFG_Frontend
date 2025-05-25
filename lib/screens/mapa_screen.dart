@@ -6,8 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:SkyNet/geolocation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
-
+import 'package:go_router/go_router.dart';
 
 class MapaScreen extends StatefulWidget {
   const MapaScreen({Key? key}) : super(key: key);
@@ -74,6 +73,24 @@ class _MapaScreenState extends State<MapaScreen> {
                       ),
                   ],
                 ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: () => context.push('/google-map'),
+            label: const Text('Mapa Google'),
+            icon: const Icon(Icons.map),
+            heroTag: 'google-map',
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: _getLocation,
+            tooltip: 'Mi ubicación',
+            child: const Icon(Icons.my_location),
+            heroTag: 'my-location',
+          ),
+        ],
+      ),
     );
   }
 } 
