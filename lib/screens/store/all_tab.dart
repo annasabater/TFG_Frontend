@@ -3,9 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/drone.dart';
 import '../../models/drone_query.dart';
 import '../../provider/drone_provider.dart';
+import '../../widgets/drone_card.dart';
+import '../../widgets/store_sidebar.dart';
 
 class AllTab extends StatefulWidget {
   const AllTab({super.key});
@@ -17,6 +18,11 @@ class _AllTabState extends State<AllTab> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
   String _selectedCat = 'all';
+  int _dronesPerPage = 10;
+  int _currentPage = 1;
+  int _totalPages = 1;
+  Map<String, dynamic> _lastFilters = {};
+  bool _showSidebar = false;
 
   @override
   void initState() {
@@ -53,92 +59,205 @@ class _AllTabState extends State<AllTab> {
     }
   }
 
+  void _applyFilters(Map<String, dynamic> filters) {
+    setState(() {
+      _lastFilters = filters;
+      _currentPage = 1;
+    });
+    final prov = context.read<DroneProvider>();
+    prov.loadDronesFiltered(DroneQuery(
+      q: filters['name'],
+      category: filters['category'],
+      condition: filters['condition'],
+      priceMin: filters['minPrice'],
+      priceMax: filters['maxPrice'],
+      // location: ...
+      page: 1,
+      limit: _dronesPerPage,
+    ));
+  }
+
+  void _changePage(int page) {
+    setState(() => _currentPage = page);
+    final prov = context.read<DroneProvider>();
+    prov.loadDronesFiltered(DroneQuery(
+      q: _lastFilters['name'],
+      category: _lastFilters['category'],
+      condition: _lastFilters['condition'],
+      priceMin: _lastFilters['minPrice'],
+      priceMax: _lastFilters['maxPrice'],
+      // location: ...
+      page: page,
+      limit: _dronesPerPage,
+    ));
+  }
+
+  void _changeDronesPerPage(int? value) {
+    if (value == null) return;
+    setState(() {
+      _dronesPerPage = value;
+      _currentPage = 1;
+    });
+    _applyFilters(_lastFilters);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Cercador
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: TextField(
-            controller: _searchCtrl,
-            decoration: InputDecoration(
-              hintText: 'Cerca per model, ubicació…',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchCtrl.clear();
-                  _onSearch('');
-                },
-              ),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-            ),
-            onSubmitted: _onSearch,
+        if (!isMobile)
+          SizedBox(
+            width: 280,
+            child: StoreSidebar(onApply: _applyFilters),
           ),
-        ),
-
-        // Categories strip
-        SizedBox(
-          height: 80,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: [
-              _catChip('all', 'Totes'),
-              _catChip('venta', 'Compra drons'),
-              _catChip('alquiler', 'Serveis'),
-            ],
-          ),
-        ),
-
-        // Grid de productes
         Expanded(
-          child: Consumer<DroneProvider>(
-            builder: (_, prov, __) {
-              if (prov.isLoading && prov.drones.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (prov.error != null) {
-                return Center(child: Text(prov.error!));
-              }
-              if (prov.drones.isEmpty) {
-                return const Center(child: Text('No hi ha anuncis'));
-              }
-              return RefreshIndicator(
-                onRefresh: () async => context.read<DroneProvider>().loadDrones(),
-                child: CustomScrollView(
-                  controller: _scrollCtrl,
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.all(12),
-                      sliver: SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) => _ProductCard(drone: prov.drones[i]),
-                          childCount: prov.drones.length,
-                        ),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount:
-                              MediaQuery.of(context).size.width < 600 ? 2 : 4,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: .75,
+          child: Column(
+            children: [
+              if (isMobile)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.filter_alt),
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => StoreSidebar(onApply: _applyFilters, isMobile: true),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              // Selector de drones por página
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Row(
+                  children: [
+                    const Text('Drones por página:'),
+                    const SizedBox(width: 8),
+                    DropdownButton<int>(
+                      value: _dronesPerPage,
+                      items: const [5, 10, 20]
+                          .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
+                          .toList(),
+                      onChanged: (v) => _changeDronesPerPage(v),
                     ),
-                    if (prov.isLoading)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ),
+                    const Spacer(),
+                    // Paginación
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: _currentPage > 1 ? () => _changePage(_currentPage - 1) : null,
+                    ),
+                    Text('Página $_currentPage'),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () => _changePage(_currentPage + 1),
+                    ),
                   ],
                 ),
-              );
-            },
+              ),
+              // Cercador
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Cerca per model, ubicació…',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        _onSearch('');
+                      },
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  onSubmitted: _onSearch,
+                ),
+              ),
+
+              // Categories strip
+              SizedBox(
+                height: 80,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    _catChip('all', 'Totes'),
+                    _catChip('venta', 'Compra drons'),
+                    _catChip('alquiler', 'Serveis'),
+                  ],
+                ),
+              ),
+
+              // Grid de productos
+              Expanded(
+                child: Consumer<DroneProvider>(
+                  builder: (_, prov, __) {
+                    if (prov.isLoading && prov.drones.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (prov.error != null) {
+                      return Center(child: Text(prov.error!));
+                    }
+                    if (prov.drones.isEmpty) {
+                      return const Center(child: Text('No hay anuncios'));
+                    }
+                    // Calcular total de páginas (asumiendo que el backend devuelve el total o puedes estimar)
+                    // Aquí solo ejemplo simple:
+                    final total = prov.drones.length;
+                    _totalPages = (total / _dronesPerPage).ceil().clamp(1, 999);
+                    return RefreshIndicator(
+                      onRefresh: () async => context.read<DroneProvider>().loadDrones(),
+                      child: CustomScrollView(
+                        controller: _scrollCtrl,
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.all(12),
+                            sliver: SliverGrid(
+                              delegate: SliverChildBuilderDelegate(
+                                (_, i) => DroneCard(
+                                  drone: prov.drones[i],
+                                  onTap: () => context.pushNamed(
+                                    'droneDetail',
+                                    pathParameters: {'id': prov.drones[i].id},
+                                    extra: prov.drones[i],
+                                  ),
+                                ),
+                                childCount: prov.drones.length,
+                              ),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: .75,
+                              ),
+                            ),
+                          ),
+                          if (prov.isLoading)
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: Center(child: CircularProgressIndicator()),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -156,59 +275,6 @@ class _AllTabState extends State<AllTab> {
           setState(() => _selectedCat = id);
           _onSearch(_searchCtrl.text);
         },
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  final Drone drone;
-  const _ProductCard({required this.drone});
-
-  @override
-  Widget build(BuildContext context) {
-    final img = (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
-    return GestureDetector(
-      onTap: () => context.pushNamed(
-        'droneDetail',
-        pathParameters: {'id': drone.id},
-        extra: drone,
-      ),
-      child: Card(
-        clipBehavior: Clip.hardEdge,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: img != null
-                  ? Image.network(img,
-                      width: double.infinity, fit: BoxFit.cover)
-                  : Container(
-                      color: Colors.grey.shade200,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.flight)),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(drone.model,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          const TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text('${drone.price.toStringAsFixed(0)} €',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary)),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
