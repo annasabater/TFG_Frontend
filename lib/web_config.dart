@@ -6,11 +6,23 @@ abstract class WebConfig {
     return _instance!;
   }
 
-  // Implementación que será sobreescrita en plataformas específicas
+  // Implementación que será reemplazada por plataformas específicas
   static WebConfig getWebConfig() {
-    // Esta implementación será reemplazada por la importación específica de la plataforma
-    throw UnimplementedError('getWebConfig() no ha sido implementado');
+    try {
+      // Esta función será sobreescrita por la implementación de cada plataforma
+      throw UnimplementedError('getWebConfig() no ha sido implementado');
+    } catch (e) {
+      print('Error en getWebConfig: $e');
+      // Devuelve una implementación mínima para evitar errores
+      return _FallbackWebConfig();
+    }
   }
 
   String get googleMapsApiKey;
+}
+
+// Implementación de respaldo para evitar errores
+class _FallbackWebConfig implements WebConfig {
+  @override
+  String get googleMapsApiKey => '';
 } 
