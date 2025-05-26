@@ -69,8 +69,8 @@ class _AllTabState extends State<AllTab> {
       q: filters['name'],
       category: filters['category'],
       condition: filters['condition'],
-      priceMin: filters['minPrice'],
-      priceMax: filters['maxPrice'],
+      minPrice: filters['minPrice'],
+      maxPrice: filters['maxPrice'],
       // location: ...
       page: 1,
       limit: _dronesPerPage,
@@ -84,8 +84,8 @@ class _AllTabState extends State<AllTab> {
       q: _lastFilters['name'],
       category: _lastFilters['category'],
       condition: _lastFilters['condition'],
-      priceMin: _lastFilters['minPrice'],
-      priceMax: _lastFilters['maxPrice'],
+      minPrice: _lastFilters['minPrice'],
+      maxPrice: _lastFilters['maxPrice'],
       // location: ...
       page: page,
       limit: _dronesPerPage,

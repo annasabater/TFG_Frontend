@@ -3,7 +3,7 @@
 /// Paràmetres de filtre per a GET /api/drones
 class DroneQuery {
   final String? q, category, condition, location;
-  final double? priceMin, priceMax;
+  final double? minPrice, maxPrice;
   final int? page, limit;
 
   const DroneQuery({
@@ -11,8 +11,8 @@ class DroneQuery {
     this.category,
     this.condition,
     this.location,
-    this.priceMin,
-    this.priceMax,
+    this.minPrice,
+    this.maxPrice,
     this.page,
     this.limit,
   });
@@ -23,8 +23,8 @@ class DroneQuery {
         if (category != null && category!.isNotEmpty) 'category': category!,
         if (condition != null && condition!.isNotEmpty) 'condition': condition!,
         if (location != null && location!.isNotEmpty) 'location': location!,
-        if (priceMin != null) 'priceMin': priceMin!.toString(),
-        if (priceMax != null) 'priceMax': priceMax!.toString(),
+        if (minPrice != null) 'minPrice': minPrice!.toString(),
+        if (maxPrice != null) 'maxPrice': maxPrice!.toString(),
         if (page != null) 'page': page.toString(),
         if (limit != null) 'limit': limit.toString(),
       };
@@ -35,8 +35,8 @@ class DroneQuery {
     String? category,
     String? condition,
     String? location,
-    double? priceMin,
-    double? priceMax,
+    double? minPrice,
+    double? maxPrice,
     int? page,
     int? limit,
   }) {
@@ -45,8 +45,8 @@ class DroneQuery {
       category: category ?? this.category,
       condition: condition ?? this.condition,
       location: location ?? this.location,
-      priceMin: priceMin ?? this.priceMin,
-      priceMax: priceMax ?? this.priceMax,
+      minPrice: minPrice ?? this.minPrice,
+      maxPrice: maxPrice ?? this.maxPrice,
       page: page ?? this.page,
       limit: limit ?? this.limit,
     );
