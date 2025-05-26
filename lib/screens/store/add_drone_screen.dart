@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +25,14 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
   final _priceCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
 
-  String _category = 'venta'; // o la categoría que uses
-  String _condition = 'nuevo'; // o condición que uses
-  final List<File> _images = [];
+  String _category = 'venta';
+  String _condition = 'nuevo';
+
+  // Para móvil guardamos Files
+  final List<File> _imagesMobile = [];
+  // Para web guardamos XFile y bytes para preview
+  final List<XFile> _imagesWeb = [];
+  final List<Uint8List> _imagesWebBytes = [];
 
   bool _isLoading = false;
   bool _visible = false;
@@ -48,16 +56,34 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
   }
 
   Future<void> _pickImage() async {
-    final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (img != null && _images.length < 4) {
-      setState(() => _images.add(File(img.path)));
+    final picker = ImagePicker();
+    final XFile? img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (img == null) return;
+
+    if (kIsWeb) {
+      if (_imagesWeb.length >= 4) return;
+
+      final bytes = await img.readAsBytes();
+      setState(() {
+        _imagesWeb.add(img);
+        _imagesWebBytes.add(bytes);
+      });
+    } else {
+      if (_imagesMobile.length >= 4) return;
+      setState(() => _imagesMobile.add(File(img.path)));
     }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_images.isEmpty) {
+    if (kIsWeb && _imagesWeb.isEmpty) {
+      showSnack(context, 'Cal afegir almenys una imatge');
+      return;
+    }
+
+    if (!kIsWeb && _imagesMobile.isEmpty) {
       showSnack(context, 'Cal afegir almenys una imatge');
       return;
     }
@@ -69,16 +95,32 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
     final ownerId = userProv.currentUser?.id;
 
     try {
-      await droneProv.createDrone(
-        ownerId: ownerId!,
-        model: _modelCtrl.text.trim(),
-        description: _descCtrl.text.trim(),
-        price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-        location: _locCtrl.text.trim(),
-        category: _category,
-        condition: _condition,
-        
-      );
+      // Aquí debes adaptar createDrone para que reciba la lista de imágenes adecuada
+      if (kIsWeb) {
+        await droneProv.createDrone(
+          ownerId: ownerId!,
+          model: _modelCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+          location: _locCtrl.text.trim(),
+          category: _category,
+          condition: _condition,
+          imagesWeb: _imagesWeb,
+        );
+      } else {
+        await droneProv.createDrone(
+          ownerId: ownerId!,
+          model: _modelCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+          location: _locCtrl.text.trim(),
+          category: _category,
+          condition: _condition,
+          imagesMobile: _imagesMobile,
+          
+        );
+      }
+
       if (mounted) {
         showSnack(context, 'Anunci creat amb èxit');
         context.go('/store');
@@ -107,6 +149,8 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Nou anunci')),
       body: AnimatedOpacity(
@@ -140,7 +184,7 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _priceCtrl,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: _inputDecoration('Preu (€)', Icons.euro),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obligatori';
@@ -155,37 +199,69 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                   validator: (v) => v == null || v.isEmpty ? 'Obligatori' : null,
                 ),
                 const SizedBox(height: 20),
-                // Podrías agregar dropdowns para categoría y condición aquí si quieres
                 ElevatedButton.icon(
-                  onPressed: _images.length >= 4 ? null : _pickImage,
+                  onPressed: imageCount >= 4 ? null : _pickImage,
                   icon: const Icon(Icons.add_a_photo),
-                  label: Text('Afegir imatge (${_images.length}/4)'),
+                  label: Text('Afegir imatge ($imageCount/4)'),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _images.length,
-                    itemBuilder: (context, i) => Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: Stack(
-                        children: [
-                          Image.file(_images[i], width: 100, fit: BoxFit.cover),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: GestureDetector(
-                              onTap: () => setState(() => _images.removeAt(i)),
-                              child: Container(
-                                color: Colors.black54,
-                                child: const Icon(Icons.close, color: Colors.white),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
+                    itemCount: imageCount,
+                    itemBuilder: (context, i) {
+                      if (kIsWeb) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Stack(
+                            children: [
+                              Image.memory(_imagesWebBytes[i], width: 100, fit: BoxFit.cover),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _imagesWeb.removeAt(i);
+                                      _imagesWebBytes.removeAt(i);
+                                    });
+                                  },
+                                  child: Container(
+                                    color: Colors.black54,
+                                    child: const Icon(Icons.close, color: Colors.white),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      } else {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Stack(
+                            children: [
+                              Image.file(_imagesMobile[i], width: 100, fit: BoxFit.cover),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _imagesMobile.removeAt(i);
+                                    });
+                                  },
+                                  child: Container(
+                                    color: Colors.black54,
+                                    child: const Icon(Icons.close, color: Colors.white),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(height: 30),

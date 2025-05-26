@@ -1,6 +1,9 @@
 //lib/provider/drone_provider.dart
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/drone.dart';
 import '../models/drone_query.dart';
 import '../models/shipping_info.dart';
@@ -80,6 +83,8 @@ class DroneProvider with ChangeNotifier {
     String? location,
     String? contact,
     String? category,
+    List<XFile>? imagesWeb,       // para web
+    List<File>? imagesMobile,      // para móvil
   }) async {
     _setLoading(true); _setError(null);
     try {

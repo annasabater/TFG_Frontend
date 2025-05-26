@@ -1,7 +1,8 @@
-//lib/screens/drone_service.dart
+// lib/screens/drone_service.dart
 
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, File;
+import 'package:path/path.dart'; // para basename
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/shipping_info.dart';
@@ -32,20 +33,46 @@ class DroneService {
     return Drone.fromJson(jsonDecode(resp.body));
   }
 
-  static Future<Drone> createDrone(Drone d) async {
-    final jwt  = await AuthService().token;
-    final resp = await http.post(
-      _dronesUri(),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwt',
-      },
-      body: jsonEncode(d.toJson()),
-    );
-    if (resp.statusCode != 200 && resp.statusCode != 201) {
-      throw Exception('Error ${resp.statusCode}');
+  // Método createDrone adaptado para enviar imágenes con multipart/form-data
+  static Future<Drone> createDrone(
+    Drone d, {
+    List<File>? images, // lista opcional de imágenes para subir
+  }) async {
+    final jwt = await AuthService().token;
+    final uri = _dronesUri();
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $jwt';
+
+    // Añadir campos del drone al formulario
+    final droneJson = d.toJson();
+    droneJson.forEach((key, value) {
+      if (value != null) request.fields[key] = value.toString();
+    });
+
+    // Adjuntar imágenes
+    if (images != null) {
+      for (var imgFile in images) {
+        final multipartFile = await http.MultipartFile.fromPath(
+          'images',
+          imgFile.path,
+          filename: basename(imgFile.path),
+        );
+        request.files.add(multipartFile);
+      }
     }
-    return Drone.fromJson(jsonDecode(resp.body));
+
+    // Enviar petición
+    final streamedResponse = await request.send();
+
+    final respStr = await streamedResponse.stream.bytesToString();
+
+    if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 201) {
+      throw Exception('Error ${streamedResponse.statusCode}: $respStr');
+    }
+
+    final json = jsonDecode(respStr);
+    return Drone.fromJson(json);
   }
 
   static Future<bool> deleteDrone(String id) async {
@@ -75,7 +102,6 @@ class DroneService {
     if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
     return Drone.fromJson(jsonDecode(resp.body));
   }
-
 
   static Future<List<Drone>> getFavorites(String userId) async {
     final jwt = await AuthService().token;
@@ -116,45 +142,44 @@ class DroneService {
     return data.map((e) => Drone.fromJson(e)).toList();
   }
 
+  static Future<Drone> purchaseDrone(
+    String id,
+    ShippingInfo info,
+  ) async {
+    final jwt = await AuthService().token;
+    final resp = await http.post(
+      Uri.parse('$_base/drones/$id/purchase'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+      body: jsonEncode(info.toJson()),
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
+  }
 
-static Future<Drone> purchaseDrone(
-  String id,
-  ShippingInfo info,
-) async {
-  final jwt = await AuthService().token;
-  final resp = await http.post(
-    Uri.parse('$_base/drones/$id/purchase'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $jwt',
-    },
-    body: jsonEncode(info.toJson()),
-  );
-  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
-  return Drone.fromJson(jsonDecode(resp.body));
-}
+  static Future<Drone> markSold(String id) async {
+    final jwt = await AuthService().token;
+    final resp = await http.put(
+      Uri.parse('$_base/drones/$id/sold'),
+      headers: {'Authorization': 'Bearer $jwt'},
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
+  }
 
-static Future<Drone> markSold(String id) async {
-  final jwt = await AuthService().token;
-  final resp = await http.put(
-    Uri.parse('$_base/drones/$id/sold'),
-    headers: {'Authorization': 'Bearer $jwt'},
-  );
-  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
-  return Drone.fromJson(jsonDecode(resp.body));
-}
-
-static Future<Drone> updateDrone(String id, Drone d) async {
-  final jwt = await AuthService().token;
-  final resp = await http.put(
-    Uri.parse('$_base/drones/$id'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $jwt',
-    },
-    body: jsonEncode(d.toJson()),
-  );
-  if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
-  return Drone.fromJson(jsonDecode(resp.body));
-}
+  static Future<Drone> updateDrone(String id, Drone d) async {
+    final jwt = await AuthService().token;
+    final resp = await http.put(
+      Uri.parse('$_base/drones/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+      body: jsonEncode(d.toJson()),
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
+  }
 }
