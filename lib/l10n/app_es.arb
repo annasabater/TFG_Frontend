@@ -15,6 +15,7 @@
   "accept"        : "Aceptar",
   "comments"      : "Comentarios",
   "noComments"    : "Aún no hay comentarios",
+  "spectateGames": "Ver partida en directo",
   "error": "Error",
   "success": "Éxito",
   "welcome": "Bienvenido",
