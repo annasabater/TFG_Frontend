@@ -16,6 +16,7 @@
   "cancel"        : "Cancelar",
   "comments"      : "Comentaris",
   "noComments"    : "Encara no hi han comentaris",
+  "spectateGames": "Veure partida en directe",
   "error": "Error",
   "success": "Èxit",
   "welcome": "Benvingut",

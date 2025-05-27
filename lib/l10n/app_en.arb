@@ -16,6 +16,7 @@
   "accept"        : "Accept",    
   "comments"      : "Comments",
   "noComments"    : "No comments yet",
+  "spectateGames": "Watch game live",
   "error": "Error",
   "success": "Success",
   "welcome": "Welcome",

@@ -19,6 +19,9 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  
+  <!-- Google Maps API Key (será reemplazado en tiempo de ejecución) -->
+  <meta name="google-maps-api-key" content="">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,8 +34,98 @@
 
   <title>seminari_flutter</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Estilo para el contenedor de Google Maps -->
+  <style>
+    .google-map-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- This script installs service_worker.js to provide PWA functionality to
+       application. For more information, see:
+       https://developers.google.com/web/fundamentals/primers/service-workers -->
+  <script>
+    var serviceWorkerVersion = null;
+    var scriptLoaded = false;
+    function loadMainDartJs() {
+      if (scriptLoaded) {
+        return;
+      }
+      scriptLoaded = true;
+      var scriptTag = document.createElement('script');
+      scriptTag.src = 'flutter_bootstrap.js';
+      scriptTag.type = 'application/javascript';
+      document.body.append(scriptTag);
+    }
+
+    if ('serviceWorker' in navigator) {
+      // Service workers are supported. Use them.
+      window.addEventListener('load', function () {
+        // Wait for registration to finish before dropping the <script> tag.
+        navigator.serviceWorker.register('flutter_service_worker.js');
+        
+        // Wait for loading to complete
+        navigator.serviceWorker.ready.then(function() {
+          loadMainDartJs();
+        });
+      });
+    } else {
+      // Service workers not supported. Just drop the <script> tag.
+      loadMainDartJs();
+    }
+  </script>
+
+  <!-- Google Maps API Script Registration -->
+  <script>
+    // Función para registrar el elemento Google Maps
+    function registerGoogleMapsView() {
+      // Registramos el viewType 'google-map-iframe'
+      window.flutterWebRenderer = "html";
+      if (window.flutter_inappwebview) {
+        window.flutter_inappwebview.callHandler('registerViewFactory', 'google-map-iframe', function(id) {
+          const iframe = document.createElement('iframe');
+          iframe.id = 'google-map-iframe-' + id;
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.className = 'google-map-container';
+          return iframe;
+        });
+      }
+    }
+
+    // Función para configurar el mapa de Google
+    window.setupGoogleMapIframe = function(id, lat, lng, apiKey) {
+      const iframe = document.getElementById('google-map-iframe-' + id);
+      if (iframe) {
+        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${lat},${lng}&zoom=15`;
+        iframe.src = mapUrl;
+      }
+    };
+
+    // Registramos la vista cuando la página esté completamente cargada
+    window.addEventListener('load', function() {
+      if (typeof registerViewFactory === 'function') {
+        registerViewFactory(
+          'google-map-iframe',
+          (viewId) => {
+            const iframe = document.createElement('iframe');
+            iframe.id = 'google-map-iframe-' + viewId;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.className = 'google-map-container';
+            return iframe;
+          }
+        );
+      }
+    });
+  </script>
 </body>
 </html>

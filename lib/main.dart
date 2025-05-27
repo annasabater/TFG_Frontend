@@ -3,10 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:SkyNet/services/auth_service.dart';
+import 'package:SkyNet/web_config.dart';
+import 'package:SkyNet/web_config_web.dart' if (dart.library.io) 'package:SkyNet/web_config_stub.dart';
 
 /* ───── Providers ───── */
 import 'package:SkyNet/provider/users_provider.dart';
@@ -23,9 +26,38 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  
+  try {
+    await dotenv.load(fileName: '.env');
+    print('Archivo .env cargado correctamente');
+  } catch (e) {
+    print('Error al cargar archivo .env: $e');
+  }
 
-  SocketService.serverUrl = dotenv.env['SERVER_URL']!;
+  // Configuración del servidor
+  try {
+    SocketService.serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:3000';
+  } catch (e) {
+    print('Error al configurar el servidor: $e');
+  }
+  
+  // En Web, inicializar Google Maps API
+  if (kIsWeb) {
+    try {
+      print('Inicializando configuración web...');
+      // Configuramos API key
+      if (dotenv.env.containsKey('GOOGLE_MAPS_API_KEY') && dotenv.env['GOOGLE_MAPS_API_KEY']!.isNotEmpty) {
+        final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
+        print('API key encontrada en .env: ${apiKey.substring(0, 3)}***');
+        setupWebGoogleMapsApi(apiKey);
+      } else {
+        print('ADVERTENCIA: GOOGLE_MAPS_API_KEY no está definida en el archivo .env');
+      }
+    } catch (e) {
+      print('Error al inicializar configuración web: $e');
+    }
+  }
+  
   runApp(const MyApp());
 }
 

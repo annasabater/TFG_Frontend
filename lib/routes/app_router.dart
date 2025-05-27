@@ -1,21 +1,15 @@
-import 'package:go_router/go_router.dart';
+//lib/routes/app_router.dart
 
-/* ──────────── Auth ──────────── */
+import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
 import 'package:SkyNet/screens/auth/register_screen.dart';
-
-/* ──────────── Perfil & social ──────────── */
 import 'package:SkyNet/screens/perfil_screen.dart';
 import 'package:SkyNet/screens/social/create_post_screen.dart';
 import 'package:SkyNet/screens/social/post_detail_screen.dart';
 import 'package:SkyNet/screens/social/user_profile_screen.dart';
 import 'package:SkyNet/screens/social/edit_post_screen.dart';
 import 'package:SkyNet/screens/edit_profile_screen.dart';
-
-/* ──────────── Nueva pantalla Xarxes Socials ──────────── */
-import 'package:SkyNet/screens/social/xarxes_socials_screen.dart';  // ← NUEVO
-
-/* ──────────── Otras pantallas ──────────── */
+import 'package:SkyNet/screens/social/xarxes_socials_screen.dart';  
 import 'package:SkyNet/screens/home_screen.dart';
 import 'package:SkyNet/screens/details_screen.dart';
 import 'package:SkyNet/screens/editar_screen.dart';
@@ -25,16 +19,18 @@ import 'package:SkyNet/screens/jocs_page.dart';
 import 'package:SkyNet/screens/waiting_room_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/screens/mapa_screen.dart';
+import 'package:SkyNet/screens/google_map_screen.dart';
+import 'package:SkyNet/screens/spectate_sessions_page.dart';
 import 'package:SkyNet/screens/chat_list_screen.dart';
 import 'package:SkyNet/screens/chat_screen.dart';
 import 'package:SkyNet/screens/search_user_screen.dart';
 import 'package:SkyNet/screens/store/drone_store_screen.dart';
 import 'package:SkyNet/screens/store/drone_detail_screen.dart';
 import 'package:SkyNet/screens/store/add_drone_screen.dart';
-
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/models/drone.dart';
 import 'package:SkyNet/models/post.dart';
+import 'package:SkyNet/services/socket_service.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
@@ -102,9 +98,31 @@ final GoRouter appRouter = GoRouter(
               path: 'control/:sessionId',
               builder: (ctx, st) => DroneControlPage(sessionId: st.pathParameters['sessionId']!),
             ),
+
+            // Aquí sustituimos la ruta "spectate" per a que redirigeixi sempre
+            GoRoute(
+              path: 'spectate',
+              redirect: (ctx, state) {
+                final sid = SocketService.currentSessionId ?? '1';
+                return '/jocs/spectate/$sid';
+              },
+              routes: [
+                GoRoute(
+                  path: ':sessionId',
+                  builder: (ctx, st) => SpectateSessionsPage(sessionId: st.pathParameters['sessionId']!),
+                ),
+              ],
+            ),
+
           ],
         ),
+
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
+        GoRoute(
+          path: 'google-map',
+          name: 'google-map',
+          builder: (_, __) => const GoogleMapScreen()
+        ),
         GoRoute(
           path: 'store',
           builder: (_, __) => const DroneStoreScreen(),
@@ -130,4 +148,4 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
   ],
-);
+); 
