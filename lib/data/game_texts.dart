@@ -54,12 +54,14 @@ const String kGameManual = r'''
 ────────────────────────────────────────────────────────────────────
 
 OBJETIVO DEL JUEGO
+
 Eliminar a los oponentes y ser el último jugador en pie, o bien acumular
 la mayor cantidad de puntos antes de que termine el tiempo de partida.
 
 ────────────────────────────────────────────────────────────────────
 
 CONFIGURACIÓN GENERAL
+
 • Simulación: 5 - 10 minutos (respawn cada 15 seg en modo 2v2)  
 • Dron Lab:   8 minutos, sin respawn  
 • Jugadores:  de 2 a 4 participantes
@@ -90,12 +92,14 @@ Bala grande y lenta   | 1 disparo cada 2 s   | 1 s   | 100 m/s
 ────────────────────────────────────────────────────────────────────
 
 OBSTÁCULOS  
+
 Estructuras destructibles (1 m×1 m×5 m) que sirven de cobertura y otorgan
 1 punto extra al destruirlas.
 
 ────────────────────────────────────────────────────────────────────
 
 CONDICIONES DE VICTORIA  
+
 • Simulación → quien más puntos obtenga  
 • Dron Lab   → quien más puntos acumule al finalizar el tiempo  
 
@@ -107,6 +111,7 @@ Puntuación
 ────────────────────────────────────────────────────────────────────
 
 FIN DE LA PARTIDA  
+
 Al concluir, se despliega una tabla de resultados con  
 - Eliminaciones  
 - Disparos realizados  
