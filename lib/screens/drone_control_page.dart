@@ -1,4 +1,5 @@
 // lib/screens/drone_control_page.dart
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -27,36 +28,26 @@ class _DroneControlPageState extends State<DroneControlPage> {
   bool   _gameFinished = false;
   double _currentZoom  = 20;
 
-  // -----------------  datos visibles en el mapa ----------------------------
   final Map<String, Marker>  _droneMarkers  = {};
   final Map<String, Marker>  _bulletMarkers = {};
   final Map<String, Polygon> _fencePolygons = {};
   final Map<String, Polygon> _obstaclePolys = {};
   final Map<String, int>     _scores        = {};
-
-  // -----------------  estado extra de cada dron ----------------------------
-  /// 'active' | 'landed'
   final Map<String, String> _droneStates = {};
-  /// última telemetría recibida por dron
   final Map<String, Map<String, dynamic>> _telemetry = {};
-  /// último heading recibido
   final Map<String, double> _headings = {};
 
-  // -----------------  parpadeo mientras está landed ------------------------
   bool   _blinkVisible = true;
   Timer? _blinkTimer;
 
-  // -----------------  contadores varios ------------------------------------
   int _bulletUid = 0;
   Map<String, dynamic>? _myTelemetry;
 
-  // -----------------  joysticks --------------------------------------------
   Timer?              _throttleTimer;
   static const double _deadZone       = 0.5;
   static const double _maxSpeed       = 1.0;
   static const Duration _throttlePeriod = Duration(milliseconds: 100);
 
-  // -----------------  colores por dron -------------------------------------
   static const Map<String, Color> _playerColor = {
     'dron_rojo1@upc.edu'    : Colors.red,
     'dron_azul1@upc.edu'    : Colors.blue,
@@ -71,10 +62,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _connectSocket();
   }
 
-  // -------------------------------------------------------------------------
-  //                               SOCKET                                     |
-  // -------------------------------------------------------------------------
-
+ 
   void _connectSocket() {
     final token = SocketService.jwt;
     _socket = IO.io(
@@ -125,7 +113,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
       case 'state':
         final newState = payload['state'] as String? ?? 'flying';
         _droneStates[drone] = newState;
-        _rebuildMarker(drone);      // refrescamos icono con la nueva opacidad
+        _rebuildMarker(drone);      
         _syncBlinkTimer();
         setState(() {});
         break;
@@ -167,11 +155,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
     }
   }
 
-  // -------------------------------------------------------------------------
-  //                           BLINK HELPERS                                   |
-  // -------------------------------------------------------------------------
-
-  /// Activa o detiene el timer de parpadeo según haya algún dron landed.
+  /// Activa o detiene el timer de parpadeo según haya algún dron landed
   void _syncBlinkTimer() {
     final anyLanded = _droneStates.values.any((s) => s == 'landed');
 
@@ -191,10 +175,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
       _blinkVisible = true;
     }
   }
-
-  // -------------------------------------------------------------------------
-  //                               RESET                                       |
-  // -------------------------------------------------------------------------
 
   void _resetScenario() {
     _droneMarkers.clear();
@@ -217,10 +197,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     setState(() {});
   }
 
-  // -------------------------------------------------------------------------
-  //                           GAME CONTROL                                    |
-  // -------------------------------------------------------------------------
-
   void _startFrontendGame() {
     _resetScenario();
     _socket!.emit('control', {
@@ -231,11 +207,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     });
   }
 
-  // -------------------------------------------------------------------------
-  //                  ACTUALIZAR DRONES & CONSTRUIR MARKER                      |
-  // -------------------------------------------------------------------------
-
-  /// Actualiza los datos guardados y reconstruye el icono.
   void _updateDrone(String email, Map<String, dynamic> p) {
     if (!_isCompetitor(email)) return;
 
@@ -243,14 +214,12 @@ class _DroneControlPageState extends State<DroneControlPage> {
     final hdg = (p['heading'] as num?)?.toDouble() ?? 0;
     _headings[email] = hdg;
 
-    // etiqueta propia para el HUD
     if (email == SocketService.currentUserEmail) _myTelemetry = p;
 
     _rebuildMarker(email);
     setState(() {});
   }
 
-  /// Genera (o regenera) el marker de un dron con la opacidad correcta.
   void _rebuildMarker(String email) {
     final p = _telemetry[email];
     if (p == null) return;
@@ -278,10 +247,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     );
   }
 
-  // -------------------------------------------------------------------------
-  //                              BULLETS                                      |
-  // -------------------------------------------------------------------------
-
   void _updateBullet(Map<String, dynamic> p, {required bool create}) {
     final id  = p['bulletId'] as String;
     final lat = p['lat'] as double;
@@ -296,9 +261,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     if (!create) setState(() {});
   }
 
-  // -------------------------------------------------------------------------
-  //                 FENCES & OBSTÁCULOS (sin cambios)                         |
-  // -------------------------------------------------------------------------
 
   void _addFence(dynamic geometry, String droneEmail) {
     if (geometry is! List || !_isCompetitor(droneEmail)) return;
@@ -337,9 +299,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _obstaclePolys.remove(key);
   }
 
-  // -------------------------------------------------------------------------
-  //                      JOYSTICK & SHOTS (sin cambios)                       |
-  // -------------------------------------------------------------------------
 
   void _onJoy(String stick, Offset off) {
     if (_gameFinished) return;
@@ -389,10 +348,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     });
   }
 
-  // -------------------------------------------------------------------------
-  //                                 MAPA                                      |
-  // -------------------------------------------------------------------------
-
   Widget _buildMap() => FlutterMap(
         mapController: _mapController,
         options: MapOptions(
@@ -418,10 +373,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
           ]),
         ],
       );
-
-  // -------------------------------------------------------------------------
-  //                                UI                                         |
-  // -------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -480,7 +431,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
           children: [
             if (_showMap) Positioned.fill(child: _buildMap()),
 
-            // Toggle mapa
             Positioned(
               top: 16,
               left: 16,
@@ -511,7 +461,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
             telemetryLabel,
             scoreLabel,
 
-            // Botones de disparo
             Positioned(
               top: 30,
               right: 16,
@@ -526,7 +475,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
               ),
             ),
 
-            // Joysticks
             if (!_gameFinished)
               Align(
                 alignment: Alignment.bottomCenter,
@@ -539,7 +487,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 ),
               ),
 
-            // Overlay fin de partida
             if (_gameFinished) _buildGameOverOverlay(context),
           ],
         ),
@@ -579,11 +526,28 @@ class _DroneControlPageState extends State<DroneControlPage> {
       );
 
   Widget _zoomBtn(double top, IconData icon, VoidCallback cb) => Positioned(
-        top: top,
-        left: 16,
-        child: FloatingActionButton(
-            heroTag: 'z$top', mini: true, onPressed: cb, child: Icon(icon)),
-      );
+    top: top,
+    left: 16,
+    child: GestureDetector(
+      onTap: cb,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            )
+          ],
+        ),
+        child: Icon(icon, size: 24, color: Colors.black87),
+      ),
+    ),
+  );
 
   Widget _joystick(String id) => Joystick(
         listener: (d) => _onJoy(id, Offset(d.x, d.y)),
@@ -601,27 +565,32 @@ class _DroneControlPageState extends State<DroneControlPage> {
       );
 
   Widget _bulletBtn(String asset, String type) => GestureDetector(
-        onTap: () => _fire(type),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
-            ],
+      onTap: () => _fire(type),
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE0E0E0), Color(0xFFFAFAFA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Image.asset(asset, fit: BoxFit.contain),
-          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            )
+          ],
         ),
-      );
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Image.asset(asset, fit: BoxFit.contain),
+        ),
+      ),
+    );
 
-  // -------------------------------------------------------------------------
-  //                               CLEAN-UP                                    |
-  // -------------------------------------------------------------------------
 
   @override
   void dispose() {

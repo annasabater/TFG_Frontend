@@ -1,4 +1,5 @@
-// Flutter / Dart
+//lib/screens/social/create_post_screen.dart
+
 import 'dart:typed_data';
 import 'dart:io' show File;                      
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -42,7 +43,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  // Subir post
   Future<void> _publish() async {
     if (!kIsWeb && _fileMobile == null) return;
     if (kIsWeb  && _xFileWeb  == null) return;

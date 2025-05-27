@@ -1,13 +1,12 @@
 // lib/screens/spectate_sessions_page.dart
+
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
 import '../services/socket_service.dart';
 import '../data/game_texts.dart';
 
@@ -24,20 +23,18 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   IO.Socket? _socket;
   final MapController _mapController = MapController();
 
-  // ---------------- estado UI ----------------
   bool _mapLocked = true;
   double _currentZoom = 20;
   bool _gameFinished = false;
   bool _gameStarted = false;
 
-  // ---------------- estado simulación ---------------
   final Map<String, Marker> _droneMarkers = {};
   final Map<String, Marker> _bulletMarkers = {};
   final Map<String, Polygon> _fencePolygons = {};
   final Map<String, Polygon> _obstaclePolys = {};
   final Map<String, int> _scores = {};
 
-  // -------- NUEVO: estado & parpadeo de cada dron -------------
+  // estado & parpadeo de cada dron 
   final Map<String, String> _droneStates = {}; // 'active' | 'landed'
   bool _blinkVisible = true;
   Timer? _blinkTimer;
@@ -56,9 +53,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     _connectAsSpectator();
   }
 
-  // -----------------------------------------------------------------
-  //                         SOCKET
-  // -----------------------------------------------------------------
   void _connectAsSpectator() {
     _socket = IO.io(
       '${SocketService.serverUrl}/jocs',
@@ -78,7 +72,8 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
       })
       ..on('state_update', _handleStateUpdate)
       ..on('game_ended', (_) {
-        if (!mounted) return;
+        if (!mounted || _gameFinished) return;
+        _resetScenario(); 
         setState(() {
           _gameFinished = true;
           _gameStarted = false;
@@ -95,9 +90,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
       ..on('disconnect', (_) => debugPrint('Spectator disconnected'));
   }
 
-  // -----------------------------------------------------------------
-  //                   STATE UPDATE + BLINK LOGIC
-  // -----------------------------------------------------------------
   void _handleStateUpdate(dynamic data) {
     if (_gameFinished) return;
 
@@ -173,9 +165,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     }
   }
 
-  // -----------------------------------------------------------------
-  //                        RESET
-  // -----------------------------------------------------------------
   void _resetScenario() {
     _droneMarkers.clear();
     _bulletMarkers.clear();
@@ -190,9 +179,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     _mapLocked = true;
   }
 
-  // -----------------------------------------------------------------
-  //                       UPDATE & MARKERS
-  // -----------------------------------------------------------------
   void _updateDrone(String email, Map<String, dynamic> p) {
     if (!_isCompetitor(email)) return;
     final lat = p['lat'] as double;
@@ -230,9 +216,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     );
   }
 
-  // -----------------------------------------------------------------
-  //                    BULLETS / FENCES / OBSTÁCULOS
-  // -----------------------------------------------------------------
   void _updateBullet(Map<String, dynamic> p, {required bool create}) {
     final id = p['bulletId'] as String;
     final lat = p['lat'] as double;
@@ -283,9 +266,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     _obstaclePolys.remove(_obstacleKey(geometry));
   }
 
-  // -----------------------------------------------------------------
-  //                       UI                                          
-  // -----------------------------------------------------------------
   void _showTextDialog(String title, String content) {
     showDialog(
       context: context,
@@ -370,12 +350,11 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
             ),
           );
 
-    return Scaffold(
+      return Scaffold(
       backgroundColor: const Color(0xFFEFF2F5),
       body: Stack(
         children: [
           Positioned.fill(child: _buildMap()),
-
           if (!_gameStarted)
             Positioned.fill(
               child: Container(
@@ -388,11 +367,11 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
-                        fontWeight: FontWeight.bold
+                        fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     const Text(
                       'Esperando a que el profesor inicie la partida…',
                       style: TextStyle(
@@ -403,56 +382,42 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                     ),
                     const SizedBox(height: 24),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _styledButton(
-                          'Descripción',
-                          () => _showTextDialog('Descripción del juego', kGameDescription),
-                        ),
+                        _styledButton('Descripción', () => _showTextDialog('Descripción del juego', kGameDescription)),
                         const SizedBox(width: 16),
-                        _styledButton(
-                          'Manual',
-                          () => _showTextDialog('Manual del juego', kGameManual),
-                        ),
+                        _styledButton('Manual', () => _showTextDialog('Manual del juego', kGameManual)),
                       ],
                     ),
                   ],
                 ),
               ),
             ),
+
           if (_gameStarted)
             Positioned(
               bottom: 24,
               right: 16,
               child: Row(
                 children: [
-                  _styledButton('📖 Descripción',
-                      () => _showTextDialog('Descripción del juego', kGameDescription)),
+                  _styledButton('📖 Descripción', () => _showTextDialog('Descripción del juego', kGameDescription)),
                   const SizedBox(width: 12),
-                  _styledButton('🛠 Manual',
-                      () => _showTextDialog('Manual del juego', kGameManual)),
+                  _styledButton('🛠 Manual', () => _showTextDialog('Manual del juego', kGameManual)),
                 ],
               ),
             ),
 
-          _zoomBtn(70, Icons.add, () {
-            setState(() => _currentZoom++);
-            _mapController.move(_mapController.center, _currentZoom);
-          }),
-          _zoomBtn(130, Icons.remove, () {
-            setState(() => _currentZoom--);
-            _mapController.move(_mapController.center, _currentZoom);
-          }),
+          _zoomBtn(70, Icons.add,    () {  }),
+          _zoomBtn(130, Icons.remove,() {  }),
           _zoomBtn(190, _mapLocked ? Icons.lock : Icons.lock_open,
-              () => setState(() => _mapLocked = !_mapLocked)),
-
+                  () => setState(() => _mapLocked = !_mapLocked)),
           scoreLabel,
-
           if (_gameFinished) _buildGameOverOverlay(context),
         ],
       ),
     );
   }
+
 
   Widget _styledButton(String label, VoidCallback onTap) {
     return ElevatedButton(
@@ -501,11 +466,28 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
       );
 
   Widget _zoomBtn(double top, IconData icon, VoidCallback cb) => Positioned(
-        top: top,
-        left: 16,
-        child: FloatingActionButton(
-            heroTag: 'z$top', mini: true, onPressed: cb, child: Icon(icon)),
-      );
+    top: top,
+    left: 16,
+    child: GestureDetector(
+      onTap: cb,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            )
+          ],
+        ),
+        child: Icon(icon, size: 24, color: Colors.black87),
+      ),
+    ),
+  );
 
   @override
   void dispose() {

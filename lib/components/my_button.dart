@@ -1,4 +1,4 @@
-// my_button.dart (simplificado)
+// my_button.dart 
 import 'package:flutter/material.dart';
 
 class MyButton extends StatelessWidget {
@@ -32,17 +32,17 @@ class MyButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? colors.primary,
+          foregroundColor: textColor ?? Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius ?? 20),
+            borderRadius: BorderRadius.circular(borderRadius ?? 25),
           ),
-          elevation: 6,
-          shadowColor: Colors.black45,
+          elevation: 4,
+          shadowColor: Colors.black38,
         ),
         onPressed: onTap,
         child: Text(
           text,
           style: TextStyle(
-            color: textColor ?? Colors.white,
             fontSize: fontSize ?? 18,
             fontWeight: fontWeight ?? FontWeight.w600,
           ),

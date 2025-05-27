@@ -35,22 +35,19 @@ import 'package:SkyNet/services/socket_service.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
   routes: [
-    /* ───────── Login & Register ───────── */
+
     GoRoute(path: '/login', builder: (_, __) => LoginPage()),
     GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
 
-    /* ──────────── Xarxes Socials (nueva pantalla inicial) ──────────── */
     GoRoute(
       path: '/xarxes',
       builder: (_, __) => const XarxesSocialsScreen(),
     ),
 
-    /* ───────── Home (shell) ───────── */
     GoRoute(
       path: '/',
       builder: (_, __) => const HomeScreen(),
       routes: [
-        /* ========== SOCIAL ========== */
         GoRoute(path: 'create', builder: (_, __) => const CreatePostScreen()),
         GoRoute(
           path: 'posts/:pid',
@@ -67,7 +64,6 @@ final GoRouter appRouter = GoRouter(
           builder: (ctx, st) => UserProfileScreen(userId: st.pathParameters['uid']!),
         ),
 
-        /* Perfil propio */
         GoRoute(
           path: 'profile',
           builder: (_, __) => const PerfilScreen(),
@@ -76,7 +72,6 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        /* ========== RESTO DE RUTAS ========== */
         GoRoute(
           path: 'details',
           builder: (_, __) => const DetailsScreen(),
@@ -98,8 +93,6 @@ final GoRouter appRouter = GoRouter(
               path: 'control/:sessionId',
               builder: (ctx, st) => DroneControlPage(sessionId: st.pathParameters['sessionId']!),
             ),
-
-            // Aquí sustituimos la ruta "spectate" per a que redirigeixi sempre
             GoRoute(
               path: 'spectate',
               redirect: (ctx, state) {
@@ -116,7 +109,6 @@ final GoRouter appRouter = GoRouter(
 
           ],
         ),
-
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
         GoRoute(
           path: 'google-map',

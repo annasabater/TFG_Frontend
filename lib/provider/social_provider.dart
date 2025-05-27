@@ -1,10 +1,10 @@
-import 'package:flutter/widgets.dart';      // WidgetsBinding
+//lib/provider/social_provider.dart
+
+import 'package:flutter/widgets.dart';      
 import '../models/post.dart';
 import '../services/social_service.dart';
 
-/// Provider que gestiona Feed y Explore.
 class SocialProvider extends ChangeNotifier {
-  /* ═════════════ FEED ═════════════ */
   final List<Post> _feed = [];
   int  _feedPage        = 1;
   bool _feedLoading     = false;
@@ -34,11 +34,9 @@ class SocialProvider extends ChangeNotifier {
     }
   }
 
-  /* ═════════════ EXPLORE ═════════════ */
   final List<Post> _explore = [];
   int  _explorePage        = 1;
   bool _exploreLoading     = false;
-
   List<Post> get explore        => List.unmodifiable(_explore);
   bool       get exploreLoading => _exploreLoading;
 
@@ -64,9 +62,7 @@ class SocialProvider extends ChangeNotifier {
     }
   }
 
-  /* ═════════════ Like / Unlike (optimista) ═════════════ */
   Future<void> toggleLike(Post p) async {
-    // Optimistic UI
     p.likedByMe ? p.likes-- : p.likes++;
     p.likedByMe = !p.likedByMe;
     notifyListeners();
@@ -74,7 +70,6 @@ class SocialProvider extends ChangeNotifier {
     try {
       await SocialService.like(p.id);
     } catch (_) {
-      // rollback
       p.likedByMe ? p.likes-- : p.likes++;
       p.likedByMe = !p.likedByMe;
       notifyListeners();

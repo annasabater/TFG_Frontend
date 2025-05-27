@@ -1,27 +1,25 @@
+//lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
 import 'package:SkyNet/routes/app_router.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/web_config.dart';
 import 'package:SkyNet/web_config_web.dart' if (dart.library.io) 'package:SkyNet/web_config_stub.dart';
-
-/* ───── Providers ───── */
+import 'package:SkyNet/routes/app_router.dart';
+import 'package:SkyNet/services/socket_service.dart';
+import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/provider/theme_provider.dart';
 import 'package:SkyNet/provider/language_provider.dart';
 import 'package:SkyNet/provider/drone_provider.dart';
-import 'package:SkyNet/provider/social_provider.dart';        // <-- NUEVO
-
-/* ───── Modelos ───── */
+import 'package:SkyNet/provider/social_provider.dart';        
 import 'package:SkyNet/models/user.dart';
-
-/* ───── i18n ───── */
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Future<void> main() async {
@@ -67,7 +65,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lightScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF81D4FA),
+      seedColor: const Color(0xFF264653),
       brightness: Brightness.light,
     );
 
@@ -79,7 +77,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DroneProvider()),
         ChangeNotifierProvider(create: (_) => SocialProvider()), // <-- añadido
 
-        /* Mantén sincronizado UserProvider con el usuario logueado */
         ProxyProvider<UserProvider, void>(
           update: (_, prov, __) {
             final raw = AuthService().currentUser;
@@ -92,8 +89,6 @@ class MyApp extends StatelessWidget {
           title: 'S K Y N E T',
           debugShowCheckedModeBanner: false,
           routerConfig: appRouter,
-          // Ahora arrancamos directamente en Explore en vez de Feed:
-          // esto lo configuras en app_router.dart con initialLocation: '/explore'
           themeMode: themeProv.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           locale: langProv.currentLocale,
           localizationsDelegates: const [
@@ -108,7 +103,6 @@ class MyApp extends StatelessWidget {
             Locale('ca'), // Catalan
           ],
 
-          /* ───── Tema claro ───── */
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
@@ -156,7 +150,6 @@ class MyApp extends StatelessWidget {
             ),
           ),
 
-          /* ───── Tema oscuro ───── */
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(

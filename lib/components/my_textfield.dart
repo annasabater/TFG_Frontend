@@ -1,4 +1,5 @@
-// my_textfield.dart (simplificado)
+// my_textfield.dart 
+
 import 'package:flutter/material.dart';
 
 class MyTextfield extends StatelessWidget {
@@ -18,20 +19,28 @@ class MyTextfield extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: colors.primary) : null,
         hintText: hintText,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: colors.primary)
+            : null,
         filled: true,
-        fillColor: colors.surface.withOpacity(0.1),
+        fillColor: colors.surfaceVariant.withOpacity(0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(25),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
+      style: TextStyle(fontSize: 16, color: colors.onSurface),
     );
   }
 }

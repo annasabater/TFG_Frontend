@@ -6,13 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:timeago/timeago.dart' as timeago;
-
 import '../services/auth_service.dart';
 import '../services/social_service.dart';
 import '../models/post.dart';
 import '../widgets/post_card.dart';
-
-// ← AÑADE estos imports:
 import '../provider/theme_provider.dart';
 import '../provider/language_provider.dart';
 
@@ -27,22 +24,18 @@ class _PerfilScreenState extends State<PerfilScreen> {
   late final String _myUserId;
   late Future<List<Post>> _postsFuture;
 
-@override
-
-void initState() {
-  super.initState();
-  _postsFuture = SocialService.getMyPosts();  // <-- nuevo endpoint que obtenga solo tus posts
-}
-
+  @override
+  void initState() {
+    super.initState();
+    _myUserId = AuthService().currentUser?['_id'] as String;
+    _postsFuture = SocialService.getMyPosts();
+  }
 
   void _loadMyPostsFromFeed() {
-    _postsFuture = SocialService.getFeed(page: 1).then((allPosts) {
-      return allPosts.where((p) => p.authorId == _myUserId).toList();
-    });
+    _postsFuture = SocialService.getMyPosts();
   }
 
   void _openSettingsMenu() {
-    // AHORA sí tienes los providers disponibles:
     final themeProv = Provider.of<ThemeProvider>(context, listen: false);
     final langProv  = Provider.of<LanguageProvider>(context, listen: false);
 
