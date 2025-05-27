@@ -15,10 +15,10 @@ Future<LatLng> getCurrentPosition() {
       try {
         if (!isCompleted) {
           if (pos.coords != null) {
-            final coords = pos.coords!;
+      final coords = pos.coords!;
             isCompleted = true;
-            completer.complete(
-              LatLng(
+      completer.complete(
+        LatLng(
                 coords.latitude!.toDouble(),
                 coords.longitude!.toDouble(),
               ),

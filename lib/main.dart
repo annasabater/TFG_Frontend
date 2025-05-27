@@ -26,15 +26,36 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  
+  try {
+    await dotenv.load(fileName: '.env');
+    print('Archivo .env cargado correctamente');
+  } catch (e) {
+    print('Error al cargar archivo .env: $e');
+  }
 
   // Configuración del servidor
-  SocketService.serverUrl = dotenv.env['SERVER_URL']!;
+  try {
+    SocketService.serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:3000';
+  } catch (e) {
+    print('Error al configurar el servidor: $e');
+  }
   
   // En Web, inicializar Google Maps API
   if (kIsWeb) {
-    // Esto cargará el script de Google Maps de forma asíncrona
-    WebConfig.instance.googleMapsApiKey;
+    try {
+      print('Inicializando configuración web...');
+      // Configuramos API key
+      if (dotenv.env.containsKey('GOOGLE_MAPS_API_KEY') && dotenv.env['GOOGLE_MAPS_API_KEY']!.isNotEmpty) {
+        final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
+        print('API key encontrada en .env: ${apiKey.substring(0, 3)}***');
+        setupWebGoogleMapsApi(apiKey);
+      } else {
+        print('ADVERTENCIA: GOOGLE_MAPS_API_KEY no está definida en el archivo .env');
+      }
+    } catch (e) {
+      print('Error al inicializar configuración web: $e');
+    }
   }
   
   runApp(const MyApp());
