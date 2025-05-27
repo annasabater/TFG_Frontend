@@ -1,3 +1,5 @@
+//lib/widgets/Layout.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,13 +18,22 @@ class LayoutWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final usersProv   = context.watch<UserProvider>();
-    final admin       = usersProv.isAdmin;
-    final email       = usersProv.currentUser!.email.toLowerCase();
-    final loc         = AppLocalizations.of(context)!;
-    final scheme      = Theme.of(context).colorScheme;
+    // Obtener provider de usuarios; puede estar cargando
+    final usersProv = context.watch<UserProvider?>();
+    final currentUser = usersProv?.currentUser;
 
-    // Conjuntos y patrones de usuarios especiales
+    // Si aún no está disponible el usuario, mostramos loader
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final admin = usersProv!.isAdmin;
+    final email = currentUser.email.toLowerCase();
+    final loc = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+
     const droneEmails = {
       'dron_azul1@upc.edu',
       'dron_verde1@upc.edu',
@@ -30,36 +41,32 @@ class LayoutWrapper extends StatelessWidget {
       'dron_amarillo1@upc.edu',
     };
     bool isInvitado(String e) =>
-      RegExp(r'^invitado_\d+@upc\.edu$').hasMatch(e);
+        RegExp(r'^invitado_\d+@upc\.edu\$').hasMatch(e);
 
     bool isRoute(String r) =>
-      GoRouterState.of(context).uri.toString() == r;
+        GoRouterState.of(context).uri.toString() == r;
 
-    // Construcción dinámica de los items de navegación
     List<Widget> navItems = [
       _navItem(context, loc.home, Icons.home, '/', isRoute('/'))
     ];
 
     if (droneEmails.contains(email)) {
-      // Pilotos de dron: solo Juegos
       navItems.add(
-        _navItem(context, loc.games, Icons.sports_esports, '/jocs', isRoute('/jocs'))
+        _navItem(context, loc.games, Icons.sports_esports, '/jocs', isRoute('/jocs')),
       );
     } else if (isInvitado(email)) {
-      // Invitados: Xarxes, Chat, Espectar
       navItems.addAll([
         _navItem(context, 'Xarxes Socials', Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
-         _navItem(
-             context,
-             loc.spectateGames,          
-             Icons.visibility,
-             '/jocs/spectate',
-             isRoute('/jocs/spectate'),
-           ),
+        _navItem(
+          context,
+          loc.spectateGames,
+          Icons.visibility,
+          '/jocs/spectate',
+          isRoute('/jocs/spectate'),
+        ),
       ]);
     } else {
-      // Usuarios normales/admin
       navItems.addAll([
         _navItem(context, 'Xarxes Socials', Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
@@ -72,7 +79,7 @@ class LayoutWrapper extends StatelessWidget {
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
         _navItem(
           context,
-          loc.spectateGames,          
+          loc.spectateGames,
           Icons.visibility,
           '/jocs/spectate',
           isRoute('/jocs/spectate'),
@@ -88,8 +95,8 @@ class LayoutWrapper extends StatelessWidget {
           const LanguageSelector(),
           Consumer<ThemeProvider>(
             builder: (_, t, __) => IconButton(
-              icon    : Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
-              tooltip : t.isDarkMode ? loc.lightMode : loc.darkMode,
+              icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              tooltip: t.isDarkMode ? loc.lightMode : loc.darkMode,
               onPressed: () => t.toggleTheme(),
             ),
           ),
@@ -111,7 +118,6 @@ class LayoutWrapper extends StatelessWidget {
           ],
         ),
       ),
-
       body: Container(
         color: scheme.surfaceVariant.withOpacity(.10),
         child: child,
@@ -119,32 +125,31 @@ class LayoutWrapper extends StatelessWidget {
     );
   }
 
-DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
-  decoration: BoxDecoration(color: scheme.primary),
-  margin: EdgeInsets.zero,
-  padding: const EdgeInsets.symmetric(vertical: 16),
-  child: SizedBox(
-    width: double.infinity,
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset('assets/logo_skynet.png', width: 80),
-        const SizedBox(height: 12),
-        const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
-        const SizedBox(height: 12),
-        Text(
-          'S K Y N E T',
-          style: TextStyle(
-            color: scheme.onPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
+  DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
+        decoration: BoxDecoration(color: scheme.primary),
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/logo_skynet.png', width: 80),
+              const SizedBox(height: 12),
+              const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
+              const SizedBox(height: 12),
+              Text(
+                'S K Y N E T',
+                style: TextStyle(
+                  color: scheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  ),
-);
-
+      );
 
   ListTile _navItem(BuildContext ctx, String title, IconData icon, String route, bool selected) {
     final scheme = Theme.of(ctx).colorScheme;
@@ -168,30 +173,30 @@ DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
   }
 
   Padding _reloadButton(BuildContext ctx, AppLocalizations loc) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: ElevatedButton.icon(
-      onPressed: () {
-        ctx.read<UserProvider>().loadUsers();
-        Navigator.pop(ctx);
-      },
-      icon : const Icon(Icons.refresh),
-      label: Text(loc.reloadUsers),
-    ),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: ElevatedButton.icon(
+          onPressed: () {
+            ctx.read<UserProvider>().loadUsers();
+            Navigator.pop(ctx);
+          },
+          icon: const Icon(Icons.refresh),
+          label: Text(loc.reloadUsers),
+        ),
+      );
 
   Padding _logoutButton(BuildContext ctx, AppLocalizations loc) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-      onPressed: () async {
-        await AuthService().logout();
-        if (ctx.mounted) {
-          Navigator.pop(ctx);
-          ctx.go('/login');
-        }
-      },
-      icon : const Icon(Icons.logout),
-      label: Text(loc.logout),
-    ),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () async {
+            await AuthService().logout();
+            if (ctx.mounted) {
+              Navigator.pop(ctx);
+              ctx.go('/login');
+            }
+          },
+          icon: const Icon(Icons.logout),
+          label: Text(loc.logout),
+        ),
+      );
 }

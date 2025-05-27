@@ -1,8 +1,11 @@
-// lib/screens/social/user_profile_screen.dart
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../services/social_service.dart';
+import 'package:provider/provider.dart';
+
 import '../../models/post.dart';
+import '../../provider/theme_provider.dart';
+import '../../services/social_service.dart';
 import '../../widgets/post_card.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -22,86 +25,195 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadProfile();
   }
 
-  Future<void> _load() async {
-    final data = await SocialService.getUserWithPosts(widget.userId);
-    setState(() {
-      _user = data['user'];
-      _posts = data['posts'];
-      _following = data['following'];
-      _loading = false;
-    });
+  Future<void> _loadProfile() async {
+    setState(() => _loading = true);
+    try {
+      final data = await SocialService.getUserWithPosts(widget.userId);
+      setState(() {
+        _user      = data['user'];
+        _posts     = List<Post>.from(data['posts']);
+        _following = data['following'];
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar perfil: $e')),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _toggleFollow() async {
-    _following
-        ? await SocialService.unFollow(widget.userId)
-        : await SocialService.follow(widget.userId);
-    setState(() => _following = !_following);
+    try {
+      if (_following) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: const Text('Dejar de seguir'),
+            content: Text('¿Quieres dejar de seguir a ${_user!['userName']}?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: const Text('Sí'),
+              ),
+            ],
+          ),
+        );
+        if (confirm != true) return;
+        await SocialService.unFollow(widget.userId);
+      } else {
+        await SocialService.follow(widget.userId);
+      }
+      await _loadProfile(); // recarga estado real desde el servidor
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al ${_following ? 'dejar de seguir' : 'seguir'}: $e')),
+      );
+    }
+  }
+
+  int _columnsForWidth(double w) {
+    if (w >= 1280) return 4;
+    if (w >= 1024) return 3;
+    if (w >= 650)  return 2;
+    return 1;
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProv = context.watch<ThemeProvider>();
+    final isDark    = themeProv.isDarkMode;
+    final scheme    = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_user?['userName'] ?? ''),
+        backgroundColor: scheme.background,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        // Título vacío para no repetir nombre
+        title: const Text(''),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+            onPressed: () => themeProv.toggleTheme(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.go('/'),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          child: Text(_user!['userName'][0]),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _user!['userName'],
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: _toggleFollow,
-                          child: Text(_following ? 'Siguiendo' : 'Seguir'),
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.chat),
-                          label: const Text('Mensaje'),
-                          onPressed: () => context.go('/chat/${widget.userId}'),
-                        ),
-                      ],
+              color: scheme.primary,
+              onRefresh: _loadProfile,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // — Header con avatar, nombre y botones —
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 24, horizontal: 16),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 48,
+                            backgroundColor: scheme.primary.withOpacity(.2),
+                            child: Text(
+                              (_user!['userName'] as String)
+                                  .substring(0, 1)
+                                  .toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 40,
+                                color: scheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _user!['userName'],
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: _toggleFollow,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _following
+                                      ? scheme.secondaryContainer
+                                      : scheme.primary,
+                                ),
+                                child: Text(
+                                  _following ? 'Siguiendo' : 'Seguir',
+                                  style: TextStyle(
+                                    color: _following
+                                        ? scheme.onSecondaryContainer
+                                        : scheme.onPrimary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.chat_bubble_outline),
+                                label: const Text('Mensaje'),
+                                onPressed: () =>
+                                    context.go('/chat/${widget.userId}'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const Divider(),
-                  GridView.builder(
-                    padding: const EdgeInsets.all(4),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _posts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 2,
-                      crossAxisSpacing: 2,
+
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 8),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) {
+                          final p = _posts[i];
+                          return PostCard(
+                            post: p,
+                            onLike: () async {
+                              await SocialService.like(p.id);
+                              setState(() {
+                                p.likedByMe = !p.likedByMe;
+                                p.likes += p.likedByMe ? 1 : -1;
+                              });
+                            },
+                          );
+                        },
+                        childCount: _posts.length,
+                      ),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            _columnsForWidth(MediaQuery.of(context).size.width),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.78,
+                      ),
                     ),
-                    itemBuilder: (_, i) {
-                      final p = _posts[i];
-                      return GestureDetector(
-                        onTap: () => context.go('/posts/${p.id}'),
-                        child: Image.network(p.mediaUrl, fit: BoxFit.cover),
-                      );
-                    },
                   ),
                 ],
               ),

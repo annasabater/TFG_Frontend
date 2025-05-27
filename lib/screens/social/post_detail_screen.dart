@@ -1,10 +1,11 @@
+// lib/screens/social/post_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/social_service.dart';
 import '../../models/post.dart';
 import '../../services/auth_service.dart';
-import '../../widgets/post_card.dart';        // cabecera / media / like
 import '../../widgets/video_player_widget.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final cs  = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     return FutureBuilder<Post>(
       future: _future,
@@ -45,7 +46,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           );
         }
 
-        final post   = snap.data!;
+        final post = snap.data!;
         final isMine = post.authorId == _myId;
 
         return Scaffold(
@@ -84,36 +85,70 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              /* ─── Media ─── */
-              (post.mediaType == 'image')
-                  ? ClipRRect(
+              // Imagen o vídeo, visible por completo dentro de un contenedor
+              if (post.mediaType == 'image') ...[
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: 300,
+                      maxWidth: MediaQuery.of(context).size.width * 0.9,
+                    ),
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: Image.network(post.mediaUrl, fit: BoxFit.cover),
-                    )
-                  : AspectRatio(
+                      child: Image.network(
+                        post.mediaUrl,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: 300,
+                      maxWidth: MediaQuery.of(context).size.width * 0.9,
+                    ),
+                    child: AspectRatio(
                       aspectRatio: 16 / 9,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: VideoPlayerWidget(url: post.mediaUrl),
                       ),
                     ),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 12),
 
-              /* ─── Acciones like / comentarios (PostCard) ─── */
-              PostCard(
-                post: post,
-                onLike: () async {
-                  await SocialService.like(post.id);
-                  setState(() {
-                    post.likedByMe = !post.likedByMe;
-                    post.likes += post.likedByMe ? 1 : -1;
-                  });
-                },
+              // Botón de like simplificado
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      post.likedByMe ? Icons.favorite : Icons.favorite_border,
+                      color: cs.error,
+                    ),
+                    onPressed: () async {
+                      await SocialService.like(post.id);
+                      setState(() {
+                        post.likedByMe = !post.likedByMe;
+                        post.likes += post.likedByMe ? 1 : -1;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text('${post.likes} likes',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                ],
               ),
 
               const Divider(height: 32),
 
-              /* ─── Descripción ─── */
               if ((post.description ?? '').isNotEmpty)
                 Text(post.description!,
                     style: Theme.of(context).textTheme.bodyLarge),
@@ -124,7 +159,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               const SizedBox(height: 8),
 
               if (post.comments.isEmpty)
-                Text(loc.noComments, style: TextStyle(color: cs.outline)),
+                Text(loc.noComments,
+                    style: TextStyle(color: cs.outline)),
               ...post.comments.map(
                 (c) => ListTile(
                   contentPadding: EdgeInsets.zero,

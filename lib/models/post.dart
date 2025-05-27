@@ -25,11 +25,10 @@ class PostComment {
 }
 
 class Post {
-  /* --------------------- campos --------------------- */
   final String         id;
   final String         authorId;
   final String         authorName;
-  final String         mediaUrl;              // ahora vendrá absoluta
+  final String         mediaUrl;              
   final String         mediaType;
         String?        description;
         String?        location;
@@ -39,7 +38,6 @@ class Post {
   final DateTime       createdAt;
   final List<PostComment> comments;
 
-  /* ------------------ constructor ------------------ */
   Post({
     required this.id,
     required this.authorId,
@@ -55,14 +53,10 @@ class Post {
     required this.comments,
   });
 
-  /* ------------- FACTORY ⇢ convierte JSON ------------ */
   factory Post.fromJson(Map<String, dynamic> j, String? myId) {
-    /* autor puede venir string u objeto */
     final auth     = j['author'];
     final authorId = auth is Map ? (auth['_id'] ?? '') : (auth ?? '');
     final authorNm = auth is Map ? (auth['userName'] ?? '-') : '-';
-
-    /* likes como ids u objetos */
     final rawLikes = (j['likes'] as List?) ?? const [];
     final likeIds  = rawLikes.map((e) => e is Map ? e['_id'] : e).cast<String>();
 
@@ -70,7 +64,7 @@ class Post {
       id          : j['_id'] ?? '',
       authorId    : authorId,
       authorName  : authorNm,
-      mediaUrl    : SocialService.absolute(j['mediaUrl'] ?? ''),  // ⬅️ AQUÍ
+      mediaUrl    : SocialService.absolute(j['mediaUrl'] ?? ''),  
       mediaType   : j['mediaType'] ?? 'image',
       description : j['description'],
       location    : j['location'],
