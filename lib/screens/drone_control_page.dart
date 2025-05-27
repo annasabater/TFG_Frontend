@@ -1,9 +1,10 @@
+// lib/screens/drone_control_page.dart
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -20,25 +21,49 @@ class DroneControlPage extends StatefulWidget {
 class _DroneControlPageState extends State<DroneControlPage> {
   IO.Socket? _socket;
   final MapController _mapController = MapController();
-  bool _showMap = false;
-  bool _mapLocked = true;
-  double _currentZoom = 19;
 
-  final Map<String, Marker> _droneMarkers   = {};
-  final Map<String, Marker> _bulletMarkers  = {};
+  bool   _showMap      = false;
+  bool   _mapLocked    = true;
+  bool   _gameFinished = false;
+  double _currentZoom  = 20;
+
+  // -----------------  datos visibles en el mapa ----------------------------
+  final Map<String, Marker>  _droneMarkers  = {};
+  final Map<String, Marker>  _bulletMarkers = {};
   final Map<String, Polygon> _fencePolygons = {};
   final Map<String, Polygon> _obstaclePolys = {};
+  final Map<String, int>     _scores        = {};
 
-  // Para asignar color definitivo tras recibir fence_add
-  final Map<String, Color> _droneColors = {};
+  // -----------------  estado extra de cada dron ----------------------------
+  /// 'active' | 'landed'
+  final Map<String, String> _droneStates = {};
+  /// última telemetría recibida por dron
+  final Map<String, Map<String, dynamic>> _telemetry = {};
+  /// último heading recibido
+  final Map<String, double> _headings = {};
 
+  // -----------------  parpadeo mientras está landed ------------------------
+  bool   _blinkVisible = true;
+  Timer? _blinkTimer;
+
+  // -----------------  contadores varios ------------------------------------
   int _bulletUid = 0;
   Map<String, dynamic>? _myTelemetry;
 
-  Timer? _throttleTimer;
-  static const double _deadZone = 0.5;
-  static const double _maxSpeed = 1.0;
-  static const Duration _period = Duration(milliseconds: 100);
+  // -----------------  joysticks --------------------------------------------
+  Timer?              _throttleTimer;
+  static const double _deadZone       = 0.5;
+  static const double _maxSpeed       = 1.0;
+  static const Duration _throttlePeriod = Duration(milliseconds: 100);
+
+  // -----------------  colores por dron -------------------------------------
+  static const Map<String, Color> _playerColor = {
+    'dron_rojo1@upc.edu'    : Colors.red,
+    'dron_azul1@upc.edu'    : Colors.blue,
+    'dron_verde1@upc.edu'   : Colors.green,
+    'dron_amarillo1@upc.edu': Colors.amber,
+  };
+  bool _isCompetitor(String email) => _playerColor.containsKey(email);
 
   @override
   void initState() {
@@ -46,13 +71,17 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _connectSocket();
   }
 
+  // -------------------------------------------------------------------------
+  //                               SOCKET                                     |
+  // -------------------------------------------------------------------------
+
   void _connectSocket() {
     final token = SocketService.jwt;
     _socket = IO.io(
       '${SocketService.serverUrl}/jocs',
       {
         'transports': ['websocket'],
-        'auth': {'token': token},
+        'auth'      : {'token': token},
         'autoConnect': false,
       },
     )..connect();
@@ -61,185 +90,308 @@ class _DroneControlPageState extends State<DroneControlPage> {
       ..on('connect', (_) {
         _socket!.emit('join', {'sessionId': widget.sessionId});
       })
-      ..on('waiting', (data) {
-        if (data is Map && data.containsKey('drones')) {
-          for (final email in data['drones']) {
-            if (!_droneMarkers.containsKey(email)) {
-              _droneMarkers[email] = _emptyDroneMarker();
-              _droneColors[email] = _getColorFromEmail(email);
-            }
-          }
-          setState(() {});
-        }
-      })
       ..on('state_update', _handleStateUpdate)
       ..on('game_ended', (_) {
         if (!mounted) return;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (route) => false);
-          }
+
+        setState(() {
+          _gameFinished = true;
+          _showMap      = true;   
+          _mapLocked    = true;  
+        });
+      })
+      ..on('game_started', (_) {
+        if (!mounted) return;
+        _resetScenario();
+        setState(() {
+          _gameFinished = false;
+          _showMap      = true;
         });
       });
   }
 
   void _handleStateUpdate(dynamic data) {
-    final action  = data['action'] as String? ?? '';
-    final droneId = data['drone']  as String? ?? '';
+    if (_gameFinished) return;
+
+    final action  = data['action'] ?? '';
+    final drone   = data['drone']  ?? '';
     final payload = data['payload'] as Map<String, dynamic>? ?? {};
 
     switch (action) {
       case 'telemetry':
-        _updateDrone(droneId, payload);
+        _updateDrone(drone, payload);
         break;
+
+      case 'state':
+        final newState = payload['state'] as String? ?? 'flying';
+        _droneStates[drone] = newState;
+        _rebuildMarker(drone);      // refrescamos icono con la nueva opacidad
+        _syncBlinkTimer();
+        setState(() {});
+        break;
+
+      case 'score_update':
+        _scores[drone] = (payload['score'] as num).toInt();
+        setState(() {});
+        break;
+
       case 'bullet_create':
       case 'bullet_move':
         _updateBullet(payload, create: action == 'bullet_create');
         break;
+
       case 'bullet_destroy':
         _bulletMarkers.remove(payload['bulletId']);
+        setState(() {});
         break;
+
       case 'fence_add':
-        _addFence(payload['geometry'], droneId);
+        _addFence(payload['geometry'], drone);
+        setState(() {});
         break;
+
       case 'fence_remove':
         _fencePolygons.clear();
+        setState(() {});
         break;
+
       case 'obstacle_add':
-        _addObstacle(payload['geometry']);
+        _addObstacle(payload['geometry'] as List);
+        setState(() {});
         break;
+
       case 'obstacle_remove':
-        final id = (payload['geometry'] as List)
-            .map((pt) => '${pt['lat']}_${pt['lon']}')
-            .join('_');
-        _obstaclePolys.remove(id);
+        _removeObstacle(payload['geometry'] as List);
+        setState(() {});
         break;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  //                           BLINK HELPERS                                   |
+  // -------------------------------------------------------------------------
+
+  /// Activa o detiene el timer de parpadeo según haya algún dron landed.
+  void _syncBlinkTimer() {
+    final anyLanded = _droneStates.values.any((s) => s == 'landed');
+
+    if (anyLanded && (_blinkTimer == null || !_blinkTimer!.isActive)) {
+      _blinkTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+        _blinkVisible = !_blinkVisible;
+
+        // solo actualizamos los drones en estado 'landed'
+        for (final email in _droneStates.keys) {
+          if (_droneStates[email] == 'landed') _rebuildMarker(email);
+        }
+        setState(() {});
+      });
+    } else if (!anyLanded) {
+      _blinkTimer?.cancel();
+      _blinkTimer = null;
+      _blinkVisible = true;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  //                               RESET                                       |
+  // -------------------------------------------------------------------------
+
+  void _resetScenario() {
+    _droneMarkers.clear();
+    _bulletMarkers.clear();
+    _fencePolygons.clear();
+    _obstaclePolys.clear();
+    _scores.clear();
+    _droneStates.clear();
+    _telemetry.clear();
+    _headings.clear();
+
+    _bulletUid     = 0;
+    _myTelemetry   = null;
+    _currentZoom   = 20;
+    _mapLocked     = true;
+
+    _blinkTimer?.cancel();
+    _blinkTimer    = null;
+    _blinkVisible  = true;
     setState(() {});
   }
 
-  void _updateDrone(String id, Map<String, dynamic> p) {
-    final lat = p['lat'] as double;
-    final lon = p['lon'] as double;
-    final hdg = (p['heading'] as num?)?.toDouble() ?? 0.0;
+  // -------------------------------------------------------------------------
+  //                           GAME CONTROL                                    |
+  // -------------------------------------------------------------------------
 
-    // Usa el color asignado por fence_add o uno por defecto
-    final color = _droneColors[id] ?? _getColorFromEmail(id);
+  void _startFrontendGame() {
+    _resetScenario();
+    _socket!.emit('control', {
+      'sessionId': widget.sessionId,
+      'drone'    : SocketService.currentUserEmail,
+      'action'   : 'start',
+      'payload'  : {},
+    });
+  }
 
-    _droneMarkers[id] = Marker(
-      point: LatLng(lat, lon),
-      width: 30,
-      height: 30,
-      child: Transform.rotate(
-        angle: hdg * pi / 180,
-        child: Icon(Icons.airplanemode_active, color: color, size: 30),
+  // -------------------------------------------------------------------------
+  //                  ACTUALIZAR DRONES & CONSTRUIR MARKER                      |
+  // -------------------------------------------------------------------------
+
+  /// Actualiza los datos guardados y reconstruye el icono.
+  void _updateDrone(String email, Map<String, dynamic> p) {
+    if (!_isCompetitor(email)) return;
+
+    _telemetry[email] = p;
+    final hdg = (p['heading'] as num?)?.toDouble() ?? 0;
+    _headings[email] = hdg;
+
+    // etiqueta propia para el HUD
+    if (email == SocketService.currentUserEmail) _myTelemetry = p;
+
+    _rebuildMarker(email);
+    setState(() {});
+  }
+
+  /// Genera (o regenera) el marker de un dron con la opacidad correcta.
+  void _rebuildMarker(String email) {
+    final p = _telemetry[email];
+    if (p == null) return;
+
+    final lat   = p['lat'] as double;
+    final lon   = p['lon'] as double;
+    final hdg   = _headings[email] ?? 0;
+    final color = _playerColor[email] ?? Colors.grey;
+    final state = _droneStates[email] ?? 'active';
+
+    final double opacity =
+        state == 'landed' ? (_blinkVisible ? 1.0 : 0.0) : 1.0;
+
+    _droneMarkers[email] = Marker(
+      point : LatLng(lat, lon),
+      width : 34,
+      height: 34,
+      child : Opacity(
+        opacity: opacity,
+        child: Transform.rotate(
+          angle: hdg * pi / 180,
+          child: Icon(Icons.airplanemode_active, color: color, size: 34),
+        ),
       ),
     );
-
-    if (id == SocketService.currentUserEmail) {
-      _myTelemetry = p;
-    }
   }
 
-  Marker _emptyDroneMarker() => Marker(
-        point: LatLng(0, 0),
-        width: 0,
-        height: 0,
-        child: const SizedBox.shrink(),
-      );
-
-  Color _getColorFromEmail(String email) {
-    if (email.contains('rojo'))     return Colors.red;
-    if (email.contains('azul'))     return Colors.blue;
-    if (email.contains('verde'))    return Colors.green;
-    if (email.contains('amarillo')) return Colors.amber;
-    return Colors.grey;
-  }
+  // -------------------------------------------------------------------------
+  //                              BULLETS                                      |
+  // -------------------------------------------------------------------------
 
   void _updateBullet(Map<String, dynamic> p, {required bool create}) {
     final id  = p['bulletId'] as String;
-    final lat = p['lat']      as double;
-    final lon = p['lon']      as double;
+    final lat = p['lat'] as double;
+    final lon = p['lon'] as double;
 
     _bulletMarkers[id] = Marker(
-      point: LatLng(lat, lon),
-      width: 12,
+      point : LatLng(lat, lon),
+      width : 12,
       height: 12,
-      child: const Icon(
-        Icons.fiber_manual_record,
-        color: Colors.black,
-        size: 12,
-      ),
+      child : const Icon(Icons.fiber_manual_record, size: 12, color: Colors.black),
     );
-
     if (!create) setState(() {});
   }
 
-  void _addFence(dynamic geometry, String drone) {
-    if (geometry is! List) return;
-    final pts = geometry
+  // -------------------------------------------------------------------------
+  //                 FENCES & OBSTÁCULOS (sin cambios)                         |
+  // -------------------------------------------------------------------------
+
+  void _addFence(dynamic geometry, String droneEmail) {
+    if (geometry is! List || !_isCompetitor(droneEmail)) return;
+    final points = geometry
         .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
         .toList();
-    final color = _getColorFromEmail(drone);
-    _droneColors[drone] = color;
+    final color = _playerColor[droneEmail] ?? Colors.grey;
 
-    _fencePolygons[drone] = Polygon(
-      points: pts,
-      color: color.withOpacity(0.25),
-      borderColor: color,
+    _fencePolygons[droneEmail] = Polygon(
+      points          : points,
+      color           : color.withOpacity(0.25),
+      borderColor     : color,
       borderStrokeWidth: 3,
     );
   }
 
-  void _addObstacle(dynamic geometry) {
-    if (geometry is! List) return;
-    final id = (geometry as List)
-        .map((pt) => '${pt['lat']}_${pt['lon']}')
-        .join('_');
-    final pts = geometry
+  String _obstacleKey(List geom) =>
+      geom.map((e) => '${e["lat"]},${e["lon"]}').join('|');
+
+  void _addObstacle(List<dynamic> geometry) {
+    final key    = _obstacleKey(geometry);
+    final points = geometry
         .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
         .toList();
 
-    _obstaclePolys[id] = Polygon(
-      points: pts,
-      color: Colors.black.withOpacity(0.4),
-      borderColor: Colors.grey,
+    _obstaclePolys[key] = Polygon(
+      points          : points,
+      color           : Colors.black.withOpacity(0.8),
+      borderColor     : Colors.black,
       borderStrokeWidth: 1,
     );
   }
 
+  void _removeObstacle(List<dynamic> geometry) {
+    final key = _obstacleKey(geometry);
+    _obstaclePolys.remove(key);
+  }
+
+  // -------------------------------------------------------------------------
+  //                      JOYSTICK & SHOTS (sin cambios)                       |
+  // -------------------------------------------------------------------------
+
   void _onJoy(String stick, Offset off) {
+    if (_gameFinished) return;
+
     final mag = sqrt(off.dx * off.dx + off.dy * off.dy);
-    if (mag < _deadZone) return;
+    if (mag < _deadZone) {
+      final action  = stick == 'left' ? 'move' : 'throttle';
+      final payload = stick == 'left'
+          ? {'dx': 0.0, 'dy': 0.0}
+          : {'dz': 0.0};
+      _socket!.emit('control', {
+        'sessionId': widget.sessionId,
+        'drone'    : SocketService.currentUserEmail,
+        'action'   : action,
+        'payload'  : payload,
+      });
+      return;
+    }
+
     if (_throttleTimer?.isActive ?? false) return;
-    _throttleTimer = Timer(_period, () {});
+    _throttleTimer = Timer(_throttlePeriod, () {});
 
     final nx = off.dx / mag;
     final ny = off.dy / mag;
     final f  = ((mag - _deadZone) / (1 - _deadZone)).clamp(0.0, 1.0) * _maxSpeed;
-    final action = stick == 'left' ? 'move' : 'throttle';
+    final action  = stick == 'left' ? 'move' : 'throttle';
     final payload = stick == 'left'
         ? {'dx': nx * f, 'dy': ny * f}
         : {'dz': ny * f};
 
     _socket!.emit('control', {
       'sessionId': widget.sessionId,
-      'drone': SocketService.currentUserEmail,
-      'action': action,
-      'payload': payload,
+      'drone'    : SocketService.currentUserEmail,
+      'action'   : action,
+      'payload'  : payload,
     });
   }
 
   void _fire(String type) {
+    if (_gameFinished) return;
     final id = 'b${_bulletUid++}';
     _socket!.emit('control', {
       'sessionId': widget.sessionId,
-      'drone': SocketService.currentUserEmail,
-      'action': 'fire',
-      'payload': {'type': type, 'bulletId': id},
+      'drone'    : SocketService.currentUserEmail,
+      'action'   : 'fire',
+      'payload'  : {'type': type, 'bulletId': id},
     });
   }
+
+  // -------------------------------------------------------------------------
+  //                                 MAPA                                      |
+  // -------------------------------------------------------------------------
 
   Widget _buildMap() => FlutterMap(
         mapController: _mapController,
@@ -253,6 +405,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
           TileLayer(
             urlTemplate:
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            subdomains: const ['server'],
             userAgentPackageName: 'com.example.seminari_flutter',
           ),
           if (_fencePolygons.isNotEmpty)
@@ -265,6 +418,10 @@ class _DroneControlPageState extends State<DroneControlPage> {
           ]),
         ],
       );
+
+  // -------------------------------------------------------------------------
+  //                                UI                                         |
+  // -------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -281,12 +438,49 @@ class _DroneControlPageState extends State<DroneControlPage> {
             ),
           );
 
+    final scoreLabel = _scores.isEmpty
+        ? const SizedBox.shrink()
+        : Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: _scores.entries.map((e) {
+                  final clr  = _playerColor[e.key]!;
+                  final name = {
+                    'dron_rojo1@upc.edu'    : 'Jugador 1 (Rojo)',
+                    'dron_azul1@upc.edu'    : 'Jugador 2 (Azul)',
+                    'dron_verde1@upc.edu'   : 'Jugador 3 (Verde)',
+                    'dron_amarillo1@upc.edu': 'Jugador 4 (Amarillo)',
+                  }[e.key] ?? e.key.split('@').first;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      '$name: ${e.value}',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: clr),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          );
+
     return Scaffold(
       backgroundColor: const Color(0xFFEFF2F5),
       body: SafeArea(
         child: Stack(
           children: [
             if (_showMap) Positioned.fill(child: _buildMap()),
+
+            // Toggle mapa
             Positioned(
               top: 16,
               left: 16,
@@ -295,54 +489,29 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 onPressed: () => setState(() => _showMap = !_showMap),
               ),
             ),
+
+            // Zoom +/− y lock
             if (_showMap) ...[
-              Positioned(
-                top: 70,
-                left: 16,
-                child: FloatingActionButton(
-                  heroTag: 'zoom_in',
-                  mini: true,
-                  onPressed: () {
-                    setState(() {
-                      _currentZoom += 1;
-                      _mapController.move(
-                          _mapController.center, _currentZoom);
-                    });
-                  },
-                  child: const Icon(Icons.add),
-                ),
-              ),
-              Positioned(
-                top: 130,
-                left: 16,
-                child: FloatingActionButton(
-                  heroTag: 'zoom_out',
-                  mini: true,
-                  onPressed: () {
-                    setState(() {
-                      _currentZoom -= 1;
-                      _mapController.move(
-                          _mapController.center, _currentZoom);
-                    });
-                  },
-                  child: const Icon(Icons.remove),
-                ),
-              ),
-              Positioned(
-                top: 190,
-                left: 16,
-                child: FloatingActionButton(
-                  heroTag: 'lock_map',
-                  mini: true,
-                  onPressed: () {
-                    setState(() => _mapLocked = !_mapLocked);
-                  },
-                  child:
-                      Icon(_mapLocked ? Icons.lock : Icons.lock_open),
-                ),
-              ),
+              _zoomBtn( 70, Icons.add, () {
+                setState(() {
+                  _currentZoom++;
+                  _mapController.move(_mapController.center, _currentZoom);
+                });
+              }),
+              _zoomBtn(130, Icons.remove, () {
+                setState(() {
+                  _currentZoom--;
+                  _mapController.move(_mapController.center, _currentZoom);
+                });
+              }),
+              _zoomBtn(190, _mapLocked ? Icons.lock : Icons.lock_open,
+                  () => setState(() => _mapLocked = !_mapLocked)),
             ],
+
             telemetryLabel,
+            scoreLabel,
+
+            // Botones de disparo
             Positioned(
               top: 30,
               right: 16,
@@ -356,45 +525,79 @@ class _DroneControlPageState extends State<DroneControlPage> {
                 ],
               ),
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _joystick('left'),
-                    _joystick('right'),
-                  ],
+
+            // Joysticks
+            if (!_gameFinished)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [_joystick('left'), _joystick('right')],
+                  ),
                 ),
               ),
-            )
+
+            // Overlay fin de partida
+            if (_gameFinished) _buildGameOverOverlay(context),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildGameOverOverlay(BuildContext context) => Positioned.fill(
+        child: Container(
+          color: Colors.black.withOpacity(0.7),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'PARTIDA FINALIZADA',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 38,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.home),
+                label: const Text('Ir al Home'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  textStyle:
+                      const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () => context.go('/'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _zoomBtn(double top, IconData icon, VoidCallback cb) => Positioned(
+        top: top,
+        left: 16,
+        child: FloatingActionButton(
+            heroTag: 'z$top', mini: true, onPressed: cb, child: Icon(icon)),
+      );
+
   Widget _joystick(String id) => Joystick(
         listener: (d) => _onJoy(id, Offset(d.x, d.y)),
         mode: JoystickMode.all,
         base: Container(
-          width: 120,
-          height: 120,
-          decoration: const BoxDecoration(
-            color: Color(0xFF2F3B4C),
-            shape: BoxShape.circle,
-          ),
-        ),
+            width: 120,
+            height: 120,
+            decoration: const BoxDecoration(
+                color: Color(0xFF2F3B4C), shape: BoxShape.circle)),
         stick: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.7),
-            shape: BoxShape.circle,
-          ),
-        ),
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7), shape: BoxShape.circle)),
       );
 
   Widget _bulletBtn(String asset, String type) => GestureDetector(
@@ -406,26 +609,25 @@ class _DroneControlPageState extends State<DroneControlPage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [
-              BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 6,
-                  offset: Offset(0, 3))
+              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8),
             child: Image.asset(asset, fit: BoxFit.contain),
           ),
         ),
       );
 
+  // -------------------------------------------------------------------------
+  //                               CLEAN-UP                                    |
+  // -------------------------------------------------------------------------
+
   @override
   void dispose() {
-    _socket
-      ?..off('state_update')
-      ..off('waiting')
-      ..dispose();
+    _socket?..off('state_update')..dispose();
     _throttleTimer?.cancel();
+    _blinkTimer?.cancel();
     super.dispose();
   }
 }

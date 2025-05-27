@@ -1,4 +1,4 @@
-//lib/routes/app_router.dart
+ //lib/routes/app_router.dart
 
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
@@ -20,7 +20,7 @@ import 'package:SkyNet/screens/waiting_room_page.dart';
 import 'package:SkyNet/screens/drone_control_page.dart';
 import 'package:SkyNet/screens/mapa_screen.dart';
 import 'package:SkyNet/screens/spectate_sessions_page.dart'; 
-import 'package:SkyNet/screens/spectator_page.dart'; 
+import 'package:SkyNet/screens/spectate_sessions_page.dart';
 import 'package:SkyNet/screens/chat_list_screen.dart';
 import 'package:SkyNet/screens/chat_screen.dart';
 import 'package:SkyNet/screens/search_user_screen.dart';
@@ -98,23 +98,25 @@ final GoRouter appRouter = GoRouter(
               path: 'control/:sessionId',
               builder: (ctx, st) => DroneControlPage(sessionId: st.pathParameters['sessionId']!),
             ),
+
+            // Aquí sustituimos la ruta "spectate" para que redirija siempre
             GoRoute(
               path: 'spectate',
-              // si tienes un sessionId guardado en el servicio, lo usas; si no, por defecto "1"
               redirect: (ctx, state) {
                 final sid = SocketService.currentSessionId ?? '1';
                 return '/jocs/spectate/$sid';
               },
-              // No necesitas builder porque nunca renderiza esta ruta: siempre redirige
               routes: [
                 GoRoute(
                   path: ':sessionId',
-                  builder: (ctx, st) => SpectatorPage(sessionId: st.pathParameters['sessionId']!),
+                  builder: (ctx, st) => SpectateSessionsPage(sessionId: st.pathParameters['sessionId']!),
                 ),
               ],
             ),
+
           ],
         ),
+
         GoRoute(path: 'mapa', builder: (_, __) => const MapaScreen()),
         GoRoute(
           path: 'store',
@@ -141,4 +143,4 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
   ],
-);
+); 

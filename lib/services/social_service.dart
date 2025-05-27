@@ -12,12 +12,8 @@ class SocialService {
   /* ─────────────────── Config ─────────────────── */
   static const _base = 'http://localhost:9000/api';
 
-  /*  Host + puerto, sin “/api”  →  p. ej. http://localhost:9000  */
   static String get _origin => _base.replaceAll('/api', '');
 
-  /// Devuelve una URL absoluta:
-  ///   · si `path` ya empieza por http/https → se devuelve tal cual  
-  ///   · si es “/uploads/xxx.png”           → se antepone el host
   static String absolute(String path) =>
       path.startsWith('http') ? path : '$_origin$path';
 
@@ -27,12 +23,11 @@ class SocialService {
     if (!multipart) hdr['Content-Type'] = 'application/json';
 
     try {
-      final dyn   = AuthService();                   // singleton
-      final token = (dyn as dynamic).token;          // String | Future<String>
+      final dyn   = AuthService();                   
+      final token = (dyn as dynamic).token;          
       final str   = token is String ? token : (token is Future ? await token : '');
       if (str.isNotEmpty) hdr['Authorization'] = 'Bearer $str';
     } catch (_) {
-      /* sin token */
     }
     return hdr;
   }

@@ -12,7 +12,7 @@ typedef VoidCallback = void Function();
 class SocketService {
   static bool _envLoaded = false;
 
-  /// Callback que se dispara al recibir `game_started`
+  /// Callback que se dispara al recibir game_started
   static VoidCallback? onGameStarted;
 
   static String? currentUserEmail;
@@ -117,7 +117,7 @@ class SocketService {
         _socket!.emit('join', {'sessionId': sid});
       })
       ..on('waiting', (data) {
-        debugPrint('Waiting: ${data['msg']}');
+        debugPrint(data['msg']);
       })
       ..on('game_started', (data) {
         debugPrint('Game started (SocketService)');
