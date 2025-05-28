@@ -80,9 +80,10 @@ class _GameViewState extends State<_GameView> {
   static const double playerSize = 50.0;
   static const double asteroidSize = 40.0;
   static const double heartSize = 30.0;
+  static const double moveSpeed = 8.0;
   
-  late double playerX;
-  late double playerY;
+  double? playerX;
+  double? playerY;
   List<Offset> asteroids = [];
   List<Offset> hearts = [];
   Timer? gameTimer;
@@ -107,8 +108,6 @@ class _GameViewState extends State<_GameView> {
     if (!mounted) return;
     
     setState(() {
-      playerX = 0;
-      playerY = 0;
       asteroids = [];
       hearts = [];
       score = 0;
@@ -129,29 +128,35 @@ class _GameViewState extends State<_GameView> {
   void updateGame() {
     if (!mounted || gameOver) return;
 
+    final size = MediaQuery.of(context).size;
+    if (playerX == null || playerY == null) {
+      playerX = size.width / 2 - playerSize / 2;
+      playerY = size.height - playerSize * 2;
+    }
+
     setState(() {
-      // Mover asteroides
+      // Aumentar velocidad de caída de asteroides
       for (int i = 0; i < asteroids.length; i++) {
-        asteroids[i] = Offset(asteroids[i].dx, asteroids[i].dy + 3);
+        asteroids[i] = Offset(asteroids[i].dx, asteroids[i].dy + 5);
       }
 
-      // Mover corazones
+      // Mover corazones más rápido también
       for (int i = 0; i < hearts.length; i++) {
-        hearts[i] = Offset(hearts[i].dx, hearts[i].dy + 2);
+        hearts[i] = Offset(hearts[i].dx, hearts[i].dy + 3);
       }
 
-      // Generar nuevos asteroides
-      if (random.nextDouble() < 0.02) {
+      // Aumentar frecuencia de asteroides (0.02 -> 0.03)
+      if (random.nextDouble() < 0.03) {
         asteroids.add(Offset(
-          random.nextDouble() * (MediaQuery.of(context).size.width - asteroidSize),
+          random.nextDouble() * (size.width - asteroidSize),
           -asteroidSize,
         ));
       }
 
-      // Generar corazones
-      if (random.nextDouble() < 0.005) {
+      // Reducir frecuencia de corazones (0.005 -> 0.003)
+      if (random.nextDouble() < 0.003) {
         hearts.add(Offset(
-          random.nextDouble() * (MediaQuery.of(context).size.width - heartSize),
+          random.nextDouble() * (size.width - heartSize),
           -heartSize,
         ));
       }
@@ -161,9 +166,9 @@ class _GameViewState extends State<_GameView> {
 
       // Limpiar objetos fuera de pantalla
       asteroids.removeWhere((asteroid) => 
-        asteroid.dy > MediaQuery.of(context).size.height);
+        asteroid.dy > size.height);
       hearts.removeWhere((heart) => 
-        heart.dy > MediaQuery.of(context).size.height);
+        heart.dy > size.height);
 
       // Incrementar puntuación
       score++;
@@ -173,10 +178,10 @@ class _GameViewState extends State<_GameView> {
   void checkCollisions() {
     // Colisiones con asteroides
     for (var asteroid in List.from(asteroids)) {
-      if (playerX < asteroid.dx + asteroidSize &&
-          playerX + playerSize > asteroid.dx &&
-          playerY < asteroid.dy + asteroidSize &&
-          playerY + playerSize > asteroid.dy) {
+      if (playerX! < asteroid.dx + asteroidSize &&
+          playerX! + playerSize > asteroid.dx &&
+          playerY! < asteroid.dy + asteroidSize &&
+          playerY! + playerSize > asteroid.dy) {
         asteroids.remove(asteroid);
         lives--;
         if (lives <= 0) {
@@ -188,10 +193,10 @@ class _GameViewState extends State<_GameView> {
 
     // Colisiones con corazones
     for (var heart in List.from(hearts)) {
-      if (playerX < heart.dx + heartSize &&
-          playerX + playerSize > heart.dx &&
-          playerY < heart.dy + heartSize &&
-          playerY + playerSize > heart.dy) {
+      if (playerX! < heart.dx + heartSize &&
+          playerX! + playerSize > heart.dx &&
+          playerY! < heart.dy + heartSize &&
+          playerY! + playerSize > heart.dy) {
         hearts.remove(heart);
         if (lives < 3) lives++;
       }
@@ -199,26 +204,35 @@ class _GameViewState extends State<_GameView> {
   }
 
   void handleKeyEvent(RawKeyEvent event) {
-    if (!mounted || gameOver) return;
+    if (!mounted || gameOver || playerX == null || playerY == null) return;
 
+    final size = MediaQuery.of(context).size;
     setState(() {
       if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
-        playerX = (playerX - 5).clamp(0, MediaQuery.of(context).size.width - playerSize);
+        playerX = (playerX! - moveSpeed).clamp(0, size.width - playerSize);
       }
       if (event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
-        playerX = (playerX + 5).clamp(0, MediaQuery.of(context).size.width - playerSize);
+        playerX = (playerX! + moveSpeed).clamp(0, size.width - playerSize);
       }
       if (event.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
-        playerY = (playerY - 5).clamp(0, MediaQuery.of(context).size.height - playerSize);
+        playerY = (playerY! - moveSpeed).clamp(0, size.height - playerSize);
       }
       if (event.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
-        playerY = (playerY + 5).clamp(0, MediaQuery.of(context).size.height - playerSize);
+        playerY = (playerY! + moveSpeed).clamp(0, size.height - playerSize);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    
+    // Inicializar posición del jugador si aún no se ha hecho
+    if (playerX == null || playerY == null) {
+      playerX = size.width / 2 - playerSize / 2;
+      playerY = size.height - playerSize * 2;
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onExit),
@@ -260,19 +274,17 @@ class _GameViewState extends State<_GameView> {
               ),
             ),
 
-            // Jugador
-            Positioned(
-              left: playerX,
-              top: playerY,
-              child: Container(
-                width: playerSize,
-                height: playerSize,
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(8),
+            if (playerX != null && playerY != null) ...[
+              // Jugador (Dron)
+              Positioned(
+                left: playerX,
+                top: playerY,
+                child: CustomPaint(
+                  size: Size(playerSize, playerSize),
+                  painter: DronePainter(color: Colors.blue),
                 ),
               ),
-            ),
+            ],
 
             // Asteroides
             ...asteroids.map((asteroid) => Positioned(
@@ -281,9 +293,13 @@ class _GameViewState extends State<_GameView> {
               child: Container(
                 width: asteroidSize,
                 height: asteroidSize,
-                decoration: const BoxDecoration(
-                  color: Colors.brown,
+                decoration: BoxDecoration(
+                  color: Colors.brown[700],
                   shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Colors.brown[500]!, Colors.brown[900]!],
+                    center: Alignment.center,
+                  ),
                 ),
               ),
             )),
@@ -355,4 +371,56 @@ class _GameViewState extends State<_GameView> {
       ),
     );
   }
+}
+
+class DronePainter extends CustomPainter {
+  final Color color;
+  
+  DronePainter({required this.color});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    // Cuerpo principal
+    final bodyPath = Path()
+      ..moveTo(size.width * 0.2, size.height * 0.4)
+      ..lineTo(size.width * 0.8, size.height * 0.4)
+      ..lineTo(size.width * 0.6, size.height * 0.8)
+      ..lineTo(size.width * 0.4, size.height * 0.8)
+      ..close();
+    canvas.drawPath(bodyPath, paint);
+
+    // Hélices
+    paint.color = color.withOpacity(0.8);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.3, size.height * 0.3),
+        width: size.width * 0.3,
+        height: size.height * 0.1,
+      ),
+      paint,
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.7, size.height * 0.3),
+        width: size.width * 0.3,
+        height: size.height * 0.1,
+      ),
+      paint,
+    );
+
+    // Detalles
+    paint.color = Colors.white;
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.5),
+      size.width * 0.05,
+      paint,
+    );
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 } 
