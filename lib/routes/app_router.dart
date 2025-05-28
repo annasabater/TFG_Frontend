@@ -31,6 +31,9 @@ import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/models/drone.dart';
 import 'package:SkyNet/models/post.dart';
 import 'package:SkyNet/services/socket_service.dart';
+import 'package:SkyNet/screens/mini_game/play_testing_game.dart';
+import 'package:SkyNet/screens/mini_game/play_testing_menu.dart';
+import 'package:SkyNet/screens/mini_game/drone_battle_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
@@ -134,6 +137,20 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: ':userId',
               builder: (ctx, st) => ChatScreen(userId: st.pathParameters['userId']!),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'play-testing',
+          builder: (_, __) => const PlayTestingMenuScreen(),
+          routes: [
+            GoRoute(
+              path: 'dodge',
+              builder: (_, __) => const PlayTestingGameScreen(),
+            ),
+            GoRoute(
+              path: 'battle',
+              builder: (_, __) => const DroneBattleScreen(),
             ),
           ],
         ),
