@@ -3,10 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:SkyNet/geolocation.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:SkyNet/widgets/map_legend.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -28,8 +25,16 @@ class _MapaScreenState extends State<MapaScreen> {
   double _currentZoom = 15.0;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _suggestions = [];
-  bool _searchLoading = false;
   FocusNode _searchFocus = FocusNode();
+  String? _selectedColor; // Nuevo: color seleccionado para el filtro
+  
+  final Map<String, Color> _colorOptions = {
+    'Todos': Colors.transparent,
+    'Rojo': Colors.red,
+    'Verde': Colors.green,
+    'Amarillo': Colors.yellow,
+    'Ninguno': Colors.transparent, // Añadido para evitar error en el Dropdown
+  };
 
   @override
   void initState() {
@@ -95,7 +100,7 @@ class _MapaScreenState extends State<MapaScreen> {
       setState(() => _suggestions = []);
       return;
     }
-    setState(() => _searchLoading = true);
+    setState(() => _loading = true);
     final url = Uri.parse('https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(value)}&format=json&addressdetails=1&limit=5&countrycodes=es');
     try {
       final response = await http.get(url);
@@ -103,19 +108,89 @@ class _MapaScreenState extends State<MapaScreen> {
         final List data = jsonDecode(response.body);
         setState(() {
           _suggestions = data.cast<Map<String, dynamic>>();
-          _searchLoading = false;
+          _loading = false;
         });
       } else {
         setState(() {
           _suggestions = [];
-          _searchLoading = false;
+          _loading = false;
         });
       }
     } catch (_) {
       setState(() {
         _suggestions = [];
-        _searchLoading = false;
+        _loading = false;
       });
+    }
+  }
+
+  // Nuevo: filtro visual con botones al lado de la leyenda
+  Widget _buildColorFilterButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _selectedColor == 'Rojo' ? Colors.red : Colors.white,
+            foregroundColor: _selectedColor == 'Rojo' ? Colors.white : Colors.red,
+            side: const BorderSide(color: Colors.red),
+          ),
+          onPressed: () => setState(() => _selectedColor = 'Rojo'),
+          child: const Text('Zona Restringida'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _selectedColor == 'Verde' ? Colors.green : Colors.white,
+            foregroundColor: _selectedColor == 'Verde' ? Colors.white : Colors.green,
+            side: const BorderSide(color: Colors.green),
+          ),
+          onPressed: () => setState(() => _selectedColor = 'Verde'),
+          child: const Text('Zona Permitida'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _selectedColor == 'Amarillo' ? Colors.yellow : Colors.white,
+            foregroundColor: _selectedColor == 'Amarillo' ? Colors.white : Colors.orange,
+            side: const BorderSide(color: Colors.yellow),
+          ),
+          onPressed: () => setState(() => _selectedColor = 'Amarillo'),
+          child: const Text('Zona de Precaución \n o con permiso especial'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _selectedColor == 'Todos' ? Colors.blueGrey : Colors.white,
+            foregroundColor: _selectedColor == 'Todos' ? Colors.white : Colors.blueGrey,
+            side: const BorderSide(color: Colors.blueGrey),
+          ),
+          onPressed: () => setState(() => _selectedColor = 'Todos'),
+          child: const Text('Mostrar Todas las Zonas'),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _selectedColor == 'Ninguno' ? Colors.black : Colors.white,
+            foregroundColor: _selectedColor == 'Ninguno' ? Colors.white : Colors.black,
+            side: const BorderSide(color: Colors.black),
+          ),
+          onPressed: () => setState(() => _selectedColor = 'Ninguno'),
+          child: const Text('Limpiar Mapa'),
+        ),
+      ],
+    );
+  }
+
+  void _onMapSecondaryTap(TapPosition tapPosition, LatLng latlng) {
+    if (_currentPosition != null) {
+      final distance = const Distance().as(LengthUnit.Meter, _currentPosition!, latlng);
+      final distanceStr = distance >= 1000
+          ? (distance / 1000).toStringAsFixed(2) + ' km'
+          : distance.toStringAsFixed(0) + ' m';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Distancia desde tu ubicación: $distanceStr')),
+      );
     }
   }
 
@@ -127,6 +202,29 @@ class _MapaScreenState extends State<MapaScreen> {
         children: [
           Column(
             children: [
+              // Filtro de color
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    const Text('Filtrar zonas por color: '),
+                    DropdownButton<String>(
+                      value: _selectedColor ?? 'Todos',
+                      items: _colorOptions.keys.map((String color) {
+                        return DropdownMenuItem<String>(
+                          value: color,
+                          child: Text(color),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedColor = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
               // Mapa
               Expanded(
                 child: _loading
@@ -148,6 +246,7 @@ class _MapaScreenState extends State<MapaScreen> {
                                   _mapController.move(_currentPosition!, _currentZoom);
                                 }
                               },
+                              onSecondaryTap: _onMapSecondaryTap, // <-- Añadido para click derecho
                             ),
                             children: [
                               TileLayer(
@@ -158,60 +257,112 @@ class _MapaScreenState extends State<MapaScreen> {
                               // Zonas de restricción de vuelo
                               CircleLayer(
                                 circles: [
-                                  // Aeropuerto de Barcelona (rojo)
-                                  CircleMarker(
-                                    point: const LatLng(41.2971, 2.0785), // Aeropuerto de Barcelona
-                                    radius: 3360, // 4.8km * 0.7 = 3.36km
-                                    useRadiusInMeter: true,
-                                    color: Colors.red.withOpacity(0.6),
-                                    borderColor: Colors.red,
-                                    borderStrokeWidth: 2,
-                                  ),
-                                  // Centro de Barcelona (rojo)
-                                  CircleMarker(
-                                    point: const LatLng(41.3851, 2.1734), // Centro de Barcelona
-                                    radius: 5400, // 5.4km
-                                    useRadiusInMeter: true,
-                                    color: Colors.red.withOpacity(0.6),
-                                    borderColor: Colors.red,
-                                    borderStrokeWidth: 2,
-                                  ),
-                                  // EETAC (verde)
-                                  CircleMarker(
-                                    point: const LatLng(41.2757, 1.9881), // EETAC
-                                    radius: 492, // 0.492km (un 59% més petit)
-                                    useRadiusInMeter: true,
-                                    color: Colors.green.withOpacity(0.6),
-                                    borderColor: Colors.green,
-                                    borderStrokeWidth: 2,
-                                  ),
-                                  // Montseny (verde)
-                                  CircleMarker(
-                                    point: const LatLng(41.7667, 2.4000), // Montseny
-                                    radius: 7200, // 7.2km
-                                    useRadiusInMeter: true,
-                                    color: Colors.green.withOpacity(0.6),
-                                    borderColor: Colors.green,
-                                    borderStrokeWidth: 2,
-                                  ),
-                                  // Collserola (verde)
-                                  CircleMarker(
-                                    point: const LatLng(41.4167, 2.1000), // Collserola
-                                    radius: 5399, // Just per tocar el de Barcelona sense solapar
-                                    useRadiusInMeter: true,
-                                    color: Colors.green.withOpacity(0.6),
-                                    borderColor: Colors.green,
-                                    borderStrokeWidth: 2,
-                                  ),
-                                  // Creueta dels Aragalls (groc)
-                                  CircleMarker(
-                                    point: const LatLng(41.4181, 1.8417), // Creueta dels Aragalls
-                                    radius: 3360, // 3.36km
-                                    useRadiusInMeter: true,
-                                    color: Colors.yellow.withOpacity(0.6),
-                                    borderColor: Colors.yellow,
-                                    borderStrokeWidth: 2,
-                                  ),
+                                  if (_selectedColor == null || _selectedColor == 'Todos') ...[
+                                    // Todos los círculos
+                                    CircleMarker(
+                                      point: const LatLng(41.2971, 2.0785),
+                                      radius: 3360,
+                                      useRadiusInMeter: true,
+                                      color: Colors.red.withOpacity(0.6),
+                                      borderColor: Colors.red,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.3851, 2.1734),
+                                      radius: 5400,
+                                      useRadiusInMeter: true,
+                                      color: Colors.red.withOpacity(0.6),
+                                      borderColor: Colors.red,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.2757, 1.9881),
+                                      radius: 492,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.7667, 2.4000),
+                                      radius: 7200,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.4167, 2.1000),
+                                      radius: 5399,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.4181, 1.8417),
+                                      radius: 3360,
+                                      useRadiusInMeter: true,
+                                      color: Colors.yellow.withOpacity(0.6),
+                                      borderColor: Colors.yellow,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                  ]
+                                  else if (_selectedColor == 'Rojo') ...[
+                                    CircleMarker(
+                                      point: const LatLng(41.2971, 2.0785),
+                                      radius: 3360,
+                                      useRadiusInMeter: true,
+                                      color: Colors.red.withOpacity(0.6),
+                                      borderColor: Colors.red,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.3851, 2.1734),
+                                      radius: 5400,
+                                      useRadiusInMeter: true,
+                                      color: Colors.red.withOpacity(0.6),
+                                      borderColor: Colors.red,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                  ]
+                                  else if (_selectedColor == 'Verde') ...[
+                                    CircleMarker(
+                                      point: const LatLng(41.2757, 1.9881),
+                                      radius: 492,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.7667, 2.4000),
+                                      radius: 7200,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                    CircleMarker(
+                                      point: const LatLng(41.4167, 2.1000),
+                                      radius: 5399,
+                                      useRadiusInMeter: true,
+                                      color: Colors.green.withOpacity(0.6),
+                                      borderColor: Colors.green,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                  ]
+                                  else if (_selectedColor == 'Amarillo') ...[
+                                    CircleMarker(
+                                      point: const LatLng(41.4181, 1.8417),
+                                      radius: 3360,
+                                      useRadiusInMeter: true,
+                                      color: Colors.yellow.withOpacity(0.6),
+                                      borderColor: Colors.yellow,
+                                      borderStrokeWidth: 2,
+                                    ),
+                                  ]
+                                  // Si es 'Ninguno', no se muestra ningún círculo
                                 ],
                               ),
                               if (_currentPosition != null)
@@ -231,7 +382,14 @@ class _MapaScreenState extends State<MapaScreen> {
                           Positioned(
                             right: 16,
                             top: MediaQuery.of(context).size.height * 0.4,
-                            child: MapLegend(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                MapLegend(),
+                                const SizedBox(height: 12),
+                                _buildColorFilterButtons(),
+                              ],
+                            ),
                           ),
                           // Botones de zoom
                           Positioned(
@@ -336,4 +494,4 @@ class _MapaScreenState extends State<MapaScreen> {
       ),
     );
   }
-} 
+}
