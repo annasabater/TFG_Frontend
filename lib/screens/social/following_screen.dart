@@ -64,14 +64,26 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
   }
 
+  int get followingCount => _followingUsers.length;
+
   Future<void> _followUser(String userId) async {
+    setState(() => _loading = true);
     await SocialService.follow(userId);
     await _loadFollowing();
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ahora sigues a este usuario')),
+    );
   }
 
   Future<void> _unfollowUser(String userId) async {
+    setState(() => _loading = true);
     await SocialService.unFollow(userId);
     await _loadFollowing();
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Has dejado de seguir a este usuario')),
+    );
   }
 
   @override
@@ -112,6 +124,20 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     },
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Sigues a $followingCount usuario${followingCount == 1 ? '' : 's'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      if (_query.isEmpty && followingCount > 0)
+                        Icon(Icons.people_alt_outlined, color: Colors.blueGrey.shade400),
+                    ],
+                  ),
+                ),
                 if (_query.isEmpty)
                   Expanded(
                     child: _followingUsers.isEmpty
@@ -123,24 +149,56 @@ class _FollowingScreenState extends State<FollowingScreen> {
                             itemBuilder: (ctx, i) {
                               final user = _followingUsers[i];
                               return Center(
-                                child: Card(
-                                  elevation: 1.5,
-                                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    leading: CircleAvatar(
-                                      radius: 20,
-                                      child: Text(user.userName[0].toUpperCase(), style: const TextStyle(fontSize: 16)),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Card(
+                                    key: ValueKey(user.id),
+                                    elevation: 1.5,
+                                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
-                                    title: Text(user.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                    subtitle: Text(user.email, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.person_remove, color: Colors.red, size: 22),
-                                      tooltip: 'Unfollow',
-                                      onPressed: () => _unfollowUser(user.id!),
+                                    child: ListTile(
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      leading: CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: Colors.blue.shade50,
+                                        child: Text(
+                                          user.userName[0].toUpperCase(),
+                                          style: const TextStyle(fontSize: 16, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      title: Text(user.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                      subtitle: Text(
+                                        user.email,
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.person, color: Colors.blueGrey, size: 22),
+                                            tooltip: 'Ver perfil',
+                                            onPressed: () {
+                                              Navigator.of(context).pushNamed('/u/${user.id}');
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.chat_bubble_outline, color: Colors.teal, size: 22),
+                                            tooltip: 'Chat',
+                                            onPressed: () {
+                                              Navigator.of(context).pushNamed('/chat/${user.id}');
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.person_remove, color: Colors.red, size: 22),
+                                            tooltip: 'Unfollow',
+                                            onPressed: () => _unfollowUser(user.id!),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
