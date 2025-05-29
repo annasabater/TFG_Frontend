@@ -17,11 +17,18 @@ class _FollowingScreenState extends State<FollowingScreen> {
   String _query = '';
   int _page = 1;
   final int _limit = 20;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadFollowing();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFollowing() async {
@@ -41,7 +48,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 
   Future<void> _searchUsers(String query) async {
-    setState(() => _loading = true);
+    // No pongas setState(() => _loading = true) aquí, solo muestra loading si realmente quieres bloquear la UI
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
       await provider.loadUsers();
@@ -54,8 +61,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
       });
     } catch (e) {
       setState(() => _searchResults = []);
-    } finally {
-      setState(() => _loading = false);
     }
   }
 
@@ -80,9 +85,22 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    decoration: const InputDecoration(
+                    controller: _searchController,
+                    decoration: InputDecoration(
                       hintText: 'Buscar usuarios...',
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
+                                  _query = '';
+                                  _searchResults = [];
+                                  _searchController.clear();
+                                });
+                              },
+                            )
+                          : null,
                     ),
                     onChanged: (v) {
                       setState(() => _query = v);
@@ -98,42 +116,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   Expanded(
                     child: _followingUsers.isEmpty
                         ? const Center(child: Text('No sigues a nadie.'))
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              childAspectRatio: 1.1,
-                            ),
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
                             itemCount: _followingUsers.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (ctx, i) {
                               final user = _followingUsers[i];
-                              return Card(
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 28,
-                                        child: Text(user.userName[0].toUpperCase(), style: const TextStyle(fontSize: 24)),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(user.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                      const SizedBox(height: 4),
-                                      Text(user.email, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                                      const SizedBox(height: 12),
-                                      TextButton.icon(
-                                        icon: const Icon(Icons.person_remove, color: Colors.red),
-                                        label: const Text('Unfollow', style: TextStyle(color: Colors.red)),
-                                        onPressed: () => _unfollowUser(user.id!),
-                                      ),
-                                    ],
+                              return Center(
+                                child: Card(
+                                  elevation: 1.5,
+                                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    leading: CircleAvatar(
+                                      radius: 20,
+                                      child: Text(user.userName[0].toUpperCase(), style: const TextStyle(fontSize: 16)),
+                                    ),
+                                    title: Text(user.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                    subtitle: Text(user.email, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.person_remove, color: Colors.red, size: 22),
+                                      tooltip: 'Unfollow',
+                                      onPressed: () => _unfollowUser(user.id!),
+                                    ),
                                   ),
                                 ),
                               );
@@ -146,14 +154,24 @@ class _FollowingScreenState extends State<FollowingScreen> {
                       itemCount: _searchResults.length,
                       itemBuilder: (ctx, i) {
                         final user = _searchResults[i];
+                        final isFollowing = _followingUsers.any((u) => u.id == user.id);
                         return ListTile(
                           leading: CircleAvatar(child: Text(user.userName[0].toUpperCase())),
                           title: Text(user.userName),
                           subtitle: Text(user.email),
-                          trailing: ElevatedButton(
-                            child: const Text('Seguir'),
-                            onPressed: () => _followUser(user.id!),
-                          ),
+                          trailing: isFollowing
+                              ? ElevatedButton(
+                                  onPressed: null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade100,
+                                    foregroundColor: Colors.green.shade800,
+                                  ),
+                                  child: const Text('Siguiendo'),
+                                )
+                              : ElevatedButton(
+                                  child: const Text('Seguir'),
+                                  onPressed: () => _followUser(user.id!),
+                                ),
                         );
                       },
                     ),
