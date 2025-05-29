@@ -218,4 +218,15 @@ class SocialService {
     return followingList.map((e) => User.fromJson(e)).toList();
   }
 
+  static Future<List<User>> getMyFollowing({int page = 1, int limit = 20}) async {
+    final res = await http.get(
+      Uri.parse('$_base/users/me/following?page=$page&limit=$limit'),
+      headers: await _headers(),
+    );
+    _throwIfNot200(res);
+    final data = jsonDecode(res.body);
+    final followingList = (data['following'] ?? []) as List;
+    return followingList.map((e) => User.fromJson(e)).toList();
+  }
+
 }

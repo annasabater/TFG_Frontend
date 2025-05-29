@@ -15,15 +15,13 @@ class _FollowingScreenState extends State<FollowingScreen> {
   List<dynamic> _searchResults = [];
   bool _loading = true;
   String _query = '';
+  int _page = 1;
+  final int _limit = 20;
 
   @override
   void initState() {
     super.initState();
     _loadFollowing();
-  }
-
-  Future<List<dynamic>> _getFollowingUsers(String userId) async {
-    return await SocialService.getFollowingUsers(userId);
   }
 
   Future<void> _loadFollowing() async {
@@ -32,8 +30,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
       final provider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = provider.currentUser;
       if (currentUser == null) return;
-      final seguidos = await _getFollowingUsers(currentUser.id!);
-      setState(() => _followingUsers = seguidos);
+      // El endpoint devuelve { following: [...] }
+      final res = await SocialService.getMyFollowing(page: _page, limit: _limit);
+      setState(() => _followingUsers = res);
     } catch (e) {
       setState(() => _followingUsers = []);
     } finally {
@@ -65,6 +64,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
     await _loadFollowing();
   }
 
+  Future<void> _unfollowUser(String userId) async {
+    await SocialService.unFollow(userId);
+    await _loadFollowing();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,17 +96,49 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 ),
                 if (_query.isEmpty)
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _followingUsers.length,
-                      itemBuilder: (ctx, i) {
-                        final user = _followingUsers[i];
-                        return ListTile(
-                          leading: CircleAvatar(child: Text(user.userName[0].toUpperCase())),
-                          title: Text(user.userName),
-                          subtitle: Text(user.email),
-                        );
-                      },
-                    ),
+                    child: _followingUsers.isEmpty
+                        ? const Center(child: Text('No sigues a nadie.'))
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childAspectRatio: 1.1,
+                            ),
+                            itemCount: _followingUsers.length,
+                            itemBuilder: (ctx, i) {
+                              final user = _followingUsers[i];
+                              return Card(
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 28,
+                                        child: Text(user.userName[0].toUpperCase(), style: const TextStyle(fontSize: 24)),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(user.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      const SizedBox(height: 4),
+                                      Text(user.email, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                                      const SizedBox(height: 12),
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.person_remove, color: Colors.red),
+                                        label: const Text('Unfollow', style: TextStyle(color: Colors.red)),
+                                        onPressed: () => _unfollowUser(user.id!),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   )
                 else
                   Expanded(
