@@ -8,6 +8,7 @@ import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/models/user.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -68,6 +69,39 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _errorMessage = e.toString();
         });
       }
+    }
+  }
+
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    setState(() => _errorMessage = null);
+    try {
+      final googleSignIn = GoogleSignIn(
+        clientId: '1094359522436-i3ojk2jlmmc85gvaf1ujtjjgp43tnqub.apps.googleusercontent.com', 
+      );
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return; // User cancelled
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      if (accessToken == null) {
+        setState(() => _errorMessage = 'No se pudo obtener el token de Google.');
+        return;
+      }
+
+      final result = await AuthService().loginWithGoogle(accessToken);
+      if (result.containsKey('error')) {
+        setState(() => _errorMessage = result['error'] as String);
+        return;
+      }
+
+      final mapUser = result['user'] as Map<String, dynamic>;
+      if (context.mounted) {
+        context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+        SocketService.setUserEmail(mapUser['email'] as String);
+        context.go('/');
+      }
+    } catch (e) {
+      setState(() => _errorMessage = 'Error al iniciar sesión con Google: $e');
     }
   }
 
@@ -210,7 +244,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+                        // Google Sign-In button
+                        ElevatedButton.icon(
+                          icon: Image.asset(
+                            'assets/google_logo.png', // Add a Google logo asset if you want
+                            height: 24,
+                            width: 24,
+                          ),
+                          label: const Text('Iniciar sesión con Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            elevation: 2,
+                          ),
+                          onPressed: () => _signInWithGoogle(context),
+                        ),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -247,3 +301,4 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 }
+

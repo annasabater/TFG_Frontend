@@ -174,4 +174,19 @@ class AuthService {
     currentUser = null;
     _jwt = null;
   }
+
+  Future<Map<String, dynamic>> loginWithGoogle(String accessToken) async {
+    final url = Uri.parse('http://localhost:9000/api/auth/google');
+    final res = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'accessToken': accessToken}),
+    );
+    if (res.statusCode != 200) {
+      final err = jsonDecode(res.body) as Map<String, dynamic>;
+      return {'error': err['message'] ?? 'Error al iniciar sesión con Google'};
+    }
+    final body = jsonDecode(res.body);
+    return body;
+  }
 }
