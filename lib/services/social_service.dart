@@ -7,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'auth_service.dart';
 import '../models/post.dart';
+import '../models/user.dart';
 
 class SocialService {
   static const _base = 'http://localhost:9000/api';
@@ -202,6 +203,19 @@ class SocialService {
     );
     _throwIfNot200(res);
     return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+  }
+
+  static Future<List<User>> getFollowingUsers(String userId) async {
+    final res = await http.get(
+      Uri.parse('$_base/users/$userId/profile'),
+      headers: await _headers(),
+    );
+    _throwIfNot200(res);
+    final j = jsonDecode(res.body);
+    // El backend devuelve los seguidos en el campo 'user.following' (array de usuarios o IDs)
+    final followingList = (j['user']['following'] ?? []) as List;
+    // Si el backend devuelve solo IDs, necesitarás mapearlos a User, aquí se asume que son objetos User
+    return followingList.map((e) => User.fromJson(e)).toList();
   }
 
 }

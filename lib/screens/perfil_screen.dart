@@ -159,6 +159,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     ?.copyWith(color: Colors.grey),
               ),
             ]),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.people_alt_outlined),
+              label: const Text('Ver seguidos / Buscar usuarios'),
+              onPressed: () => context.go('/following'),
+            ),
             const SizedBox(height: 32),
 
             FutureBuilder<List<Post>>(
