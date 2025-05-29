@@ -31,6 +31,8 @@ import 'package:SkyNet/services/auth_service.dart';
 import 'package:SkyNet/models/drone.dart';
 import 'package:SkyNet/models/post.dart';
 import 'package:SkyNet/services/socket_service.dart';
+import 'package:SkyNet/screens/notifications_screen.dart';
+
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
@@ -69,6 +71,10 @@ final GoRouter appRouter = GoRouter(
           builder: (_, __) => const PerfilScreen(),
           routes: [
             GoRoute(path: 'edit', builder: (_, __) => const EditProfileScreen()),
+            GoRoute(
+              path: 'notifications',
+              builder: (_, __) => const NotificationsScreen(),
+            ),
           ],
         ),
 

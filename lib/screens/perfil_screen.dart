@@ -12,6 +12,7 @@ import '../models/post.dart';
 import '../widgets/post_card.dart';
 import '../provider/theme_provider.dart';
 import '../provider/language_provider.dart';
+import '../provider/notification_provider.dart';   // ← importem
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -29,6 +30,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
     super.initState();
     _myUserId = AuthService().currentUser?['_id'] as String;
     _postsFuture = SocialService.getMyPosts();
+
+    // Carregar també notificacions a l'inici
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationProvider>().loadNotifications();
+    });
   }
 
   void _loadMyPostsFromFeed() {
@@ -116,23 +122,58 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Widget build(BuildContext context) {
     final theme  = Theme.of(context);
     final scheme = theme.colorScheme;
+    final notiProv = context.watch<NotificationProvider>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
         actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: _openSettingsMenu)
+          // Campana de notificacions
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () => context.go('/profile/notifications'),
+              ),
+              if (notiProv.unreadCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${notiProv.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          IconButton(icon: const Icon(Icons.settings), onPressed: _openSettingsMenu),
         ],
       ),
+
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/create'),
         icon: const Icon(Icons.add_a_photo),
         label: const Text('Nuevo post'),
       ),
+
       body: RefreshIndicator(
         color: scheme.primary,
         onRefresh: () {
           setState(_loadMyPostsFromFeed);
+          context.read<NotificationProvider>().loadNotifications();
           return _postsFuture;
         },
         child: ListView(
