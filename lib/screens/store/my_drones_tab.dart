@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../provider/drone_provider.dart';
-import '../../models/drone.dart';
 
 class MyDronesTab extends StatelessWidget {
   const MyDronesTab({super.key});

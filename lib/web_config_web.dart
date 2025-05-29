@@ -141,6 +141,6 @@ WebConfig getWebConfig() {
     return WebConfigImpl();
   } catch (e) {
     print('Error al crear WebConfigImpl: $e');
-    throw e;
+    rethrow;
   }
 } 

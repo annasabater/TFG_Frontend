@@ -106,7 +106,7 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: lightScheme,
-            scaffoldBackgroundColor: lightScheme.background,
+            scaffoldBackgroundColor: lightScheme.surface,
             appBarTheme: AppBarTheme(
               backgroundColor: lightScheme.primary,
               foregroundColor: lightScheme.onPrimary,
@@ -144,7 +144,7 @@ class MyApp extends StatelessWidget {
                 borderSide: BorderSide(color: lightScheme.primary),
               ),
               filled: true,
-              fillColor: lightScheme.surfaceVariant,
+              fillColor: lightScheme.surfaceContainerHighest,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),

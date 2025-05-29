@@ -13,7 +13,7 @@ import '../services/socket_service.dart';
 
 class DroneControlPage extends StatefulWidget {
   final String sessionId;
-  const DroneControlPage({Key? key, required this.sessionId}) : super(key: key);
+  const DroneControlPage({super.key, required this.sessionId});
 
   @override
   State<DroneControlPage> createState() => _DroneControlPageState();
@@ -33,9 +33,9 @@ class _DroneControlPageState extends State<DroneControlPage> {
   final Map<String, Polygon> _fencePolygons = {};
   final Map<String, Polygon> _obstaclePolys = {};
   final Map<String, int>     _scores        = {};
-  final Map<String, String> _droneStates = {};
+  final Map<String, String> _droneStates   = {};
   final Map<String, Map<String, dynamic>> _telemetry = {};
-  final Map<String, double> _headings = {};
+  final Map<String, double> _headings      = {};
 
   bool   _blinkVisible = true;
   Timer? _blinkTimer;
@@ -44,8 +44,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
   Map<String, dynamic>? _myTelemetry;
 
   Timer?              _throttleTimer;
-  static const double _deadZone       = 0.5;
-  static const double _maxSpeed       = 1.0;
+  static const double _deadZone       = 0.7;
+  static const double _maxSpeed       = 0.3;
   static const Duration _throttlePeriod = Duration(milliseconds: 100);
 
   static const Map<String, Color> _playerColor = {
@@ -62,41 +62,75 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _connectSocket();
   }
 
- 
-  void _connectSocket() {
-    final token = SocketService.jwt;
-    _socket = IO.io(
-      '${SocketService.serverUrl}/jocs',
-      {
-        'transports': ['websocket'],
-        'auth'      : {'token': token},
-        'autoConnect': false,
-      },
-    )..connect();
+void _connectSocket() {
+  final token = SocketService.jwt;
+  _socket = IO.io(
+    '${SocketService.serverUrl}/jocs',
+    {
+      'transports' : ['websocket'],
+      'auth'       : {'token': token},
+      'autoConnect': false,
+    },
+  )..connect();
 
-    _socket!
-      ..on('connect', (_) {
-        _socket!.emit('join', {'sessionId': widget.sessionId});
-      })
-      ..on('state_update', _handleStateUpdate)
-      ..on('game_ended', (_) {
-        if (!mounted) return;
+  _socket!
+  ..on('connect', (_) {
+    _socket!.emit('join', {'sessionId': widget.sessionId});
+  })
 
-        setState(() {
-          _gameFinished = true;
-          _showMap      = true;   
-          _mapLocked    = true;  
-        });
-      })
-      ..on('game_started', (_) {
-        if (!mounted) return;
-        _resetScenario();
-        setState(() {
-          _gameFinished = false;
-          _showMap      = true;
-        });
-      });
-  }
+  ..on('game_started', (_) {
+    if (!mounted) return;
+    _resetScenarioContents();
+    setState(() {
+      _gameFinished = false;
+      _showMap      = true;
+      _mapLocked    = false;
+    });
+  })
+
+  ..on('game_ended', (_) {
+    if (!mounted || _gameFinished) return;
+    _resetScenarioContents();    
+    setState(() {
+      _gameFinished = true;
+      _showMap      = true;
+      _mapLocked    = true;
+    });
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) context.go('/');
+    });
+  })
+
+    ..on('state_update', _handleStateUpdate)
+    ..on('score_update', (data) {
+      final drone = data['drone'] as String;
+      final pts   = (data['payload']['score'] as num).toInt();
+      _scores[drone] = pts;
+      setState(() {});
+    })
+    ..on('bullet_create',  (d) => _updateBullet(d['payload'], create: true))
+    ..on('bullet_move',    (d) => _updateBullet(d['payload'], create: false))
+    ..on('bullet_destroy', (d) {
+      _bulletMarkers.remove(d['payload']['bulletId']);
+      setState(() {});
+    })
+    ..on('fence_add', (d) {
+      _addFence(d['payload']['geometry'], d['drone']);
+      setState(() {});
+    })
+    ..on('fence_remove', (_) {
+      _fencePolygons.clear();
+      setState(() {});
+    })
+    ..on('obstacle_add', (d) {
+      _addObstacle(d['payload']['geometry'] as List);
+      setState(() {});
+    })
+    ..on('obstacle_remove', (d) {
+      _removeObstacle(d['payload']['geometry'] as List);
+      setState(() {});
+    });
+}
 
   void _handleStateUpdate(dynamic data) {
     if (_gameFinished) return;
@@ -109,45 +143,37 @@ class _DroneControlPageState extends State<DroneControlPage> {
       case 'telemetry':
         _updateDrone(drone, payload);
         break;
-
       case 'state':
         final newState = payload['state'] as String? ?? 'flying';
         _droneStates[drone] = newState;
-        _rebuildMarker(drone);      
+        _rebuildMarker(drone);
         _syncBlinkTimer();
         setState(() {});
         break;
-
       case 'score_update':
         _scores[drone] = (payload['score'] as num).toInt();
         setState(() {});
         break;
-
       case 'bullet_create':
       case 'bullet_move':
         _updateBullet(payload, create: action == 'bullet_create');
         break;
-
       case 'bullet_destroy':
         _bulletMarkers.remove(payload['bulletId']);
         setState(() {});
         break;
-
       case 'fence_add':
         _addFence(payload['geometry'], drone);
         setState(() {});
         break;
-
       case 'fence_remove':
         _fencePolygons.clear();
         setState(() {});
         break;
-
       case 'obstacle_add':
         _addObstacle(payload['geometry'] as List);
         setState(() {});
         break;
-
       case 'obstacle_remove':
         _removeObstacle(payload['geometry'] as List);
         setState(() {});
@@ -155,15 +181,11 @@ class _DroneControlPageState extends State<DroneControlPage> {
     }
   }
 
-  /// Activa o detiene el timer de parpadeo según haya algún dron landed
   void _syncBlinkTimer() {
     final anyLanded = _droneStates.values.any((s) => s == 'landed');
-
     if (anyLanded && (_blinkTimer == null || !_blinkTimer!.isActive)) {
       _blinkTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
         _blinkVisible = !_blinkVisible;
-
-        // solo actualizamos los drones en estado 'landed'
         for (final email in _droneStates.keys) {
           if (_droneStates[email] == 'landed') _rebuildMarker(email);
         }
@@ -185,27 +207,34 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _droneStates.clear();
     _telemetry.clear();
     _headings.clear();
-
-    _bulletUid     = 0;
-    _myTelemetry   = null;
-    _currentZoom   = 20;
-    _mapLocked     = true;
-
+    _bulletUid      = 0;
+    _myTelemetry    = null;
+    _currentZoom    = 20;
+    _mapLocked      = true;
     _blinkTimer?.cancel();
-    _blinkTimer    = null;
-    _blinkVisible  = true;
+    _blinkTimer     = null;
+    _blinkVisible   = true;
     setState(() {});
   }
 
-  void _startFrontendGame() {
-    _resetScenario();
-    _socket!.emit('control', {
-      'sessionId': widget.sessionId,
-      'drone'    : SocketService.currentUserEmail,
-      'action'   : 'start',
-      'payload'  : {},
-    });
+  void _resetScenarioContents() {
+    _droneMarkers.clear();
+    _bulletMarkers.clear();
+    _fencePolygons.clear();
+    _obstaclePolys.clear();
+    _scores.clear();
+    _droneStates.clear();
+    _telemetry.clear();
+    _headings.clear();
+    _bulletUid = 0;
+    _myTelemetry = null;
+    _currentZoom = 20;
+    _mapLocked = true;
+    _blinkTimer?.cancel();
+    _blinkTimer = null;
+    _blinkVisible = true;
   }
+
 
   void _updateDrone(String email, Map<String, dynamic> p) {
     if (!_isCompetitor(email)) return;
@@ -230,8 +259,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
     final color = _playerColor[email] ?? Colors.grey;
     final state = _droneStates[email] ?? 'active';
 
-    final double opacity =
-        state == 'landed' ? (_blinkVisible ? 1.0 : 0.0) : 1.0;
+    final double opacity = state == 'landed' ? (_blinkVisible ? 1.0 : 0.0) : 1.0;
 
     _droneMarkers[email] = Marker(
       point : LatLng(lat, lon),
@@ -261,7 +289,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
     if (!create) setState(() {});
   }
 
-
   void _addFence(dynamic geometry, String droneEmail) {
     if (geometry is! List || !_isCompetitor(droneEmail)) return;
     final points = geometry
@@ -277,8 +304,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
     );
   }
 
-  String _obstacleKey(List geom) =>
-      geom.map((e) => '${e["lat"]},${e["lon"]}').join('|');
+  String _obstacleKey(List geom) => geom.map((e) => '${e['lat']},${e['lon']}').join('|');
 
   void _addObstacle(List<dynamic> geometry) {
     final key    = _obstacleKey(geometry);
@@ -299,36 +325,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
     _obstaclePolys.remove(key);
   }
 
-
-  void _onJoy(String stick, Offset off) {
-    if (_gameFinished) return;
-
-    final mag = sqrt(off.dx * off.dx + off.dy * off.dy);
-    if (mag < _deadZone) {
-      final action  = stick == 'left' ? 'move' : 'throttle';
-      final payload = stick == 'left'
-          ? {'dx': 0.0, 'dy': 0.0}
-          : {'dz': 0.0};
-      _socket!.emit('control', {
-        'sessionId': widget.sessionId,
-        'drone'    : SocketService.currentUserEmail,
-        'action'   : action,
-        'payload'  : payload,
-      });
-      return;
-    }
-
-    if (_throttleTimer?.isActive ?? false) return;
-    _throttleTimer = Timer(_throttlePeriod, () {});
-
-    final nx = off.dx / mag;
-    final ny = off.dy / mag;
-    final f  = ((mag - _deadZone) / (1 - _deadZone)).clamp(0.0, 1.0) * _maxSpeed;
-    final action  = stick == 'left' ? 'move' : 'throttle';
-    final payload = stick == 'left'
-        ? {'dx': nx * f, 'dy': ny * f}
-        : {'dz': ny * f};
-
+  void _emitControl(String action, Map<String, dynamic> payload) {
     _socket!.emit('control', {
       'sessionId': widget.sessionId,
       'drone'    : SocketService.currentUserEmail,
@@ -337,9 +334,39 @@ class _DroneControlPageState extends State<DroneControlPage> {
     });
   }
 
+  void _onJoy(String stick, Offset off) {
+    if (_gameFinished) return;
+
+    final mag = sqrt(off.dx * off.dx + off.dy * off.dy);
+    if (mag < _deadZone) {
+      if (stick == 'right') {
+        _emitControl('move', {'dx': 0.0, 'dy': 0.0});
+      } else {
+        _emitControl('throttle', {'dz': 0.0});
+        _emitControl('yaw',      {'dyaw': 0.0});
+      }
+      return;
+    }
+
+    if (_throttleTimer?.isActive ?? false) return;
+    _throttleTimer = Timer(_throttlePeriod, () {});
+
+    final nx = off.dx / mag;
+    final ny = off.dy / mag;
+    final f  = ((mag - _deadZone) / (1 - _deadZone))
+        .clamp(0.0, 1.0) * _maxSpeed;
+
+    if (stick == 'right') {
+      _emitControl('move',   {'dx': nx * f, 'dy': -ny * f});
+    } else {
+      _emitControl('throttle', {'dz': -ny * f});
+      _emitControl('yaw',      {'dyaw': nx * f});
+    }
+  }
+
   void _fire(String type) {
     if (_gameFinished) return;
-    final id = 'b${_bulletUid++}';
+    final id = 'b\${_bulletUid++}';
     _socket!.emit('control', {
       'sessionId': widget.sessionId,
       'drone'    : SocketService.currentUserEmail,
@@ -594,7 +621,10 @@ class _DroneControlPageState extends State<DroneControlPage> {
 
   @override
   void dispose() {
-    _socket?..off('state_update')..dispose();
+    _socket
+      ?..offAny()          
+      ..disconnect()
+      ..destroy();
     _throttleTimer?.cancel();
     _blinkTimer?.cancel();
     super.dispose();

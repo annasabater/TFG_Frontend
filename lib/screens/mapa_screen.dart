@@ -13,7 +13,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 class MapaScreen extends StatefulWidget {
-  const MapaScreen({Key? key}) : super(key: key);
+  const MapaScreen({super.key});
 
   @override
   State<MapaScreen> createState() => _MapaScreenState();
@@ -29,7 +29,7 @@ class _MapaScreenState extends State<MapaScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _suggestions = [];
   bool _searchLoading = false;
-  FocusNode _searchFocus = FocusNode();
+  final FocusNode _searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -242,15 +242,15 @@ class _MapaScreenState extends State<MapaScreen> {
                                 FloatingActionButton(
                                   mini: true,
                                   onPressed: _zoomIn,
-                                  child: const Icon(Icons.add),
                                   heroTag: 'zoom-in',
+                                  child: const Icon(Icons.add),
                                 ),
                                 const SizedBox(height: 8),
                                 FloatingActionButton(
                                   mini: true,
                                   onPressed: _zoomOut,
-                                  child: const Icon(Icons.remove),
                                   heroTag: 'zoom-out',
+                                  child: const Icon(Icons.remove),
                                 ),
                               ],
                             ),
@@ -329,8 +329,8 @@ class _MapaScreenState extends State<MapaScreen> {
           FloatingActionButton(
             onPressed: _getLocation,
             tooltip: 'Mi ubicació',
-            child: const Icon(Icons.my_location),
             heroTag: 'my-location',
+            child: const Icon(Icons.my_location),
           ),
         ],
       ),

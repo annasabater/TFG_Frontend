@@ -4,7 +4,7 @@ import '../models/drone.dart';
 class DroneCard extends StatelessWidget {
   final Drone drone;
   final VoidCallback? onTap;
-  const DroneCard({Key? key, required this.drone, this.onTap}) : super(key: key);
+  const DroneCard({super.key, required this.drone, this.onTap});
 
   @override
   Widget build(BuildContext context) {

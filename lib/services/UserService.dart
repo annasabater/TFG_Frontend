@@ -2,8 +2,6 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user.dart';
 import 'auth_service.dart';
 

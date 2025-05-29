@@ -80,7 +80,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     final btnText = _uploading ? 'Publicando…' : 'Publicar';
 
-    Widget _preview() {
+    Widget preview() {
       if (kIsWeb && _bytesWebPreview != null) {
         return Image.memory(_bytesWebPreview!, height: 250, fit: BoxFit.contain);
       }
@@ -100,7 +100,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            _preview(),
+            preview(),
             const SizedBox(height: 20),
 
             TextField(

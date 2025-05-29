@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MapLegend extends StatelessWidget {
-  const MapLegend({Key? key}) : super(key: key);
+  const MapLegend({super.key});
 
   @override
   Widget build(BuildContext context) {

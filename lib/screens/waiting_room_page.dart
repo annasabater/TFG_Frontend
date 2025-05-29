@@ -7,7 +7,7 @@ import '../services/socket_service.dart';
 
 class WaitingRoomPage extends StatefulWidget {
   final String sessionId;
-  const WaitingRoomPage({Key? key, required this.sessionId}) : super(key: key);
+  const WaitingRoomPage({super.key, required this.sessionId});
 
   @override
   State<WaitingRoomPage> createState() => _WaitingRoomPageState();

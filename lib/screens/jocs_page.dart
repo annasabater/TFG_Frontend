@@ -66,7 +66,7 @@ class _FancyButton extends StatelessWidget {
 }
 
 class JocsPage extends StatelessWidget {
-  const JocsPage({Key? key}) : super(key: key);
+  const JocsPage({super.key});
 
   void _showTextDialog(BuildContext ctx, String title, String content) {
     showDialog(

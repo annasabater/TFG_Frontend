@@ -151,12 +151,12 @@ class _HoverFeatureCard extends StatefulWidget {
   final double maxWidth;
 
   const _HoverFeatureCard({
-    Key? key,
+    super.key,
     required this.image,
     required this.title,
     required this.description,
     required this.maxWidth,
-  }) : super(key: key);
+  });
 
   @override
   State<_HoverFeatureCard> createState() => __HoverFeatureCardState();

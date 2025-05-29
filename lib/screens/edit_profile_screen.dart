@@ -8,7 +8,7 @@ import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/models/user.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({Key? key}) : super(key: key);
+  const EditProfileScreen({super.key});
 
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
@@ -322,7 +322,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
                         value: _selectedRole,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: colors.surfaceVariant.withOpacity(0.6),
+                          fillColor: colors.surfaceContainerHighest.withOpacity(0.6),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -376,7 +376,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
                         ),
 
                         const SizedBox(height: 36),
-                        Divider(color: colors.surfaceVariant, thickness: 1),
+                        Divider(color: colors.surfaceContainerHighest, thickness: 1),
                         const SizedBox(height: 20),
                         TextButton.icon(
                           icon: const Icon(Icons.delete, color: Colors.redAccent),

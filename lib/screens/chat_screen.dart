@@ -11,7 +11,7 @@ import '../services/socket_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String userId;
-  const ChatScreen({Key? key, required this.userId}) : super(key: key);
+  const ChatScreen({super.key, required this.userId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();

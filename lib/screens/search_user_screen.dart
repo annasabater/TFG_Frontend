@@ -8,7 +8,7 @@ import '../models/user.dart';
 import '../widgets/language_selector.dart';  
 
 class SearchUserScreen extends StatefulWidget {
-  const SearchUserScreen({Key? key}) : super(key: key);
+  const SearchUserScreen({super.key});
   @override
   State<SearchUserScreen> createState() => _SearchUserScreenState();
 }

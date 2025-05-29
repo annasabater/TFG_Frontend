@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
-import '../../models/post.dart';
 import '../../provider/social_provider.dart';
 import '../../services/social_service.dart';
 import '../../widgets/post_card.dart';

@@ -12,8 +12,7 @@ import '../data/game_texts.dart';
 
 class SpectateSessionsPage extends StatefulWidget {
   final String sessionId;
-  const SpectateSessionsPage({Key? key, required this.sessionId})
-      : super(key: key);
+  const SpectateSessionsPage({super.key, required this.sessionId});
 
   @override
   State<SpectateSessionsPage> createState() => _SpectateSessionsPageState();
@@ -53,44 +52,55 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     _connectAsSpectator();
   }
 
-  void _connectAsSpectator() {
-    _socket = IO.io(
-      '${SocketService.serverUrl}/jocs',
-      {
-        'transports': ['websocket'],
-        'query': {
-          'sessionId': widget.sessionId,
-          'spectator': 'true',
-        },
-        'autoConnect': false,
+void _connectAsSpectator() {
+  _socket = IO.io(
+    '${SocketService.serverUrl}/jocs',
+    {
+      'transports': ['websocket'],
+      'query': {
+        'sessionId': widget.sessionId,
+        'spectator': 'true',
       },
-    )..connect();
+      'autoConnect': false,
+    },
+  )..connect();
 
-    _socket!
-      ..on('connect', (_) {
-        _socket!.emit('join', {'sessionId': widget.sessionId});
-      })
-      ..on('state_update', _handleStateUpdate)
-      ..on('game_ended', (_) {
-        if (!mounted || _gameFinished) return;
-        _resetScenario(); 
-        setState(() {
-          _gameFinished = true;
-          _gameStarted = false;
-        });
-      })
-      ..on('game_started', (_) {
-        if (!mounted) return;
-        _resetScenario();
-        setState(() {
-          _gameFinished = false;
-          _gameStarted = true;
-        });
-      })
-      ..on('disconnect', (_) => debugPrint('Spectator disconnected'));
-  }
+  _socket!
+    ..on('connect', (_) {
+      _socket!.emit('join', {'sessionId': widget.sessionId});
+    })
+
+    ..on('state_update', _handleStateUpdate)
+
+    ..on('game_ended', (_) {
+      if (!mounted || _gameFinished) return;
+      _resetScenario();
+      setState(() {
+        _gameFinished = true;
+        _gameStarted  = false;
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) context.go('/');
+      });
+    })
+
+    ..on('game_started', (_) {
+      if (!mounted) return;
+      _resetScenario();
+      setState(() {
+        _gameFinished = false;
+        _gameStarted  = true;
+      });
+    })
+
+    ..on('disconnect', (_) => debugPrint('Spectator disconnected'));
+}
 
   void _handleStateUpdate(dynamic data) {
+    if (!_gameStarted) {
+      setState(() => _gameStarted = true);
+    }
+    
     if (_gameFinished) return;
 
     final action = data['action'] ?? '';
@@ -102,7 +112,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
         _updateDrone(drone, payload);
         break;
 
-      case 'state': // NUEVO
+      case 'state': 
         _droneStates[drone] = payload['state'] as String? ?? 'flying';
         _rebuildMarker(drone);
         _syncBlinkTimer();
@@ -186,7 +196,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     final hdg = (p['heading'] as num?) ?? 0;
 
     _rebuildMarker(email,
-        lat: lat, lon: lon, heading: hdg.toDouble()); // marker rebuild
+        lat: lat, lon: lon, heading: hdg.toDouble()); 
   }
 
   void _rebuildMarker(String email,
@@ -491,7 +501,10 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
 
   @override
   void dispose() {
-    _socket?..off('state_update')..dispose();
+    _socket
+      ?..offAny()
+      ..disconnect()
+      ..destroy();
     _blinkTimer?.cancel();
     super.dispose();
   }

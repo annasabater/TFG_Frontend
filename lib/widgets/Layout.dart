@@ -41,7 +41,7 @@ class LayoutWrapper extends StatelessWidget {
       'dron_amarillo1@upc.edu',
     };
     bool isInvitado(String e) =>
-        RegExp(r'^invitado_\d+@upc\.edu\$').hasMatch(e);
+        RegExp(r'^invitado\d+@upc\.edu\$').hasMatch(e);
 
     bool isRoute(String r) =>
         GoRouterState.of(context).uri.toString() == r;
@@ -119,7 +119,7 @@ class LayoutWrapper extends StatelessWidget {
         ),
       ),
       body: Container(
-        color: scheme.surfaceVariant.withOpacity(.10),
+        color: scheme.surfaceContainerHighest.withOpacity(.10),
         child: child,
       ),
     );

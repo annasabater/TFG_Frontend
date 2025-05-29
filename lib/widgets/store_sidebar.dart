@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class StoreSidebar extends StatefulWidget {
   final void Function(Map<String, dynamic> filters) onApply;
-  const StoreSidebar({Key? key, required this.onApply}) : super(key: key);
+  const StoreSidebar({super.key, required this.onApply});
 
   @override
   State<StoreSidebar> createState() => _StoreSidebarState();

@@ -14,7 +14,7 @@ import '../provider/theme_provider.dart';
 import '../provider/language_provider.dart';
 
 class PerfilScreen extends StatefulWidget {
-  const PerfilScreen({Key? key}) : super(key: key);
+  const PerfilScreen({super.key});
 
   @override
   State<PerfilScreen> createState() => _PerfilScreenState();

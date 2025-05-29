@@ -17,12 +17,12 @@ class AllTab extends StatefulWidget {
 class _AllTabState extends State<AllTab> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
-  String _selectedCat = 'all';
+  final String _selectedCat = 'all';
   int _dronesPerPage = 10;
   int _currentPage = 1;
   int _totalPages = 1;
   Map<String, dynamic> _lastFilters = {};
-  bool _showSidebar = false;
+  final bool _showSidebar = false;
 
   @override
   void initState() {

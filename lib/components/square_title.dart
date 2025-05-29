@@ -17,7 +17,7 @@ class SquareTitle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surfaceVariant.withOpacity(0.7),
+        color: colors.surfaceContainerHighest.withOpacity(0.7),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.outline.withOpacity(0.2)),
         boxShadow: [

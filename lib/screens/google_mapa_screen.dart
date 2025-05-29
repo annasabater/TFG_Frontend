@@ -10,7 +10,7 @@ import 'package:SkyNet/web_config.dart';
 import 'package:SkyNet/web_config_web.dart' if (dart.library.io) 'package:SkyNet/web_config_stub.dart';
 
 class GoogleMapScreen extends StatefulWidget {
-  const GoogleMapScreen({Key? key}) : super(key: key);
+  const GoogleMapScreen({super.key});
 
   @override
   State<GoogleMapScreen> createState() => _GoogleMapScreenState();

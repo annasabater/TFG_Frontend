@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class GoogleMapScreen extends StatefulWidget {
-  const GoogleMapScreen({Key? key}) : super(key: key);
+  const GoogleMapScreen({super.key});
 
   @override
   State<GoogleMapScreen> createState() => _GoogleMapScreenState();
@@ -304,8 +304,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
           FloatingActionButton(
             onPressed: _getCurrentLocation,
             tooltip: 'Mi ubicación',
-            child: const Icon(Icons.my_location),
             heroTag: 'my-location',
+            child: const Icon(Icons.my_location),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
@@ -315,8 +315,8 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
               }
             },
             tooltip: 'Centro del mapa',
-            child: const Icon(Icons.center_focus_strong),
             heroTag: 'center-map',
+            child: const Icon(Icons.center_focus_strong),
           ),
         ],
       ),

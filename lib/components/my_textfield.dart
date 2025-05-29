@@ -9,12 +9,12 @@ class MyTextfield extends StatelessWidget {
   final IconData? prefixIcon;
 
   const MyTextfield({
-    Key? key,
+    super.key,
     required this.controller,
     required this.hintText,
     required this.obscureText,
     this.prefixIcon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class MyTextfield extends StatelessWidget {
             ? Icon(prefixIcon, color: colors.primary)
             : null,
         filled: true,
-        fillColor: colors.surfaceVariant.withOpacity(0.1),
+        fillColor: colors.surfaceContainerHighest.withOpacity(0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(25),
           borderSide: BorderSide.none,

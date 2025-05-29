@@ -11,7 +11,7 @@ import '../../provider/users_provider.dart';
 import '../../widgets/snack.dart';
 
 class AddDroneScreen extends StatefulWidget {
-  const AddDroneScreen({Key? key}) : super(key: key);
+  const AddDroneScreen({super.key});
 
   @override
   State<AddDroneScreen> createState() => _AddDroneScreenState();
@@ -25,8 +25,8 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
   final _priceCtrl = TextEditingController();
   final _locCtrl = TextEditingController();
 
-  String _category = 'venta';
-  String _condition = 'nuevo';
+  final String _category = 'venta';
+  final String _condition = 'nuevo';
 
   // Para móvil guardamos Files
   final List<File> _imagesMobile = [];

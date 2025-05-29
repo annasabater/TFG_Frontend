@@ -12,7 +12,7 @@ class MyButton extends StatelessWidget {
   final FontWeight? fontWeight;
 
   const MyButton({
-    Key? key,
+    super.key,
     required this.onTap,
     required this.text,
     this.color,
@@ -21,7 +21,7 @@ class MyButton extends StatelessWidget {
     this.height,
     this.fontSize,
     this.fontWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

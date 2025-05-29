@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final isWide = MediaQuery.of(context).size.width > 700;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       body: Row(
         children: [
           if (isWide)

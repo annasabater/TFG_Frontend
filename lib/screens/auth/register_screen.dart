@@ -224,7 +224,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       body: Row(
         children: [
           if (isWide)

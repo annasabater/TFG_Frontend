@@ -167,7 +167,7 @@ class SocketService {
 
     final token = await AuthService().token;
     final base  = AuthService().webSocketBaseUrl;
-    final url   = base.replaceFirst(RegExp(r'^http'), 'ws') + '/chat';
+    final url   = '${base.replaceFirst(RegExp(r'^http'), 'ws')}/chat';
 
     _chatSocket = IO.io(
       url,

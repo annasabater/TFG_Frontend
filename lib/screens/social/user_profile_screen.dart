@@ -95,7 +95,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: scheme.background,
+        backgroundColor: scheme.surface,
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
