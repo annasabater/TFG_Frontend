@@ -12,7 +12,7 @@ class SocialService {
   static const _base = 'http://localhost:9000/api';
   static String get _origin => _base.replaceAll('/api', '');
 
-  /// Construeix una URL absoluta a partir d’una ruta relativa
+  /// Construye una URL absoluta a partir de una ruta relativa
   static String absolute(String path) =>
       path.startsWith('http') ? path : '$_origin$path';
 
@@ -127,7 +127,7 @@ class SocialService {
     );
     _throwIfNot200(res);
   }
-  /// Afegeix un comentari a un post i envia notificació
+
   static Future<void> commentWithNotification(String postId, String content) async {
     final res = await http.post(
       Uri.parse('$_base/posts/$postId/comments'),
@@ -189,6 +189,7 @@ class SocialService {
         ? name.substring(i + 1)
         : 'jpeg';
   }
+
   static Future<void> updatePost(String postId, String description) async {
     final res = await http.put(
       Uri.parse('$_base/posts/$postId'),
@@ -197,6 +198,7 @@ class SocialService {
     );
     _throwIfNot200(res);
   }
+
   static Future<void> deletePost(String postId) async {
     final res = await http.delete(
       Uri.parse('$_base/posts/$postId'),
@@ -214,13 +216,11 @@ class SocialService {
     return List<Map<String, dynamic>>.from(jsonDecode(res.body));
   }
 
-static Future<void> deleteComment(String postId, String commentId) async {
-  final res = await http.delete(
-    Uri.parse('$_base/posts/$postId/comments/$commentId'),
-    headers: await _headers(),
-  );
-  _throwIfNot200(res);
-}
-
-
+  static Future<void> deleteComment(String postId, String commentId) async {
+    final res = await http.delete(
+      Uri.parse('$_base/posts/$postId/comments/$commentId'),
+      headers: await _headers(),
+    );
+    _throwIfNot200(res);
+  }
 }

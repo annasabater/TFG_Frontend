@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   Future<void> _signUserIn(BuildContext context) async {
-    final email = emailController.text.trim();
+    final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
     final loc = AppLocalizations.of(context)!;
 

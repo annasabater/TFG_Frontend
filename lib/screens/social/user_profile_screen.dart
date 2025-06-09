@@ -1,4 +1,4 @@
-//lib/screens/social/user_profile_screen.dart
+// lib/screens/social/user_profile_screen.dart
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +72,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       } else {
         await SocialService.follow(widget.userId);
       }
-      await _loadProfile(); // recarga estado real desde el servidor
+      await _loadProfile();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al ${_following ? 'dejar de seguir' : 'seguir'}: $e')),
@@ -95,13 +95,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: scheme.surface,
-        elevation: 1,
+        // Usamos el color por defecto del AppBar para mantener consistencia
+        // backgroundColor y elevation quedan como los del tema global
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        // Título vacío para no repetir nombre
         title: const Text(''),
         centerTitle: true,
         actions: [
@@ -123,7 +122,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  // — Header con avatar, nombre y botones —
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -185,7 +183,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
                   ),
-
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 8),

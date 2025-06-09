@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io' show Platform, File;
-import 'package:path/path.dart'; // para basename
+import 'package:path/path.dart'; 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/shipping_info.dart';

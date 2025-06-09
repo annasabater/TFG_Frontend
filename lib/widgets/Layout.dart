@@ -41,7 +41,8 @@ class LayoutWrapper extends StatelessWidget {
       'dron_amarillo1@upc.edu',
     };
     bool isInvitado(String e) =>
-        RegExp(r'^invitado\d+@upc\.edu\$').hasMatch(e);
+        RegExp(r'^invitado\d+@upc\.edu$').hasMatch(e);
+
 
     bool isRoute(String r) =>
         GoRouterState.of(context).uri.toString() == r;

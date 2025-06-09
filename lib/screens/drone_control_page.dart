@@ -23,8 +23,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
   IO.Socket? _socket;
   final MapController _mapController = MapController();
 
-  bool   _showMap      = false;
-  bool   _mapLocked    = true;
+  bool   _showMap      = true;
+  bool   _mapLocked    = false;
   bool   _gameFinished = false;
   double _currentZoom  = 20;
 

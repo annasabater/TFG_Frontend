@@ -108,7 +108,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => context.go('/u/${post.authorId}'),
+              onPressed: () => context.pop(),
             ),
             title: Text(post.authorName),
             actions: [
