@@ -32,7 +32,7 @@ import 'package:SkyNet/models/drone.dart';
 import 'package:SkyNet/models/post.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:SkyNet/screens/notifications_screen.dart';
-
+import 'package:SkyNet/screens/social/following_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
@@ -143,7 +143,11 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
+        GoRoute(
+          path: 'following',
+          builder: (_, __) => const FollowingScreen(),
+        ),
       ],
     ),
   ],
-); 
+);
