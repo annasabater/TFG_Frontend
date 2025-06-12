@@ -115,6 +115,10 @@ class Drone {
 
     'createdAt': createdAt?.toIso8601String(),
     'images': images,
-    'ratings': ratings.map((r) => r.toJson()).toList(),
+    // ratings siempre como array, nunca string
+    'ratings':
+        ratings.isNotEmpty
+            ? ratings.map((r) => r.toJson()).toList()
+            : <dynamic>[],
   };
 }

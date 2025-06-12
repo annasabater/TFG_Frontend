@@ -87,8 +87,9 @@ class _EditDroneScreenState extends State<EditDroneScreen>
     setState(() => _isLoading = true);
     final droneProv = context.read<DroneProvider>();
     try {
-      final ok = await droneProv.updateDrone(
-        widget.drone.id,
+      final ok = await droneProv.createDrone(
+        id: widget.drone.id, // <-- Añadido: indica edición
+        ownerId: widget.drone.ownerId,
         model: _modelCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
@@ -99,6 +100,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
         stock: _stock,
         imagesWeb: kIsWeb ? _imagesWeb : null,
         imagesMobile: !kIsWeb ? _imagesMobile : null,
+        existingImages: widget.drone.images, // <-- Añade las imágenes previas
       );
       if (ok && mounted) {
         showSnack(context, 'Anuncio actualizado');
@@ -132,6 +134,10 @@ class _EditDroneScreenState extends State<EditDroneScreen>
   @override
   Widget build(BuildContext context) {
     final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
+    // Mostrar imágenes existentes si no hay nuevas seleccionadas
+    final existingImages = widget.drone.images ?? [];
+    final showExistingImages = imageCount == 0 && existingImages.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Editar dron')),
       body: AnimatedOpacity(
@@ -234,79 +240,100 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                   label: Text('Añadir imagen ($imageCount/4)'),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: imageCount,
-                    itemBuilder: (context, i) {
-                      if (kIsWeb) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Stack(
-                            children: [
-                              Image.memory(
-                                _imagesWebBytes[i],
+                if (showExistingImages)
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: existingImages.length,
+                      itemBuilder:
+                          (context, i) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                existingImages[i],
                                 width: 100,
                                 fit: BoxFit.cover,
                               ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imagesWeb.removeAt(i);
-                                      _imagesWebBytes.removeAt(i);
-                                    });
-                                  },
-                                  child: Container(
-                                    color: Colors.black54,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
+                            ),
+                          ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: imageCount,
+                      itemBuilder: (context, i) {
+                        if (kIsWeb) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Stack(
+                              children: [
+                                Image.memory(
+                                  _imagesWebBytes[i],
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _imagesWeb.removeAt(i);
+                                        _imagesWebBytes.removeAt(i);
+                                      });
+                                    },
+                                    child: Container(
+                                      color: Colors.black54,
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      } else {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Stack(
-                            children: [
-                              Image.file(
-                                _imagesMobile[i],
-                                width: 100,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imagesMobile.removeAt(i);
-                                    });
-                                  },
-                                  child: Container(
-                                    color: Colors.black54,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
+                              ],
+                            ),
+                          );
+                        } else {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Stack(
+                              children: [
+                                Image.file(
+                                  _imagesMobile[i],
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _imagesMobile.removeAt(i);
+                                      });
+                                    },
+                                    child: Container(
+                                      color: Colors.black54,
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    },
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
-                ),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,

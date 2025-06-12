@@ -186,17 +186,68 @@ class DroneService {
     return Drone.fromJson(jsonDecode(resp.body));
   }
 
-  static Future<Drone> updateDrone(String id, Drone d) async {
+  static Future<Drone> updateDrone(
+    String id,
+    Drone d, {
+    List<File>? images,
+    List<XFile>? imagesWeb,
+  }) async {
     final jwt = await AuthService().token;
-    final resp = await http.put(
-      Uri.parse('$_base/drones/$id'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $jwt',
-      },
-      body: jsonEncode(d.toJson()),
-    );
-    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
-    return Drone.fromJson(jsonDecode(resp.body));
+    // Si hay imágenes nuevas, usa multipart/form-data
+    if ((images != null && images.isNotEmpty) ||
+        (imagesWeb != null && imagesWeb.isNotEmpty)) {
+      final uri = Uri.parse('$_base/drones/$id');
+      final request = http.MultipartRequest('PUT', uri);
+      request.headers['Authorization'] = 'Bearer $jwt';
+
+      final droneJson = d.toJson();
+      droneJson.forEach((key, value) {
+        if (value != null) request.fields[key] = value.toString();
+      });
+
+      if (images != null && images.isNotEmpty) {
+        for (var imgFile in images) {
+          final multipartFile = await http.MultipartFile.fromPath(
+            'images',
+            imgFile.path,
+            filename: basename(imgFile.path),
+          );
+          request.files.add(multipartFile);
+        }
+      } else if (imagesWeb != null && imagesWeb.isNotEmpty) {
+        for (var xfile in imagesWeb) {
+          final bytes = await xfile.readAsBytes();
+          final multipartFile = http.MultipartFile.fromBytes(
+            'images',
+            bytes,
+            filename: basename(xfile.name),
+          );
+          request.files.add(multipartFile);
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final respStr = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200 &&
+          streamedResponse.statusCode != 201) {
+        throw Exception('Error ${streamedResponse.statusCode}: $respStr');
+      }
+
+      final json = jsonDecode(respStr);
+      return Drone.fromJson(json);
+    } else {
+      // Si no hay imágenes nuevas, usa JSON normal
+      final resp = await http.put(
+        Uri.parse('$_base/drones/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $jwt',
+        },
+        body: jsonEncode(d.toJson()),
+      );
+      if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+      return Drone.fromJson(jsonDecode(resp.body));
+    }
   }
 }

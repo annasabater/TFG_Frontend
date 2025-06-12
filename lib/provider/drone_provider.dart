@@ -101,12 +101,14 @@ class DroneProvider with ChangeNotifier {
     int? stock,
     List<XFile>? imagesWeb, // para web
     List<File>? imagesMobile, // para móvil
+    List<String>? existingImages, // <-- Añade este parámetro opcional
+    String? id, // <-- Añadido para distinguir edición
   }) async {
     _setLoading(true);
     _setError(null);
     try {
       final newDrone = Drone(
-        id: '',
+        id: id ?? '', // Si hay id, es edición
         ownerId: ownerId,
         model: model,
         price: price,
@@ -117,27 +119,42 @@ class DroneProvider with ChangeNotifier {
         contact: contact,
         category: category,
         stock: stock,
-        images: const [],
+        images: existingImages ?? const [],
         createdAt: null,
       );
-      Drone created;
-      if (imagesMobile != null && imagesMobile.isNotEmpty) {
-        created = await DroneService.createDrone(
+      Drone result;
+      if (id != null && id.isNotEmpty) {
+        // Es edición: actualiza el dron existente
+        result = await DroneService.updateDrone(
+          id,
           newDrone,
           images: imagesMobile,
-        );
-      } else if (imagesWeb != null && imagesWeb.isNotEmpty) {
-        created = await DroneService.createDrone(
-          newDrone,
           imagesWeb: imagesWeb,
         );
+        // Actualiza en _drones y _myDrones
+        final idx = _drones.indexWhere((d) => d.id == id);
+        if (idx != -1) _drones[idx] = result;
+        final myIdx = _myDrones.indexWhere((d) => d.id == id);
+        if (myIdx != -1) _myDrones[myIdx] = result;
       } else {
-        throw Exception('Debes subir al menos 1 imagen.');
+        // Es creación
+        if ((imagesMobile != null && imagesMobile.isNotEmpty) ||
+            (imagesWeb != null && imagesWeb.isNotEmpty) ||
+            ((existingImages != null && existingImages.isNotEmpty))) {
+          result = await DroneService.createDrone(
+            newDrone,
+            images: imagesMobile,
+            imagesWeb: imagesWeb,
+          );
+        } else {
+          throw Exception('Debes subir al menos 1 imagen.');
+        }
+        _drones.insert(0, result);
       }
-      _drones.insert(0, created);
+      notifyListeners();
       return true;
     } catch (e) {
-      _setError('Error creating drone: $e');
+      _setError('Error creando/editando dron: $e');
       return false;
     } finally {
       _setLoading(false);

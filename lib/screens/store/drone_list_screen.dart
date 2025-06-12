@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/drone.dart';
 import '../../models/drone_query.dart';
 import '../../provider/drone_provider.dart';
+import '../../provider/users_provider.dart';
 
 enum ListSource { all, favorites, mine }
 
@@ -33,7 +34,8 @@ class _DroneListScreenState extends State<DroneListScreen> {
       await _prov.loadDrones();
     } else {
       await _prov.loadDronesFiltered(
-          DroneQuery(category: widget.categoryFilter));
+        DroneQuery(category: widget.categoryFilter),
+      );
     }
   }
 
@@ -71,9 +73,11 @@ class _DroneListScreenState extends State<DroneListScreen> {
         Expanded(
           child: Consumer<DroneProvider>(
             builder: (_, p, __) {
-              if (p.isLoading)         return const Center(child: CircularProgressIndicator());
-              if (p.error != null)     return Center(child: Text(p.error!));
-              if (p.drones.isEmpty)    return const Center(child: Text('No hi ha anuncis'));
+              if (p.isLoading)
+                return const Center(child: CircularProgressIndicator());
+              if (p.error != null) return Center(child: Text(p.error!));
+              if (p.drones.isEmpty)
+                return const Center(child: Text('No hi ha anuncis'));
 
               return RefreshIndicator(
                 onRefresh: _onRefresh,
@@ -91,38 +95,62 @@ class _DroneListScreenState extends State<DroneListScreen> {
   }
 }
 
-
 class _DroneTile extends StatelessWidget {
   final Drone drone;
   const _DroneTile({required this.drone});
 
   @override
   Widget build(BuildContext context) {
-    final img = (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
+    final img =
+        (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
+    final userProv = Provider.of<UserProvider>(context, listen: false);
+    final myId = userProv.currentUser?.id;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: img != null
-              ? Image.network(img, width: 64, height: 64, fit: BoxFit.cover)
-              : Container(
-                  width: 64,
-                  height: 64,
-                  color: Colors.grey.shade300,
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.flight, color: Colors.grey),
-                ),
+          child:
+              img != null
+                  ? Image.network(img, width: 64, height: 64, fit: BoxFit.cover)
+                  : Container(
+                    width: 64,
+                    height: 64,
+                    color: Colors.grey.shade300,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.flight, color: Colors.grey),
+                  ),
         ),
         title: Text(drone.model),
-        subtitle: Text('${drone.price.toStringAsFixed(0)} € • ${drone.location ?? '-'}'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.pushNamed(
-          'droneDetail',
-          pathParameters: {'id': drone.id},
-          extra: drone,
+        subtitle: Text(
+          '${drone.price.toStringAsFixed(0)} € • ${drone.location ?? '-'}',
         ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (myId != null && myId != drone.ownerId)
+              IconButton(
+                icon: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Colors.teal,
+                  size: 22,
+                ),
+                tooltip: 'Chat con el creador',
+                onPressed: () {
+                  // Lleva al chat con el creador del anuncio
+                  Navigator.of(context).pushNamed('/chat/${drone.ownerId}');
+                },
+              ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+        onTap:
+            () => context.pushNamed(
+              'droneDetail',
+              pathParameters: {'id': drone.id},
+              extra: drone,
+            ),
       ),
     );
   }
