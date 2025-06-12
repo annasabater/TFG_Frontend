@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/drone.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:provider/provider.dart';
+import '../../provider/users_provider.dart';
 
 class DroneDetailModal extends StatelessWidget {
   final Drone drone;
@@ -97,13 +99,47 @@ class DroneDetailModal extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'Cerrar',
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Builder(
+                      builder: (context) {
+                        final userProv = Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final currentUserId = userProv.currentUser?.id;
+                        final isMine = currentUserId == drone.ownerId;
+                        return IconButton(
+                          icon: const Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.teal,
+                            size: 28,
+                          ),
+                          tooltip:
+                              isMine
+                                  ? 'No puedes chatear contigo mismo'
+                                  : 'Chat con el vendedor',
+                          onPressed:
+                              isMine
+                                  ? null
+                                  : () {
+                                    // Si usas GoRouter:
+                                    // GoRouter.of(context).go('/chat/${drone.ownerId}');
+                                    Navigator.of(context).pop();
+                                    Navigator.of(
+                                      context,
+                                    ).pushNamed('/chat/${drone.ownerId}');
+                                  },
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: 'Cerrar',
+                    ),
+                  ],
                 ),
               ],
             ),
