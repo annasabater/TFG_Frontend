@@ -17,7 +17,8 @@ class AddDroneScreen extends StatefulWidget {
   State<AddDroneScreen> createState() => _AddDroneScreenState();
 }
 
-class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStateMixin {
+class _AddDroneScreenState extends State<AddDroneScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _modelCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
@@ -57,7 +58,10 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final XFile? img = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
 
     if (img == null) return;
 
@@ -95,9 +99,10 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
     final ownerId = userProv.currentUser?.id;
 
     try {
+      bool ok;
       // Aquí debes adaptar createDrone para que reciba la lista de imágenes adecuada
       if (kIsWeb) {
-        await droneProv.createDrone(
+        ok = await droneProv.createDrone(
           ownerId: ownerId!,
           model: _modelCtrl.text.trim(),
           description: _descCtrl.text.trim(),
@@ -108,7 +113,7 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
           imagesWeb: _imagesWeb,
         );
       } else {
-        await droneProv.createDrone(
+        ok = await droneProv.createDrone(
           ownerId: ownerId!,
           model: _modelCtrl.text.trim(),
           description: _descCtrl.text.trim(),
@@ -117,13 +122,15 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
           category: _category,
           condition: _condition,
           imagesMobile: _imagesMobile,
-          
         );
       }
 
-      if (mounted) {
+      if (ok && mounted) {
         showSnack(context, 'Anunci creat amb èxit');
         context.go('/store');
+      } else if (!ok && mounted) {
+        final error = droneProv.error ?? 'Error en crear l\'anunci';
+        showSnack(context, error);
       }
     } catch (e) {
       showSnack(context, 'Error en crear l\'anunci: $e');
@@ -166,25 +173,30 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                 TextFormField(
                   controller: _modelCtrl,
                   decoration: _inputDecoration('Model', Icons.title),
-                  validator: (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                  validator:
+                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _titleCtrl,
                   decoration: _inputDecoration('Títol', Icons.title),
-                  validator: (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                  validator:
+                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _descCtrl,
                   decoration: _inputDecoration('Descripció', Icons.description),
                   maxLines: 3,
-                  validator: (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                  validator:
+                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _priceCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: _inputDecoration('Preu (€)', Icons.euro),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obligatori';
@@ -195,8 +207,12 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _locCtrl,
-                  decoration: _inputDecoration('Localització', Icons.location_on),
-                  validator: (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                  decoration: _inputDecoration(
+                    'Localització',
+                    Icons.location_on,
+                  ),
+                  validator:
+                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
@@ -216,7 +232,11 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                           padding: const EdgeInsets.only(right: 10),
                           child: Stack(
                             children: [
-                              Image.memory(_imagesWebBytes[i], width: 100, fit: BoxFit.cover),
+                              Image.memory(
+                                _imagesWebBytes[i],
+                                width: 100,
+                                fit: BoxFit.cover,
+                              ),
                               Positioned(
                                 right: 0,
                                 top: 0,
@@ -229,10 +249,13 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                                   },
                                   child: Container(
                                     color: Colors.black54,
-                                    child: const Icon(Icons.close, color: Colors.white),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         );
@@ -241,7 +264,11 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                           padding: const EdgeInsets.only(right: 10),
                           child: Stack(
                             children: [
-                              Image.file(_imagesMobile[i], width: 100, fit: BoxFit.cover),
+                              Image.file(
+                                _imagesMobile[i],
+                                width: 100,
+                                fit: BoxFit.cover,
+                              ),
                               Positioned(
                                 right: 0,
                                 top: 0,
@@ -253,10 +280,13 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                                   },
                                   child: Container(
                                     color: Colors.black54,
-                                    child: const Icon(Icons.close, color: Colors.white),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         );
@@ -267,10 +297,11 @@ class _AddDroneScreenState extends State<AddDroneScreen> with TickerProviderStat
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Crear anunci'),
-                )
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Crear anunci'),
+                ),
               ],
             ),
           ),

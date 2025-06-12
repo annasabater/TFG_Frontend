@@ -28,29 +28,44 @@ class DroneProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  void _setLoading(bool v) { _isLoading = v; notifyListeners(); }
-  void _setError(String? e)  { _error = e; notifyListeners(); }
+  void _setLoading(bool v) {
+    _isLoading = v;
+    notifyListeners();
+  }
+
+  void _setError(String? e) {
+    _error = e;
+    notifyListeners();
+  }
 
   Future<void> loadDrones() async {
-    _setLoading(true); _setError(null);
-    _page = 1; _hasMore = true;
+    _setLoading(true);
+    _setError(null);
+    _page = 1;
+    _hasMore = true;
     try {
       _drones = await DroneService.getDrones();
     } catch (e) {
       _setError('Error loading drones: $e');
       _drones = [];
-    } finally { _setLoading(false); }
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> loadDronesFiltered(DroneQuery q) async {
-    _setLoading(true); _setError(null);
-    _page = 1; _hasMore = true;
+    _setLoading(true);
+    _setError(null);
+    _page = 1;
+    _hasMore = true;
     try {
       _drones = await DroneService.getDrones(q);
     } catch (e) {
       _setError('Error: $e');
       _drones = [];
-    } finally { _setLoading(false); }
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> loadMore({DroneQuery? filter}) async {
@@ -59,8 +74,8 @@ class DroneProvider with ChangeNotifier {
     try {
       final next = await DroneService.getDrones(
         filter == null
-          ? DroneQuery(page: ++_page, limit: 20)
-          : filter.copyWith(page: _page + 1, limit: 20),
+            ? DroneQuery(page: ++_page, limit: 20)
+            : filter.copyWith(page: _page + 1, limit: 20),
       );
       if (next.isEmpty) _hasMore = false;
       _page++;
@@ -83,10 +98,11 @@ class DroneProvider with ChangeNotifier {
     String? location,
     String? contact,
     String? category,
-    List<XFile>? imagesWeb,       // para web
-    List<File>? imagesMobile,      // para móvil
+    List<XFile>? imagesWeb, // para web
+    List<File>? imagesMobile, // para móvil
   }) async {
-    _setLoading(true); _setError(null);
+    _setLoading(true);
+    _setError(null);
     try {
       final newDrone = Drone(
         id: '',
@@ -102,7 +118,20 @@ class DroneProvider with ChangeNotifier {
         images: const [],
         createdAt: null,
       );
-      final created = await DroneService.createDrone(newDrone);
+      Drone created;
+      if (imagesMobile != null && imagesMobile.isNotEmpty) {
+        created = await DroneService.createDrone(
+          newDrone,
+          images: imagesMobile,
+        );
+      } else if (imagesWeb != null && imagesWeb.isNotEmpty) {
+        created = await DroneService.createDrone(
+          newDrone,
+          imagesWeb: imagesWeb,
+        );
+      } else {
+        throw Exception('Debes subir al menos 1 imagen.');
+      }
       _drones.insert(0, created);
       return true;
     } catch (e) {
@@ -179,10 +208,19 @@ class DroneProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addReview(String id, int rating, String comment, String userId) async {
+  Future<bool> addReview(
+    String id,
+    int rating,
+    String comment,
+    String userId,
+  ) async {
     try {
       final upd = await DroneService.addReview(
-        droneId: id, userId: userId, rating: rating, comment: comment);
+        droneId: id,
+        userId: userId,
+        rating: rating,
+        comment: comment,
+      );
       _replace(upd);
       return true;
     } catch (e) {
