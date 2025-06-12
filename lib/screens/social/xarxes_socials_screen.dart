@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:SkyNet/screens/social/explore_screen.dart';
 import 'package:SkyNet/screens/social/feed_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class XarxesSocialsScreen extends StatelessWidget {
   const XarxesSocialsScreen({super.key});
@@ -13,7 +14,7 @@ class XarxesSocialsScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        //  Header “Red Social” 
+        //  Header “Red Social”
         body: Column(
           children: [
             Container(
@@ -31,6 +32,21 @@ class XarxesSocialsScreen extends StatelessWidget {
               ),
             ),
 
+            // Botón para ir a la pantalla de seguidos
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.people_alt_outlined),
+                  label: const Text('Ver seguidos'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                  ),
+                  onPressed: () => context.go('/following'),
+                ),
+              ],
+            ),
+
             // TabBar justo debajo, fondo blanco
             Material(
               color: Colors.white,
@@ -45,11 +61,15 @@ class XarxesSocialsScreen extends StatelessWidget {
                 labelColor: theme.colorScheme.primary,
                 unselectedLabelColor: Colors.grey.shade600,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                unselectedLabelStyle:
-                    const TextStyle(fontWeight: FontWeight.normal),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                ),
                 tabs: const [
                   Tab(icon: Icon(Icons.explore_outlined), text: 'EXPLORAR'),
-                  Tab(icon: Icon(Icons.dynamic_feed_outlined), text: 'SIGUIENDO'),
+                  Tab(
+                    icon: Icon(Icons.dynamic_feed_outlined),
+                    text: 'SIGUIENDO',
+                  ),
                 ],
               ),
             ),
@@ -57,10 +77,7 @@ class XarxesSocialsScreen extends StatelessWidget {
             // Contenido de las pestañas
             Expanded(
               child: TabBarView(
-                children: const [
-                  ExploreScreen(),
-                  FeedScreen(),
-                ],
+                children: const [ExploreScreen(), FeedScreen()],
               ),
             ),
           ],
