@@ -3,6 +3,7 @@ import '../../models/drone.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:provider/provider.dart';
 import '../../provider/users_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class DroneDetailModal extends StatelessWidget {
   final Drone drone;
@@ -110,27 +111,38 @@ class DroneDetailModal extends StatelessWidget {
                         );
                         final currentUserId = userProv.currentUser?.id;
                         final isMine = currentUserId == drone.ownerId;
-                        return IconButton(
-                          icon: const Icon(
-                            Icons.chat_bubble_outline,
-                            color: Colors.teal,
-                            size: 28,
-                          ),
-                          tooltip:
-                              isMine
-                                  ? 'No puedes chatear contigo mismo'
-                                  : 'Chat con el vendedor',
-                          onPressed:
-                              isMine
-                                  ? null
-                                  : () {
-                                    // Si usas GoRouter:
-                                    // GoRouter.of(context).go('/chat/${drone.ownerId}');
-                                    Navigator.of(context).pop();
-                                    Navigator.of(
-                                      context,
-                                    ).pushNamed('/chat/${drone.ownerId}');
-                                  },
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.chat_bubble_outline,
+                                color: isMine ? Colors.grey : Colors.teal,
+                                size: 28,
+                              ),
+                              tooltip:
+                                  isMine
+                                      ? 'No puedes chatear contigo mismo'
+                                      : 'Chat con el vendedor',
+                              onPressed:
+                                  isMine
+                                      ? null
+                                      : () {
+                                        Navigator.of(context).pop();
+                                        GoRouter.of(
+                                          context,
+                                        ).go('/chat/${drone.ownerId}');
+                                      },
+                            ),
+                            if (isMine)
+                              const Positioned(
+                                child: Icon(
+                                  Icons.block,
+                                  color: Colors.redAccent,
+                                  size: 22,
+                                ),
+                              ),
+                          ],
                         );
                       },
                     ),

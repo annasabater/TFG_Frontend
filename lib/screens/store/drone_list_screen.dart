@@ -129,19 +129,42 @@ class _DroneTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (myId != null && myId != drone.ownerId)
-              IconButton(
-                icon: const Icon(
-                  Icons.chat_bubble_outline,
-                  color: Colors.teal,
-                  size: 22,
+            myId == drone.ownerId
+                ? Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Opacity(
+                      opacity: 0.5,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.grey,
+                          size: 22,
+                        ),
+                        tooltip: 'Eres el anunciante',
+                        onPressed: null,
+                      ),
+                    ),
+                    const Positioned(
+                      child: Icon(
+                        Icons.block,
+                        color: Colors.redAccent,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                )
+                : IconButton(
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: Colors.teal,
+                    size: 22,
+                  ),
+                  tooltip: 'Chat con el creador',
+                  onPressed: () {
+                    GoRouter.of(context).go('/chat/${drone.ownerId}');
+                  },
                 ),
-                tooltip: 'Chat con el creador',
-                onPressed: () {
-                  // Lleva al chat con el creador del anuncio
-                  Navigator.of(context).pushNamed('/chat/${drone.ownerId}');
-                },
-              ),
             const Icon(Icons.chevron_right),
           ],
         ),
