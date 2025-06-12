@@ -1,48 +1,52 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/drone.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
 import '../../widgets/snack.dart';
 
-class AddDroneScreen extends StatefulWidget {
-  const AddDroneScreen({super.key});
+class EditDroneScreen extends StatefulWidget {
+  final Drone drone;
+  const EditDroneScreen({super.key, required this.drone});
 
   @override
-  State<AddDroneScreen> createState() => _AddDroneScreenState();
+  State<EditDroneScreen> createState() => _EditDroneScreenState();
 }
 
-class _AddDroneScreenState extends State<AddDroneScreen>
+class _EditDroneScreenState extends State<EditDroneScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _modelCtrl = TextEditingController();
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
-  final _locCtrl = TextEditingController();
-  final _contactCtrl = TextEditingController();
-
-  int _stock = 1;
-  String _category = 'venta';
-  String _condition = 'nuevo';
-
-  // Para móvil guardamos Files
+  late final TextEditingController _modelCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _locCtrl;
+  late final TextEditingController _contactCtrl;
+  late int _stock;
+  late String _category;
+  late String _condition;
   final List<File> _imagesMobile = [];
-  // Para web guardamos XFile y bytes para preview
   final List<XFile> _imagesWeb = [];
   final List<Uint8List> _imagesWebBytes = [];
-
   bool _isLoading = false;
   bool _visible = false;
 
   @override
   void initState() {
     super.initState();
+    final d = widget.drone;
+    _modelCtrl = TextEditingController(text: d.model);
+    _descCtrl = TextEditingController(text: d.description ?? '');
+    _priceCtrl = TextEditingController(text: d.price.toString());
+    _locCtrl = TextEditingController(text: d.location ?? '');
+    _contactCtrl = TextEditingController(text: d.contact ?? '');
+    _stock = d.stock ?? 1;
+    _category = d.category ?? 'venta';
+    _condition = d.condition ?? 'nuevo';
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() => _visible = true);
     });
@@ -51,7 +55,6 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   @override
   void dispose() {
     _modelCtrl.dispose();
-    _titleCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
     _locCtrl.dispose();
@@ -65,12 +68,9 @@ class _AddDroneScreenState extends State<AddDroneScreen>
       source: ImageSource.gallery,
       imageQuality: 80,
     );
-
     if (img == null) return;
-
     if (kIsWeb) {
       if (_imagesWeb.length >= 4) return;
-
       final bytes = await img.readAsBytes();
       setState(() {
         _imagesWeb.add(img);
@@ -84,62 +84,31 @@ class _AddDroneScreenState extends State<AddDroneScreen>
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (kIsWeb && _imagesWeb.isEmpty) {
-      showSnack(context, 'Cal afegir almenys una imatge');
-      return;
-    }
-
-    if (!kIsWeb && _imagesMobile.isEmpty) {
-      showSnack(context, 'Cal afegir almenys una imatge');
-      return;
-    }
-
     setState(() => _isLoading = true);
-
     final droneProv = context.read<DroneProvider>();
-    final userProv = context.read<UserProvider>();
-    final ownerId = userProv.currentUser?.id;
-
     try {
-      bool ok;
-      if (kIsWeb) {
-        ok = await droneProv.createDrone(
-          ownerId: ownerId!,
-          model: _modelCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-          location: _locCtrl.text.trim(),
-          category: _category,
-          condition: _condition,
-          contact: _contactCtrl.text.trim(),
-          stock: _stock,
-          imagesWeb: _imagesWeb,
-        );
-      } else {
-        ok = await droneProv.createDrone(
-          ownerId: ownerId!,
-          model: _modelCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-          location: _locCtrl.text.trim(),
-          category: _category,
-          condition: _condition,
-          contact: _contactCtrl.text.trim(),
-          stock: _stock,
-          imagesMobile: _imagesMobile,
-        );
-      }
-
+      final ok = await droneProv.updateDrone(
+        widget.drone.id,
+        model: _modelCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+        location: _locCtrl.text.trim(),
+        category: _category,
+        condition: _condition,
+        contact: _contactCtrl.text.trim(),
+        stock: _stock,
+        imagesWeb: kIsWeb ? _imagesWeb : null,
+        imagesMobile: !kIsWeb ? _imagesMobile : null,
+      );
       if (ok && mounted) {
-        showSnack(context, 'Anunci creat amb èxit');
-        context.go('/store');
+        showSnack(context, 'Anuncio actualizado');
+        context.pop();
       } else if (!ok && mounted) {
-        final error = droneProv.error ?? 'Error en crear l\'anunci';
+        final error = droneProv.error ?? 'Error al actualizar';
         showSnack(context, error);
       }
     } catch (e) {
-      showSnack(context, 'Error en crear l\'anunci: $e');
+      showSnack(context, 'Error al actualizar: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -163,9 +132,8 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   @override
   Widget build(BuildContext context) {
     final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Nou anunci')),
+      appBar: AppBar(title: const Text('Editar dron')),
       body: AnimatedOpacity(
         duration: const Duration(milliseconds: 1200),
         opacity: _visible ? 1 : 0,
@@ -180,22 +148,18 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   controller: _modelCtrl,
                   decoration: _inputDecoration('Model', Icons.title),
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _titleCtrl,
-                  decoration: _inputDecoration('Títol', Icons.title),
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _descCtrl,
-                  decoration: _inputDecoration('Descripció', Icons.description),
+                  decoration: _inputDecoration(
+                    'Descripción',
+                    Icons.description,
+                  ),
                   maxLines: 3,
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -203,10 +167,10 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: _inputDecoration('Preu (€)', Icons.euro),
+                  decoration: _inputDecoration('Precio (€)', Icons.euro),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obligatori';
-                    if (double.tryParse(v) == null) return 'Preu invàlid';
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (double.tryParse(v) == null) return 'Precio inválido';
                     return null;
                   },
                 ),
@@ -214,16 +178,16 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                 TextFormField(
                   controller: _locCtrl,
                   decoration: _inputDecoration(
-                    'Localització',
+                    'Localización',
                     Icons.location_on,
                   ),
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _category,
-                  decoration: _inputDecoration('Categoria', Icons.category),
+                  decoration: _inputDecoration('Categoría', Icons.category),
                   items: const [
                     DropdownMenuItem(value: 'venta', child: Text('Venta')),
                     DropdownMenuItem(
@@ -258,7 +222,8 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   onChanged: (v) => _stock = int.tryParse(v) ?? 1,
                   validator: (v) {
                     final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1) return 'Stock debe ser un número positivo';
+                    if (n == null || n < 1)
+                      return 'Stock debe ser un número positivo';
                     return null;
                   },
                 ),
@@ -266,7 +231,7 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                 ElevatedButton.icon(
                   onPressed: imageCount >= 4 ? null : _pickImage,
                   icon: const Icon(Icons.add_a_photo),
-                  label: Text('Afegir imatge ($imageCount/4)'),
+                  label: Text('Añadir imagen ($imageCount/4)'),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -348,7 +313,7 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   child:
                       _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Crear anunci'),
+                          : const Text('Guardar cambios'),
                 ),
               ],
             ),

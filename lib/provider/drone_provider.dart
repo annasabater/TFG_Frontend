@@ -98,6 +98,7 @@ class DroneProvider with ChangeNotifier {
     String? location,
     String? contact,
     String? category,
+    int? stock,
     List<XFile>? imagesWeb, // para web
     List<File>? imagesMobile, // para móvil
   }) async {
@@ -115,6 +116,7 @@ class DroneProvider with ChangeNotifier {
         location: location,
         contact: contact,
         category: category,
+        stock: stock,
         images: const [],
         createdAt: null,
       );
@@ -237,6 +239,55 @@ class DroneProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _setError('Error update: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateDrone(
+    String id, {
+    required String model,
+    required String description,
+    required double price,
+    required String location,
+    required String category,
+    required String condition,
+    required String contact,
+    required int stock,
+    List<XFile>? imagesWeb,
+    List<File>? imagesMobile,
+  }) async {
+    final d = Drone(
+      id: id,
+      ownerId: '', // not needed for update
+      model: model,
+      price: price,
+      description: description,
+      location: location,
+      category: category,
+      condition: condition,
+      contact: contact,
+      stock: stock,
+      images: const [],
+      createdAt: null,
+    );
+    return await update(id, d);
+  }
+
+  Future<bool> deleteDrone(String id) async {
+    _setLoading(true);
+    try {
+      final ok = await DroneService.deleteDrone(id);
+      if (ok) {
+        _myDrones.removeWhere((d) => d.id == id);
+        // Recargar la lista general de drones
+        await loadDrones();
+        notifyListeners();
+      }
+      return ok;
+    } catch (e) {
+      _setError('Error al borrar: $e');
       return false;
     } finally {
       _setLoading(false);
