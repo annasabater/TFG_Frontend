@@ -8,6 +8,7 @@ import '../../provider/users_provider.dart';
 import 'all_tab.dart';
 import 'favorites_tab.dart';
 import 'my_drones_tab.dart';
+import '../../widgets/balance_form.dart';
 
 class DroneStoreScreen extends StatefulWidget {
   const DroneStoreScreen({Key? key}) : super(key: key);
@@ -62,6 +63,7 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
       appBar: AppBar(
         title: const Text('Botiga'),
         actions: [
+          // Cambio de moneda
           Consumer<DroneProvider>(
             builder: (context, droneProv, _) {
               return PopupMenuButton<String>(
@@ -102,6 +104,27 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
                             .toList(),
               );
             },
+          ),
+          // Icono de carrito
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            tooltip: 'Carrito',
+            onPressed: () {
+              // Acción del carrito (puedes implementar navegación si tienes pantalla de carrito)
+            },
+          ),
+          // Icono de moneda para ingresar saldo
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: const Icon(Icons.account_balance_wallet),
+                  tooltip: 'Ingresar saldo',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const BalanceForm()),
+                    );
+                  },
+                ),
           ),
         ],
         bottom: TabBar(
