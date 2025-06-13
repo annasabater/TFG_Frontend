@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
-
 class MapaScreen extends StatefulWidget {
   const MapaScreen({Key? key}) : super(key: key);
 
@@ -18,7 +17,10 @@ class MapaScreen extends StatefulWidget {
   State<MapaScreen> createState() => _MapaScreenState();
 }
 
+enum TransportMode { walking, driving }
+
 class _MapaScreenState extends State<MapaScreen> {
+  TransportMode _transportMode = TransportMode.walking;
   late final _orsApiKey;
   LatLng? _currentPosition;
   bool _loading = true;
@@ -159,68 +161,100 @@ class _MapaScreenState extends State<MapaScreen> {
 
   // Nuevo: función para obtener la ruta usando OSRM
   Future<void> _getRoute(LatLng from, LatLng to) async {
-  setState(() {
-    _fetchingRoute = true;
-    _routePoints = [];
-    _routeDistance = null;
-  });
-
-  final url = Uri.parse(
-    'https://api.openrouteservice.org/v2/directions/foot-walking',
-  );
-  final body = jsonEncode({
-    "coordinates": [
-      [from.longitude, from.latitude],
-      [to.longitude, to.latitude],
-    ],
-  });
-
-  try {
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': _orsApiKey,
-      },
-      body: body,
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('ORS HTTP ${response.statusCode}');
-    }
-
-    final data = jsonDecode(response.body);
-    final route = data['routes'][0];
-
-    // 1) Distancia en metros
-    final distance = (route['summary']['distance'] as num).toDouble();
-
-    // 2) Polyline encodeada
-    final encoded = route['geometry'] as String;
-    final poly = PolylinePoints();
-    final decoded = poly.decodePolyline(encoded);
-
-    // 3) Mapa de PointLatLng → LatLng
-    final pts = decoded
-        .map((pt) => LatLng(pt.latitude, pt.longitude))
-        .toList();
-
     setState(() {
-      _routeDistance = distance;
-      _routePoints = pts;
-    });
-  } catch (e) {
-    print('Error ORS: $e');
-    setState(() {
+      _fetchingRoute = true;
       _routePoints = [];
       _routeDistance = null;
     });
-  } finally {
-    setState(() {
-      _fetchingRoute = false;
-    });
+    if (_transportMode == TransportMode.walking) {
+      final url = Uri.parse(
+        'https://api.openrouteservice.org/v2/directions/foot-walking',
+      );
+      final body = jsonEncode({
+        "coordinates": [
+          [from.longitude, from.latitude],
+          [to.longitude, to.latitude],
+        ],
+      });
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': _orsApiKey,
+          },
+          body: body,
+        );
+
+        if (response.statusCode != 200) {
+          throw Exception('ORS HTTP ${response.statusCode}');
+        }
+
+        final data = jsonDecode(response.body);
+        final route = data['routes'][0];
+
+        // 1) Distancia en metros
+        final distance = (route['summary']['distance'] as num).toDouble();
+
+        // 2) Polyline encodeada
+        final encoded = route['geometry'] as String;
+        final poly = PolylinePoints();
+        final decoded = poly.decodePolyline(encoded);
+
+        // 3) Mapa de PointLatLng → LatLng
+        final pts =
+            decoded.map((pt) => LatLng(pt.latitude, pt.longitude)).toList();
+
+        setState(() {
+          _routeDistance = distance;
+          _routePoints = pts;
+        });
+      } catch (e) {
+        print('Error ORS: $e');
+        setState(() {
+          _routePoints = [];
+          _routeDistance = null;
+        });
+      }
+    } else {
+      final url = Uri.parse(
+        'https://router.project-osrm.org/route/v1/foot/'
+        '${from.longitude},${from.latitude};${to.longitude},${to.latitude}'
+        '?overview=full&geometries=geojson',
+      );
+
+      try {
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['routes'] != null && data['routes'].isNotEmpty) {
+            final route = data['routes'][0];
+            final geometry = route['geometry']['coordinates'] as List;
+            final distance = route['distance'] as num;
+            setState(() {
+              _routePoints =
+                  geometry
+                      .map<LatLng>(
+                        (c) => LatLng(
+                          (c[1] as num).toDouble(),
+                          (c[0] as num).toDouble(),
+                        ),
+                      )
+                      .toList();
+              _routeDistance = distance.toDouble();
+            });
+          }
+        }
+      } catch (e) {
+        setState(() {
+          _routePoints = [];
+          _routeDistance = null;
+        });
+      }
+    }
+    setState(() => _fetchingRoute = false);
   }
-}
 
   // Nuevo: manejar tap izquierdo en el mapa
   void _onMapTap(TapPosition tapPosition, LatLng latlng) {
@@ -235,7 +269,33 @@ class _MapaScreenState extends State<MapaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa')),
+      appBar: AppBar(
+        title: const Text('Mapa'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.drive_eta,
+              color:
+                  _transportMode == TransportMode.driving
+                      ? Colors.white
+                      : Colors.white70,
+            ),
+            onPressed:
+                () => setState(() => _transportMode = TransportMode.driving),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.directions_walk,
+              color:
+                  _transportMode == TransportMode.walking
+                      ? Colors.white
+                      : Colors.white70,
+            ),
+            onPressed:
+                () => setState(() => _transportMode = TransportMode.walking),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           Column(
