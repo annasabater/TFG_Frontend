@@ -167,15 +167,29 @@ class _CartModalState extends State<CartModal> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.shopping_cart_checkout),
                 label: const Text('Comprar'),
-                onPressed: () {
-                  // Aquí irá la petición de compra en el futuro
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Compra realizada (simulada)'),
-                    ),
-                  );
-                  cart.clear();
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  final userId =
+                      Provider.of<user_provider.UserProvider>(
+                        context,
+                        listen: false,
+                      ).currentUser?.id;
+                  if (userId == null) return;
+                  try {
+                    final ok = await cart.purchaseCart(userId, cart.currency);
+                    if (ok) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Compra realizada correctamente'),
+                        ),
+                      );
+                      cart.clear();
+                      Navigator.of(context).pop();
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error en la compra: $e')),
+                    );
+                  }
                 },
               ),
             ],

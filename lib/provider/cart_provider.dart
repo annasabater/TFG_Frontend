@@ -92,6 +92,18 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> purchaseCart(String userId, String currency) async {
+    final itemsList =
+        _items
+            .map((e) => {'droneId': e.drone.id, 'quantity': e.quantity})
+            .toList();
+    return await DroneService.purchaseMultiple(
+      userId: userId,
+      payWithCurrency: currency,
+      items: itemsList,
+    );
+  }
+
   Map<String, dynamic> get latestStocks => _latestStocks;
   Map<String, dynamic> get latestPrices => _latestPrices;
   Map<String, String> get latestCurrencies => _latestCurrencies;

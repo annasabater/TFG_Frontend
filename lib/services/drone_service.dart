@@ -6,6 +6,7 @@ import 'package:path/path.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/shipping_info.dart';
 import '../models/drone.dart';
 import '../models/drone_query.dart';
@@ -260,5 +261,29 @@ class DroneService {
       if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
       return Drone.fromJson(jsonDecode(resp.body));
     }
+  }
+
+  static Future<bool> purchaseMultiple({
+    required String userId,
+    required String payWithCurrency,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
+    final url = Uri.parse('$serverUrl/api/drones/purchase-multiple');
+    final jwt = await AuthService().token;
+    final resp = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
+      body: jsonEncode({
+        'userId': userId,
+        'payWithCurrency': payWithCurrency,
+        'items': items,
+      }),
+    );
+    if (resp.statusCode == 200) return true;
+    throw Exception('Error en la compra: ${resp.statusCode}');
   }
 }
