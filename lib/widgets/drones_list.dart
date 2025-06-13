@@ -1,53 +1,77 @@
 import 'package:flutter/material.dart';
-import 'drone_form.dart';
-import '../api/drone_api.dart';
+import '../models/drone.dart';
+import 'drone_detail_modal.dart';
 
-class DronesList extends StatefulWidget {
-  @override
-  _DronesListState createState() => _DronesListState();
-}
+class DronesList extends StatelessWidget {
+  final List<Drone> drones;
+  final void Function(Drone)? onTap;
 
-class _DronesListState extends State<DronesList> {
-  List drones = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchDrones();
-  }
-
-  void _goToCreateDrone() async {
-    final result = await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => DroneForm()));
-    if (result == true) {
-      // Si se creó un dron, recarga la lista
-      await _fetchDrones();
-    }
-  }
-
-  Future<void> _fetchDrones() async {
-    final response = await DroneApi.getDrones();
-    setState(() {
-      drones = response;
-    });
-  }
+  const DronesList({super.key, required this.drones, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Drones')),
-      body: ListView.builder(
-        itemCount: drones.length,
-        itemBuilder: (context, index) {
-          final drone = drones[index];
-          return ListTile(title: Text(drone.name), subtitle: Text(drone.model));
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToCreateDrone,
-        child: Icon(Icons.add),
-      ),
+    if (drones.isEmpty) {
+      return const Center(child: Text('No hay drones disponibles'));
+    }
+    return ListView.separated(
+      itemCount: drones.length,
+      separatorBuilder: (_, __) => const Divider(),
+      itemBuilder: (context, i) {
+        final drone = drones[i];
+        final img =
+            (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
+        return ListTile(
+          leading:
+              img != null
+                  ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      img,
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                  : const Icon(Icons.flight, size: 40),
+          title: Text(drone.model),
+          subtitle: Text(
+            '${drone.price.toStringAsFixed(0)} ${drone.currency ?? '€'} • ${drone.location ?? '-'}',
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chat_bubble_outline, color: Colors.teal),
+                tooltip: 'Chat con el vendedor',
+                onPressed: () {
+                  // Puedes personalizar la navegación aquí
+                  Navigator.of(context).pushNamed('/chat/${drone.ownerId}');
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                tooltip: 'Ver detalles',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => DroneDetailModal(drone: drone),
+                  );
+                },
+              ),
+            ],
+          ),
+          onTap: () {
+            if (onTap != null) {
+              onTap!(drone);
+            } else {
+              showDialog(
+                context: context,
+                builder: (_) => DroneDetailModal(drone: drone),
+              );
+            }
+          },
+        );
+      },
     );
   }
 }

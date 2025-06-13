@@ -1,112 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:your_project_name/api/drone_api.dart';
 
 class DroneForm extends StatefulWidget {
-  final bool isEdit;
-  final Drone? drone;
+  final void Function({
+    required String model,
+    required double price,
+    String? description,
+    String? type,
+    String? condition,
+    String? location,
+    String? contact,
+    String? category,
+  })
+  onSubmit;
+  final Map<String, dynamic>? initialData;
 
-  DroneForm({required this.isEdit, this.drone});
+  const DroneForm({super.key, required this.onSubmit, this.initialData});
 
   @override
-  _DroneFormState createState() => _DroneFormState();
+  State<DroneForm> createState() => _DroneFormState();
 }
 
 class _DroneFormState extends State<DroneForm> {
   final _formKey = GlobalKey<FormState>();
-  final List<String> _currencies = [
-    'EUR',
-    'USD',
-    'GBP',
-    'JPY',
-    'CHF',
-    'CAD',
-    'AUD',
-    'CNY',
-    'HKD',
-    'NZD'
-  ];
-
-  double? _price;
-  String _currency = 'EUR';
-
-  void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-
-    final droneData = <String, dynamic>{
-      if (!widget.isEdit || _price != null) 'price': _price,
-      if (!widget.isEdit || _currency.isNotEmpty) 'currency': _currency,
-    };
-
-    if (widget.isEdit) {
-      await DroneApi.updateDrone(widget.drone!.id, droneData);
-    } else {
-      await DroneApi.createDrone(droneData);
-    }
-    Navigator.of(context).pop(
-      true,
-    );
-  }
+  late final TextEditingController _modelCtrl;
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _typeCtrl;
+  late final TextEditingController _conditionCtrl;
+  late final TextEditingController _locationCtrl;
+  late final TextEditingController _contactCtrl;
+  late final TextEditingController _categoryCtrl;
 
   @override
   void initState() {
     super.initState();
-    _price = widget.drone?.price;
-    _currency = widget.drone?.currency ?? _currencies.first;
+    final d = widget.initialData ?? {};
+    _modelCtrl = TextEditingController(text: d['model'] ?? '');
+    _priceCtrl = TextEditingController(text: d['price']?.toString() ?? '');
+    _descCtrl = TextEditingController(text: d['description'] ?? '');
+    _typeCtrl = TextEditingController(text: d['type'] ?? '');
+    _conditionCtrl = TextEditingController(text: d['condition'] ?? '');
+    _locationCtrl = TextEditingController(text: d['location'] ?? '');
+    _contactCtrl = TextEditingController(text: d['contact'] ?? '');
+    _categoryCtrl = TextEditingController(text: d['category'] ?? '');
+  }
+
+  @override
+  void dispose() {
+    _modelCtrl.dispose();
+    _priceCtrl.dispose();
+    _descCtrl.dispose();
+    _typeCtrl.dispose();
+    _conditionCtrl.dispose();
+    _locationCtrl.dispose();
+    _contactCtrl.dispose();
+    _categoryCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    widget.onSubmit(
+      model: _modelCtrl.text.trim(),
+      price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+      description: _descCtrl.text.trim(),
+      type: _typeCtrl.text.trim(),
+      condition: _conditionCtrl.text.trim(),
+      location: _locationCtrl.text.trim(),
+      contact: _contactCtrl.text.trim(),
+      category: _categoryCtrl.text.trim(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
+      child: ListView(
+        shrinkWrap: true,
         children: [
           TextFormField(
-            initialValue: _price != null ? _price.toString() : '',
-            decoration: InputDecoration(labelText: 'Precio'),
+            controller: _modelCtrl,
+            decoration: const InputDecoration(labelText: 'Modelo'),
+            validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+          ),
+          TextFormField(
+            controller: _priceCtrl,
+            decoration: const InputDecoration(labelText: 'Precio'),
             keyboardType: TextInputType.number,
-            validator: (value) {
-              if (!widget.isEdit && (value == null || value.isEmpty))
-                return 'El precio es obligatorio';
-              if (value != null && value.isNotEmpty) {
-                final n = double.tryParse(value);
-                if (n == null || n <= 0) return 'Introduce un precio válido';
-              }
-              return null;
-            },
-            onSaved: (value) {
-              _price = (value != null && value.isNotEmpty)
-                  ? double.tryParse(value)
-                  : null;
-            },
+            validator:
+                (v) =>
+                    v == null || double.tryParse(v) == null
+                        ? 'Precio inválido'
+                        : null,
           ),
-          DropdownButtonFormField<String>(
-            value: _currency,
-            decoration: InputDecoration(labelText: 'Divisa'),
-            items: _currencies
-                .map((c) => DropdownMenuItem(
-                      value: c,
-                      child: Text(c),
-                    ))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) setState(() => _currency = val);
-            },
-            validator: (value) {
-              if (!widget.isEdit && (value == null || value.isEmpty))
-                return 'La divisa es obligatoria';
-              if (value != null && !_currencies.contains(value))
-                return 'Divisa no permitida';
-              return null;
-            },
-            onSaved: (value) {
-              if (value != null) _currency = value;
-            },
+          TextFormField(
+            controller: _descCtrl,
+            decoration: const InputDecoration(labelText: 'Descripción'),
           ),
-          ElevatedButton(
-            onPressed: _submit,
-            child: Text(widget.isEdit ? 'Actualizar Dron' : 'Crear Dron'),
+          TextFormField(
+            controller: _typeCtrl,
+            decoration: const InputDecoration(labelText: 'Tipo'),
           ),
+          TextFormField(
+            controller: _conditionCtrl,
+            decoration: const InputDecoration(labelText: 'Condición'),
+          ),
+          TextFormField(
+            controller: _locationCtrl,
+            decoration: const InputDecoration(labelText: 'Ubicación'),
+          ),
+          TextFormField(
+            controller: _contactCtrl,
+            decoration: const InputDecoration(labelText: 'Contacto'),
+          ),
+          TextFormField(
+            controller: _categoryCtrl,
+            decoration: const InputDecoration(labelText: 'Categoría'),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(onPressed: _submit, child: const Text('Guardar')),
         ],
       ),
     );
