@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import '../../services/geojson_service.dart';
+import '../widgets/flight_zones_layer.dart';
 
 class MapaScreen extends StatefulWidget {
   const MapaScreen({super.key});
@@ -31,12 +33,12 @@ class _MapaScreenState extends State<MapaScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _suggestions = [];
   FocusNode _searchFocus = FocusNode();
-  String? _selectedFilter = 'Mostrar todas las zonas';
+  String? _selectedFilter = 'Zona Permitida';
 
   final List<String> _filterOptions = [
     'Zona Restringida',
     'Zona Permitida',
-    'Zona de Precaución o con permiso especial',
+    'Zona Regulada',
     'Mostrar todas las zonas',
     'Limpiar mapa',
   ];
@@ -50,12 +52,22 @@ class _MapaScreenState extends State<MapaScreen> {
   // Nuevo: para mostrar loading en la ruta
   bool _fetchingRoute = false;
 
+  List<FlightZone> _flightZones = [];
+  bool _loadingZones = true;
+
   @override
   void initState() {
     super.initState();
     _orsApiKey = dotenv.env['ORS_API_KEY'] ?? '';
-    print('ORS API Key: $_orsApiKey');
+    print('ORS API Key: [38;5;5m$_orsApiKey[0m');
     _getLocation();
+    // Cargar zonas desde GeoJSON
+    GeoJSONService().loadFlightZones().then((zones) {
+      setState(() {
+        _flightZones = zones;
+        _loadingZones = false;
+      });
+    });
   }
 
   @override
@@ -410,118 +422,17 @@ class _MapaScreenState extends State<MapaScreen> {
                                   tileProvider: NetworkTileProvider(),
                                 ),
                                 // Zonas de restricción de vuelo
-                                CircleLayer(
-                                  circles: [
-                                    if (_selectedFilter == null ||
-                                        _selectedFilter ==
-                                            'Mostrar todas las zonas') ...[
-                                      // Todos los círculos
-                                      CircleMarker(
-                                        point: const LatLng(41.2971, 2.0785),
-                                        radius: 3360,
-                                        useRadiusInMeter: true,
-                                        color: Colors.red.withOpacity(0.6),
-                                        borderColor: Colors.red,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.3851, 2.1734),
-                                        radius: 5400,
-                                        useRadiusInMeter: true,
-                                        color: Colors.red.withOpacity(0.6),
-                                        borderColor: Colors.red,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.2757, 1.9881),
-                                        radius: 492,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.7667, 2.4000),
-                                        radius: 7200,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.4167, 2.1000),
-                                        radius: 5399,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.4181, 1.8417),
-                                        radius: 3360,
-                                        useRadiusInMeter: true,
-                                        color: Colors.yellow.withOpacity(0.6),
-                                        borderColor: Colors.yellow,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                    ] else if (_selectedFilter ==
-                                        'Zona Restringida') ...[
-                                      CircleMarker(
-                                        point: const LatLng(41.2971, 2.0785),
-                                        radius: 3360,
-                                        useRadiusInMeter: true,
-                                        color: Colors.red.withOpacity(0.6),
-                                        borderColor: Colors.red,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.3851, 2.1734),
-                                        radius: 5400,
-                                        useRadiusInMeter: true,
-                                        color: Colors.red.withOpacity(0.6),
-                                        borderColor: Colors.red,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                    ] else if (_selectedFilter ==
-                                        'Zona Permitida') ...[
-                                      CircleMarker(
-                                        point: const LatLng(41.2757, 1.9881),
-                                        radius: 492,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.7667, 2.4000),
-                                        radius: 7200,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                      CircleMarker(
-                                        point: const LatLng(41.4167, 2.1000),
-                                        radius: 5399,
-                                        useRadiusInMeter: true,
-                                        color: Colors.green.withOpacity(0.6),
-                                        borderColor: Colors.green,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                    ] else if (_selectedFilter ==
-                                        'Zona de Precaución o con permiso especial') ...[
-                                      CircleMarker(
-                                        point: const LatLng(41.4181, 1.8417),
-                                        radius: 3360,
-                                        useRadiusInMeter: true,
-                                        color: Colors.yellow.withOpacity(0.6),
-                                        borderColor: Colors.yellow,
-                                        borderStrokeWidth: 2,
-                                      ),
-                                    ],
-                                    // Si es 'Ninguno', no se muestra ningún círculo
-                                  ],
-                                ),
+                                if (!_loadingZones)
+                                  FlightZonesLayer(
+                                    zones: _flightZones.where((zone) {
+                                      final tipus = zone.restrictions['tipus']?.toLowerCase();
+                                      if (_selectedFilter == null || _selectedFilter == 'Mostrar todas las zonas') return true;
+                                      if (_selectedFilter == 'Zona Restringida') return ['restringida','restringido','restricted'].contains(tipus);
+                                      if (_selectedFilter == 'Zona Permitida') return ['permitida','permitido','permitted'].contains(tipus);
+                                      if (_selectedFilter == 'Zona Regulada') return ['prohibida','prohibido','forbidden'].contains(tipus);
+                                      return false;
+                                    }).toList(),
+                                  ),
                                 // Polyline de la ruta
                                 if (_routePoints.isNotEmpty)
                                   PolylineLayer(

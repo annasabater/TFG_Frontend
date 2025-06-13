@@ -47,4 +47,7 @@ class DroneZonesService {
       ),
     ];
   }
-} 
+}
+
+// NOTA: Ahora las zonas de drones se gestionan desde GeoJSON usando GeoJSONService.
+// Este servicio queda obsoleto para la gestión de zonas visuales en el mapa. 
