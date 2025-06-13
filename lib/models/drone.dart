@@ -74,12 +74,12 @@ class Drone {
     model: json['model'] as String,
     price: (json['price'] as num).toDouble(),
 
-    description: json['details'] ?? json['description'],
-    type: json['type'] ?? json['category'],
-    condition: json['condition'],
-    location: json['location'],
-    contact: json['contact'],
-    category: json['category'],
+    description: (json['details'] ?? json['description']) as String?,
+    type: (json['type'] ?? json['category']) as String?,
+    condition: json['condition'] as String?,
+    location: (json['location'] ?? '') as String,
+    contact: (json['contact'] ?? '') as String,
+    category: (json['category'] ?? '') as String,
 
     status: json['status'] as String?,
     isSold: json['isSold'] ?? false,

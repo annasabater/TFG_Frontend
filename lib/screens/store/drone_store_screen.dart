@@ -26,11 +26,13 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
   void initState() {
     super.initState();
 
-    _droneProv     = context.read<DroneProvider>();
-    _userProv      = context.read<UserProvider>();
+    _droneProv = context.read<DroneProvider>();
+    _userProv = context.read<UserProvider>();
     _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = _userProv.currentUser?.id;
+      _droneProv.setUserIdForReload(uid);
       _droneProv.loadDrones();
       _loadExtras();
     });
@@ -59,6 +61,49 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Botiga'),
+        actions: [
+          Consumer<DroneProvider>(
+            builder: (context, droneProv, _) {
+              return PopupMenuButton<String>(
+                icon: Row(
+                  children: [
+                    const Icon(Icons.currency_exchange),
+                    const SizedBox(width: 4),
+                    Text(
+                      droneProv.currency,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                tooltip: 'Cambiar divisa',
+                onSelected: (value) {
+                  droneProv.currency = value;
+                },
+                itemBuilder:
+                    (context) =>
+                        [
+                              'EUR',
+                              'USD',
+                              'GBP',
+                              'JPY',
+                              'CHF',
+                              'CAD',
+                              'AUD',
+                              'CNY',
+                              'HKD',
+                              'NZD',
+                            ]
+                            .map(
+                              (currency) => PopupMenuItem(
+                                value: currency,
+                                child: Text(currency),
+                              ),
+                            )
+                            .toList(),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: scheme.onPrimary,
@@ -76,11 +121,7 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          AllTab(),
-          FavoritesTab(),
-          MyDronesTab(),
-        ],
+        children: const [AllTab(), FavoritesTab(), MyDronesTab()],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/store/add'),

@@ -21,6 +21,27 @@ class DroneProvider with ChangeNotifier {
   int _page = 1;
   bool _hasMore = true;
 
+  // NUEVO: Estado de moneda
+  String _currency = 'EUR';
+  String get currency => _currency;
+  set currency(String value) {
+    if (_currency != value) {
+      _currency = value;
+      notifyListeners();
+      loadDrones(); // recarga al cambiar
+      // Recargar favoritos y mis drones si hay usuario
+      if (_userIdForReload != null && _userIdForReload!.isNotEmpty) {
+        loadFavorites(_userIdForReload!);
+        loadMyDrones(_userIdForReload!);
+      }
+    }
+  }
+
+  String? _userIdForReload;
+  void setUserIdForReload(String? uid) {
+    _userIdForReload = uid;
+  }
+
   List<Drone> get drones => _drones;
   List<Drone> get favorites => _favorites;
   List<Drone> get myDrones => _myDrones;
@@ -44,7 +65,7 @@ class DroneProvider with ChangeNotifier {
     _page = 1;
     _hasMore = true;
     try {
-      _drones = await DroneService.getDrones();
+      _drones = await DroneService.getDrones(DroneQuery(currency: _currency));
     } catch (e) {
       _setError('Error loading drones: $e');
       _drones = [];
@@ -59,7 +80,7 @@ class DroneProvider with ChangeNotifier {
     _page = 1;
     _hasMore = true;
     try {
-      _drones = await DroneService.getDrones(q);
+      _drones = await DroneService.getDrones(q.copyWith(currency: _currency));
     } catch (e) {
       _setError('Error: $e');
       _drones = [];
