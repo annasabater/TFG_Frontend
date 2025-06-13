@@ -55,6 +55,14 @@ class _MapaScreenState extends State<MapaScreen> {
   List<FlightZone> _flightZones = [];
   bool _loadingZones = true;
 
+  // Añadir variable para el destino buscado y su display
+  String? _searchDestinationName;
+  LatLng? _searchDestination;
+  bool _showRoute = false;
+
+  // Mejorar el buscador: sugerencias rápidas y debounce
+  Timer? _debounce;
+
   @override
   void initState() {
     super.initState();
@@ -123,35 +131,38 @@ class _MapaScreenState extends State<MapaScreen> {
     }
   }
 
-  void _onSearchChanged(String value) async {
-    if (value.trim().isEmpty) {
-      setState(() => _suggestions = []);
-      return;
-    }
-    setState(() => _loading = true);
-    final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(value)}&format=json&addressdetails=1&limit=5&countrycodes=es',
-    );
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        setState(() {
-          _suggestions = data.cast<Map<String, dynamic>>();
-          _loading = false;
-        });
-      } else {
+  void _onSearchChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      if (value.trim().isEmpty) {
+        setState(() => _suggestions = []);
+        return;
+      }
+      setState(() => _loading = true);
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(value)}&format=json&addressdetails=1&limit=7&countrycodes=es',
+      );
+      try {
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final List data = jsonDecode(response.body);
+          setState(() {
+            _suggestions = data.cast<Map<String, dynamic>>();
+            _loading = false;
+          });
+        } else {
+          setState(() {
+            _suggestions = [];
+            _loading = false;
+          });
+        }
+      } catch (_) {
         setState(() {
           _suggestions = [];
           _loading = false;
         });
       }
-    } catch (_) {
-      setState(() {
-        _suggestions = [];
-        _loading = false;
-      });
-    }
+    });
   }
 
   void _onMapSecondaryTap(TapPosition tapPosition, LatLng latlng) {
@@ -572,13 +583,19 @@ class _MapaScreenState extends State<MapaScreen> {
                               final lat = double.tryParse(s['lat'] ?? '');
                               final lon = double.tryParse(s['lon'] ?? '');
                               if (lat != null && lon != null) {
-                                _mapController.move(LatLng(lat, lon), 16);
+                                final dest = LatLng(lat, lon);
+                                _mapController.move(dest, 16);
+                                setState(() {
+                                  _searchController.text = display;
+                                  _suggestions = [];
+                                  _searchDestination = dest;
+                                  _searchDestinationName = display;
+                                  _showRoute = false;
+                                  _routePoints = [];
+                                  _routeDistance = null;
+                                });
+                                _searchFocus.unfocus();
                               }
-                              setState(() {
-                                _searchController.text = display;
-                                _suggestions = [];
-                              });
-                              _searchFocus.unfocus();
                             },
                           );
                         },
@@ -588,6 +605,119 @@ class _MapaScreenState extends State<MapaScreen> {
               ),
             ),
           ),
+          // Mostrar pop-up de destino y botón para calcular ruta
+          if (_searchDestination != null && !_showRoute)
+            Positioned(
+              bottom: 24,
+              left: 24,
+              right: 24,
+              child: Card(
+                elevation: 8,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Destino seleccionado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue[900])),
+                            const SizedBox(height: 8),
+                            if (_searchDestinationName != null)
+                              Text(_searchDestinationName!, style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.directions),
+                        label: const Text('Cómo llegar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        onPressed: () async {
+                          if (_currentPosition != null && _searchDestination != null) {
+                            await _getRoute(_currentPosition!, _searchDestination!);
+                            setState(() {
+                              _showRoute = true;
+                            });
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            _searchDestination = null;
+                            _searchDestinationName = null;
+                            _routePoints = [];
+                            _routeDistance = null;
+                            _showRoute = false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // Mostrar pop-up de ruta solo si _showRoute es true
+          if (_searchDestination != null && _showRoute && _routePoints.isNotEmpty && _routeDistance != null)
+            Positioned(
+              bottom: 24,
+              left: 24,
+              right: 24,
+              child: Card(
+                elevation: 8,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cómo llegar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue[900])),
+                            const SizedBox(height: 8),
+                            if (_searchDestinationName != null)
+                              Text(_searchDestinationName!, style: const TextStyle(fontSize: 16)),
+                            const SizedBox(height: 4),
+                            Text('Distancia: '
+                              '${_routeDistance! >= 1000 ? (_routeDistance! / 1000).toStringAsFixed(2) + ' km' : _routeDistance!.toStringAsFixed(0) + ' m'}',
+                              style: const TextStyle(fontSize: 15)),
+                            const SizedBox(height: 4),
+                            Text('Tiempo estimado: ' + _getEstimatedTime(_routeDistance!, _transportMode), style: const TextStyle(fontSize: 15)),
+                            const SizedBox(height: 4),
+                            Text('Modo: ' + (_transportMode == TransportMode.walking ? 'A pie' : 'En coche'), style: const TextStyle(fontSize: 15)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            _searchDestination = null;
+                            _searchDestinationName = null;
+                            _routePoints = [];
+                            _routeDistance = null;
+                            _showRoute = false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
       floatingActionButton: Column(
@@ -602,5 +732,17 @@ class _MapaScreenState extends State<MapaScreen> {
         ],
       ),
     );
+  }
+
+  // Añadir función para calcular tiempo estimado
+  String _getEstimatedTime(double distance, TransportMode mode) {
+    // Velocidad media: a pie 5km/h, en coche 40km/h
+    final speed = mode == TransportMode.walking ? 5.0 : 40.0;
+    final hours = distance / 1000 / speed;
+    final mins = (hours * 60).round();
+    if (mins < 60) return '$mins min';
+    final h = mins ~/ 60;
+    final m = mins % 60;
+    return '$h h $m min';
   }
 }
