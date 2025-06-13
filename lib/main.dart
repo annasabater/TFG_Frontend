@@ -23,6 +23,7 @@ import 'package:SkyNet/provider/social_provider.dart';
 import 'package:SkyNet/models/user.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:SkyNet/provider/notification_provider.dart';
+import 'package:SkyNet/provider/cart_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,6 +84,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DroneProvider()),
         ChangeNotifierProvider(create: (_) => SocialProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
 
         ProxyProvider<UserProvider, void>(
           update: (_, prov, __) {

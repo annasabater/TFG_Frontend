@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
+import '../../provider/cart_provider.dart';
 import 'all_tab.dart';
 import 'favorites_tab.dart';
 import 'my_drones_tab.dart';
 import '../../widgets/balance_form.dart';
+import '../../widgets/cart_modal.dart';
 
 class DroneStoreScreen extends StatefulWidget {
   const DroneStoreScreen({Key? key}) : super(key: key);
@@ -106,11 +108,47 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
             },
           ),
           // Icono de carrito
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            tooltip: 'Carrito',
-            onPressed: () {
-              // Acción del carrito (puedes implementar navegación si tienes pantalla de carrito)
+          Consumer<CartProvider>(
+            builder: (context, cart, _) {
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart),
+                    tooltip: 'Carrito',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const CartModal(),
+                      );
+                    },
+                  ),
+                  if (cart.items.isNotEmpty)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          '${cart.items.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
           ),
           // Icono de moneda para ingresar saldo

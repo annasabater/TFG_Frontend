@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/drone.dart';
+import '../provider/cart_provider.dart';
 import 'drone_detail_modal.dart';
 
 class DronesList extends StatelessWidget {
@@ -44,7 +46,6 @@ class DronesList extends StatelessWidget {
                 icon: const Icon(Icons.chat_bubble_outline, color: Colors.teal),
                 tooltip: 'Chat con el vendedor',
                 onPressed: () {
-                  // Puedes personalizar la navegación aquí
                   Navigator.of(context).pushNamed('/chat/${drone.ownerId}');
                 },
               ),
@@ -55,6 +56,25 @@ class DronesList extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder: (_) => DroneDetailModal(drone: drone),
+                  );
+                },
+              ),
+              Consumer<CartProvider>(
+                builder: (context, cart, _) {
+                  final inStock = (drone.stock ?? 1) > 0;
+                  return IconButton(
+                    icon: const Icon(Icons.add_shopping_cart),
+                    tooltip: inStock ? 'Añadir al carrito' : 'Sin stock',
+                    color: inStock ? Colors.teal : Colors.grey,
+                    onPressed:
+                        inStock
+                            ? () {
+                              cart.addToCart(drone);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Añadido al carrito')),
+                              );
+                            }
+                            : null,
                   );
                 },
               ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
+import '../../provider/cart_provider.dart';
 import 'edit_drone_screen.dart';
 
 class MyDronesTab extends StatelessWidget {
@@ -88,6 +89,27 @@ class MyDronesTab extends StatelessWidget {
                           );
                         }
                       }
+                    },
+                  ),
+                  Consumer<CartProvider>(
+                    builder: (context, cart, _) {
+                      final inStock = (drone.stock ?? 1) > 0;
+                      return IconButton(
+                        icon: const Icon(Icons.add_shopping_cart),
+                        tooltip: inStock ? 'Añadir al carrito' : 'Sin stock',
+                        color: inStock ? Colors.teal : Colors.grey,
+                        onPressed:
+                            inStock
+                                ? () {
+                                  cart.addToCart(drone);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Añadido al carrito'),
+                                    ),
+                                  );
+                                }
+                                : null,
+                      );
                     },
                   ),
                 ],

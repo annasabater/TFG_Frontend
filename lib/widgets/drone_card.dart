@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/drone.dart';
 import '../provider/drone_provider.dart';
+import '../provider/cart_provider.dart';
 
 class DroneCard extends StatelessWidget {
   final Drone drone;
@@ -128,6 +129,31 @@ class DroneCard extends StatelessWidget {
                       Text(
                         rating.toStringAsFixed(1),
                         style: const TextStyle(fontSize: 13),
+                      ),
+                      const Spacer(),
+                      Consumer<CartProvider>(
+                        builder: (context, cart, _) {
+                          final inStock = (drone.stock ?? 1) > 0;
+                          return IconButton(
+                            icon: const Icon(Icons.add_shopping_cart),
+                            tooltip:
+                                inStock ? 'Añadir al carrito' : 'Sin stock',
+                            color: inStock ? Colors.teal : Colors.grey,
+                            onPressed:
+                                inStock
+                                    ? () {
+                                      cart.addToCart(drone);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Añadido al carrito'),
+                                        ),
+                                      );
+                                    }
+                                    : null,
+                          );
+                        },
                       ),
                     ],
                   ),
