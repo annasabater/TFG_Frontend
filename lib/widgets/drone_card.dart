@@ -114,6 +114,11 @@ class DroneCard extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Stock: ${drone.stock ?? '-'}',
+                    style: const TextStyle(fontSize: 13),
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     children: [

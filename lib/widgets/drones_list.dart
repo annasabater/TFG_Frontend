@@ -36,8 +36,17 @@ class DronesList extends StatelessWidget {
                   )
                   : const Icon(Icons.flight, size: 40),
           title: Text(drone.model),
-          subtitle: Text(
-            '${drone.price.toStringAsFixed(0)} ${drone.currency ?? '€'} • ${drone.location ?? '-'}',
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${drone.price.toStringAsFixed(0)} ${drone.currency ?? '€'} • ${drone.location ?? '-'}',
+              ),
+              Text(
+                'Stock: ${drone.stock ?? '-'}',
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,

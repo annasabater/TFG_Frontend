@@ -138,24 +138,14 @@ class _CartModalState extends State<CartModal> {
                 ),
               ),
               const SizedBox(height: 10),
+              // Quitar selección de divisa, solo mostrar la actual
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Divisa:'),
-                  DropdownButton<String>(
-                    value: cart.currency,
-                    items:
-                        currencies
-                            .map(
-                              (c) => DropdownMenuItem(value: c, child: Text(c)),
-                            )
-                            .toList(),
-                    onChanged: (v) async {
-                      if (v != null) {
-                        cart.setCurrency(v);
-                        await cart.updateCartForCurrency(v, items);
-                      }
-                    },
+                  Text(
+                    cart.currency,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
