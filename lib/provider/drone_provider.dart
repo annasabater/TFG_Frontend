@@ -113,6 +113,7 @@ class DroneProvider with ChangeNotifier {
     required String ownerId,
     required String model,
     required double price,
+    String? currency, // NUEVO
     String? description,
     String? type,
     String? condition,
@@ -133,6 +134,7 @@ class DroneProvider with ChangeNotifier {
         ownerId: ownerId,
         model: model,
         price: price,
+        currency: currency ?? _currency, // NUEVO
         description: description,
         type: type,
         condition: condition,
@@ -157,6 +159,8 @@ class DroneProvider with ChangeNotifier {
         if (idx != -1) _drones[idx] = result;
         final myIdx = _myDrones.indexWhere((d) => d.id == id);
         if (myIdx != -1) _myDrones[myIdx] = result;
+        // Recarga la tienda tras editar
+        await loadDrones();
       } else {
         // Es creación
         if ((imagesMobile != null && imagesMobile.isNotEmpty) ||
@@ -171,6 +175,8 @@ class DroneProvider with ChangeNotifier {
           throw Exception('Debes subir al menos 1 imagen.');
         }
         _drones.insert(0, result);
+        // Recarga la tienda tras crear
+        await loadDrones();
       }
       notifyListeners();
       return true;

@@ -30,6 +30,20 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   int _stock = 1;
   String _category = 'venta';
   String _condition = 'nuevo';
+  String _currency = 'EUR'; // NUEVO
+
+  static const List<String> _currencies = [
+    'EUR',
+    'USD',
+    'GBP',
+    'JPY',
+    'CHF',
+    'CAD',
+    'AUD',
+    'CNY',
+    'HKD',
+    'NZD',
+  ];
 
   // Para móvil guardamos Files
   final List<File> _imagesMobile = [];
@@ -109,6 +123,7 @@ class _AddDroneScreenState extends State<AddDroneScreen>
           model: _modelCtrl.text.trim(),
           description: _descCtrl.text.trim(),
           price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+          currency: _currency, // NUEVO
           location: _locCtrl.text.trim(),
           category: _category,
           condition: _condition,
@@ -122,6 +137,7 @@ class _AddDroneScreenState extends State<AddDroneScreen>
           model: _modelCtrl.text.trim(),
           description: _descCtrl.text.trim(),
           price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+          currency: _currency, // NUEVO
           location: _locCtrl.text.trim(),
           category: _category,
           condition: _condition,
@@ -133,6 +149,8 @@ class _AddDroneScreenState extends State<AddDroneScreen>
 
       if (ok && mounted) {
         showSnack(context, 'Anunci creat amb èxit');
+        // Recarga la tienda tras crear
+        await droneProv.loadDrones();
         context.go('/store');
       } else if (!ok && mounted) {
         final error = droneProv.error ?? 'Error en crear l\'anunci';
@@ -203,10 +221,32 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: _inputDecoration('Preu (€)', Icons.euro),
+                  decoration: _inputDecoration('Preu', Icons.euro),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obligatori';
                     if (double.tryParse(v) == null) return 'Preu invàlid';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _currency,
+                  decoration: _inputDecoration(
+                    'Divisa',
+                    Icons.currency_exchange,
+                  ),
+                  items:
+                      _currencies
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
+                          .toList(),
+                  onChanged: (v) {
+                    if (v != null) setState(() => _currency = v);
+                  },
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obligatori';
+                    if (!_currencies.contains(v)) return 'Divisa no permesa';
                     return null;
                   },
                 ),
@@ -258,7 +298,8 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   onChanged: (v) => _stock = int.tryParse(v) ?? 1,
                   validator: (v) {
                     final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1) return 'Stock debe ser un número positivo';
+                    if (n == null || n < 1)
+                      return 'Stock debe ser un número positivo';
                     return null;
                   },
                 ),

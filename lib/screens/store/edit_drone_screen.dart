@@ -29,11 +29,25 @@ class _EditDroneScreenState extends State<EditDroneScreen>
   late int _stock;
   late String _category;
   late String _condition;
+  late String _currency;
   final List<File> _imagesMobile = [];
   final List<XFile> _imagesWeb = [];
   final List<Uint8List> _imagesWebBytes = [];
   bool _isLoading = false;
   bool _visible = false;
+
+  static const List<String> _currencies = [
+    'EUR',
+    'USD',
+    'GBP',
+    'JPY',
+    'CHF',
+    'CAD',
+    'AUD',
+    'CNY',
+    'HKD',
+    'NZD',
+  ];
 
   @override
   void initState() {
@@ -47,6 +61,11 @@ class _EditDroneScreenState extends State<EditDroneScreen>
     _stock = d.stock ?? 1;
     _category = d.category ?? 'venta';
     _condition = d.condition ?? 'nuevo';
+    _currency =
+        d.category != null && _currencies.contains(d.category)
+            ? d.category!
+            : 'EUR';
+    _currency = d.currency ?? 'EUR'; // Usa el campo currency si existe
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() => _visible = true);
     });
@@ -93,6 +112,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
         model: _modelCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+        currency: _currency, // NUEVO
         location: _locCtrl.text.trim(),
         category: _category,
         condition: _condition,
@@ -104,6 +124,8 @@ class _EditDroneScreenState extends State<EditDroneScreen>
       );
       if (ok && mounted) {
         showSnack(context, 'Anuncio actualizado');
+        // Recarga la tienda tras editar
+        await droneProv.loadDrones();
         context.pop();
       } else if (!ok && mounted) {
         final error = droneProv.error ?? 'Error al actualizar';
@@ -173,10 +195,32 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: _inputDecoration('Precio (€)', Icons.euro),
+                  decoration: _inputDecoration('Precio', Icons.euro),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obligatorio';
                     if (double.tryParse(v) == null) return 'Precio inválido';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _currency,
+                  decoration: _inputDecoration(
+                    'Divisa',
+                    Icons.currency_exchange,
+                  ),
+                  items:
+                      _currencies
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
+                          .toList(),
+                  onChanged: (v) {
+                    if (v != null) setState(() => _currency = v);
+                  },
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (!_currencies.contains(v)) return 'Divisa no permitida';
                     return null;
                   },
                 ),

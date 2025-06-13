@@ -36,6 +36,7 @@ class Drone {
   final String? location;
   final String? contact;
   final String? category;
+  final String? currency; // NUEVO
 
   final DateTime? createdAt;
   final List<String>? images;
@@ -57,6 +58,7 @@ class Drone {
     this.location,
     this.contact,
     this.category,
+    this.currency, // NUEVO
     this.createdAt,
     this.images,
     this.ratings = const [],
@@ -80,6 +82,7 @@ class Drone {
     location: (json['location'] ?? '') as String,
     contact: (json['contact'] ?? '') as String,
     category: (json['category'] ?? '') as String,
+    currency: json['currency'] as String?, // NUEVO
 
     status: json['status'] as String?,
     isSold: json['isSold'] ?? false,
@@ -100,6 +103,7 @@ class Drone {
     'ownerId': ownerId,
     'model': model,
     'price': price,
+    'currency': currency, // NUEVO
 
     'details': description,
     'type': type,
