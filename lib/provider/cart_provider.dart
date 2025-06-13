@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/drone.dart';
+import '../services/drone_service.dart';
+import '../services/UserService.dart';
+import '../provider/users_provider.dart';
 
 class CartItem {
   final Drone drone;
@@ -10,6 +13,12 @@ class CartItem {
 class CartProvider extends ChangeNotifier {
   final List<CartItem> _items = [];
   String _currency = 'EUR';
+
+  Map<String, dynamic> _latestStocks = {};
+  Map<String, dynamic> _latestPrices = {};
+  Map<String, String> _latestCurrencies = {};
+  Map<String, dynamic> _balances = {};
+  bool _loading = false;
 
   List<CartItem> get items => List.unmodifiable(_items);
   String get currency => _currency;
@@ -58,4 +67,34 @@ class CartProvider extends ChangeNotifier {
     _items.clear();
     notifyListeners();
   }
+
+  Future<void> updateCartForCurrency(
+    String currency,
+    List<CartItem> items,
+  ) async {
+    _loading = true;
+    notifyListeners();
+    for (final item in items) {
+      final drone = await DroneService.getDroneByIdWithCurrency(
+        item.drone.id,
+        currency,
+      );
+      _latestStocks[item.drone.id] = drone.stock ?? 1;
+      _latestPrices[item.drone.id] = drone.price;
+      _latestCurrencies[item.drone.id] = drone.currency ?? currency;
+    }
+    _loading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchUserBalances(String userId) async {
+    _balances = await UserService.getUserBalance(userId);
+    notifyListeners();
+  }
+
+  Map<String, dynamic> get latestStocks => _latestStocks;
+  Map<String, dynamic> get latestPrices => _latestPrices;
+  Map<String, String> get latestCurrencies => _latestCurrencies;
+  Map<String, dynamic> get balances => _balances;
+  bool get loading => _loading;
 }

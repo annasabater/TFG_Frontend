@@ -34,6 +34,17 @@ class DroneService {
     return Drone.fromJson(jsonDecode(resp.body));
   }
 
+  static Future<Drone> getDroneByIdWithCurrency(
+    String id,
+    String currency,
+  ) async {
+    final resp = await http.get(
+      Uri.parse('$_base/drones/$id?currency=$currency'),
+    );
+    if (resp.statusCode != 200) throw Exception('Error ${resp.statusCode}');
+    return Drone.fromJson(jsonDecode(resp.body));
+  }
+
   // Método createDrone adaptado para enviar imágenes con multipart/form-data
   static Future<Drone> createDrone(
     Drone d, {
