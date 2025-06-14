@@ -122,6 +122,36 @@ class DroneCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   DroneCardRating(droneId: drone.id),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(child: Container()),
+                      Consumer<CartProvider>(
+                        builder: (context, cart, _) {
+                          final inStock = (drone.stock ?? 1) > 0;
+                          return IconButton(
+                            icon: const Icon(Icons.add_shopping_cart),
+                            tooltip:
+                                inStock ? 'Añadir al carrito' : 'Sin stock',
+                            color: inStock ? Colors.teal : Colors.grey,
+                            onPressed:
+                                inStock
+                                    ? () {
+                                      cart.addToCart(drone);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Añadido al carrito'),
+                                        ),
+                                      );
+                                    }
+                                    : null,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

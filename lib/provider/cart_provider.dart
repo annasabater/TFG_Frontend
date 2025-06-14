@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/drone.dart';
 import '../services/drone_service.dart';
@@ -116,4 +118,44 @@ class CartProvider extends ChangeNotifier {
   Map<String, String> get latestCurrencies => _latestCurrencies;
   Map<String, dynamic> get balances => _balances;
   bool get loading => _loading;
+
+  static const String _cartKeyPrefix = 'cart_';
+
+  Future<void> saveCartToPrefs(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartJson =
+        _items
+            .map((e) => {'droneId': e.drone.id, 'quantity': e.quantity})
+            .toList();
+    await prefs.setString(_cartKeyPrefix + userId, jsonEncode(cartJson));
+  }
+
+  Future<void> loadCartFromPrefs(
+    String userId,
+    List<Drone> availableDrones,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartStr = prefs.getString(_cartKeyPrefix + userId);
+    _items.clear();
+    if (cartStr != null) {
+      final List<dynamic> cartList = jsonDecode(cartStr);
+      for (final item in cartList) {
+        Drone? drone;
+        try {
+          drone = availableDrones.firstWhere((d) => d.id == item['droneId']);
+        } catch (_) {
+          drone = null;
+        }
+        if (drone != null && (drone.stock ?? 0) > 0) {
+          _items.add(CartItem(drone: drone, quantity: item['quantity']));
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> clearCartPrefs(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cartKeyPrefix + userId);
+  }
 }
