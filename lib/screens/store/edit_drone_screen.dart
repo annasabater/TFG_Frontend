@@ -1,36 +1,40 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/drone.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
 import '../../widgets/snack.dart';
 
-class AddDroneScreen extends StatefulWidget {
-  const AddDroneScreen({super.key});
+class EditDroneScreen extends StatefulWidget {
+  final Drone drone;
+  const EditDroneScreen({super.key, required this.drone});
 
   @override
-  State<AddDroneScreen> createState() => _AddDroneScreenState();
+  State<EditDroneScreen> createState() => _EditDroneScreenState();
 }
 
-class _AddDroneScreenState extends State<AddDroneScreen>
+class _EditDroneScreenState extends State<EditDroneScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _modelCtrl = TextEditingController();
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
-  final _locCtrl = TextEditingController();
-  final _contactCtrl = TextEditingController();
-
-  int _stock = 1;
-  String _category = 'venta';
-  String _condition = 'nuevo';
-  String _currency = 'EUR'; // NUEVO
+  late final TextEditingController _modelCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _locCtrl;
+  late final TextEditingController _contactCtrl;
+  late int _stock;
+  late String _category;
+  late String _condition;
+  late String _currency;
+  final List<File> _imagesMobile = [];
+  final List<XFile> _imagesWeb = [];
+  final List<Uint8List> _imagesWebBytes = [];
+  bool _isLoading = false;
+  bool _visible = false;
 
   static const List<String> _currencies = [
     'EUR',
@@ -45,18 +49,23 @@ class _AddDroneScreenState extends State<AddDroneScreen>
     'NZD',
   ];
 
-  // Para móvil guardamos Files
-  final List<File> _imagesMobile = [];
-  // Para web guardamos XFile y bytes para preview
-  final List<XFile> _imagesWeb = [];
-  final List<Uint8List> _imagesWebBytes = [];
-
-  bool _isLoading = false;
-  bool _visible = false;
-
   @override
   void initState() {
     super.initState();
+    final d = widget.drone;
+    _modelCtrl = TextEditingController(text: d.model);
+    _descCtrl = TextEditingController(text: d.description ?? '');
+    _priceCtrl = TextEditingController(text: d.price.toString());
+    _locCtrl = TextEditingController(text: d.location ?? '');
+    _contactCtrl = TextEditingController(text: d.contact ?? '');
+    _stock = d.stock ?? 1;
+    _category = d.category ?? 'venta';
+    _condition = d.condition ?? 'nuevo';
+    _currency =
+        d.category != null && _currencies.contains(d.category)
+            ? d.category!
+            : 'EUR';
+    _currency = d.currency ?? 'EUR'; // Usa el campo currency si existe
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() => _visible = true);
     });
@@ -65,7 +74,6 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   @override
   void dispose() {
     _modelCtrl.dispose();
-    _titleCtrl.dispose();
     _descCtrl.dispose();
     _priceCtrl.dispose();
     _locCtrl.dispose();
@@ -79,12 +87,9 @@ class _AddDroneScreenState extends State<AddDroneScreen>
       source: ImageSource.gallery,
       imageQuality: 80,
     );
-
     if (img == null) return;
-
     if (kIsWeb) {
       if (_imagesWeb.length >= 4) return;
-
       final bytes = await img.readAsBytes();
       setState(() {
         _imagesWeb.add(img);
@@ -98,66 +103,36 @@ class _AddDroneScreenState extends State<AddDroneScreen>
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (kIsWeb && _imagesWeb.isEmpty) {
-      showSnack(context, 'Cal afegir almenys una imatge');
-      return;
-    }
-
-    if (!kIsWeb && _imagesMobile.isEmpty) {
-      showSnack(context, 'Cal afegir almenys una imatge');
-      return;
-    }
-
     setState(() => _isLoading = true);
-
     final droneProv = context.read<DroneProvider>();
-    final userProv = context.read<UserProvider>();
-    final ownerId = userProv.currentUser?.id;
-
     try {
-      bool ok;
-      if (kIsWeb) {
-        ok = await droneProv.createDrone(
-          ownerId: ownerId!,
-          model: _modelCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-          currency: _currency, // NUEVO
-          location: _locCtrl.text.trim(),
-          category: _category,
-          condition: _condition,
-          contact: _contactCtrl.text.trim(),
-          stock: _stock,
-          imagesWeb: _imagesWeb,
-        );
-      } else {
-        ok = await droneProv.createDrone(
-          ownerId: ownerId!,
-          model: _modelCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-          currency: _currency, // NUEVO
-          location: _locCtrl.text.trim(),
-          category: _category,
-          condition: _condition,
-          contact: _contactCtrl.text.trim(),
-          stock: _stock,
-          imagesMobile: _imagesMobile,
-        );
-      }
-
+      final ok = await droneProv.createDrone(
+        id: widget.drone.id, // <-- Añadido: indica edición
+        ownerId: widget.drone.ownerId,
+        model: _modelCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+        currency: _currency, // NUEVO
+        location: _locCtrl.text.trim(),
+        category: _category,
+        condition: _condition,
+        contact: _contactCtrl.text.trim(),
+        stock: _stock,
+        imagesWeb: kIsWeb ? _imagesWeb : null,
+        imagesMobile: !kIsWeb ? _imagesMobile : null,
+        existingImages: widget.drone.images, // <-- Añade las imágenes previas
+      );
       if (ok && mounted) {
-        showSnack(context, 'Anunci creat amb èxit');
-        // Recarga la tienda tras crear
+        showSnack(context, 'Anuncio actualizado');
+        // Recarga la tienda tras editar
         await droneProv.loadDrones();
-        context.go('/store');
+        context.pop();
       } else if (!ok && mounted) {
-        final error = droneProv.error ?? 'Error en crear l\'anunci';
+        final error = droneProv.error ?? 'Error al actualizar';
         showSnack(context, error);
       }
     } catch (e) {
-      showSnack(context, 'Error en crear l\'anunci: $e');
+      showSnack(context, 'Error al actualizar: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -181,9 +156,12 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   @override
   Widget build(BuildContext context) {
     final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
+    // Mostrar imágenes existentes si no hay nuevas seleccionadas
+    final existingImages = widget.drone.images ?? [];
+    final showExistingImages = imageCount == 0 && existingImages.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nou anunci')),
+      appBar: AppBar(title: const Text('Editar dron')),
       body: AnimatedOpacity(
         duration: const Duration(milliseconds: 1200),
         opacity: _visible ? 1 : 0,
@@ -198,22 +176,18 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   controller: _modelCtrl,
                   decoration: _inputDecoration('Model', Icons.title),
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _titleCtrl,
-                  decoration: _inputDecoration('Títol', Icons.title),
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _descCtrl,
-                  decoration: _inputDecoration('Descripció', Icons.description),
+                  decoration: _inputDecoration(
+                    'Descripción',
+                    Icons.description,
+                  ),
                   maxLines: 3,
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -221,10 +195,10 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: _inputDecoration('Preu', Icons.euro),
+                  decoration: _inputDecoration('Precio', Icons.euro),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obligatori';
-                    if (double.tryParse(v) == null) return 'Preu invàlid';
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (double.tryParse(v) == null) return 'Precio inválido';
                     return null;
                   },
                 ),
@@ -245,8 +219,8 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                     if (v != null) setState(() => _currency = v);
                   },
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obligatori';
-                    if (!_currencies.contains(v)) return 'Divisa no permesa';
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (!_currencies.contains(v)) return 'Divisa no permitida';
                     return null;
                   },
                 ),
@@ -254,16 +228,16 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                 TextFormField(
                   controller: _locCtrl,
                   decoration: _inputDecoration(
-                    'Localització',
+                    'Localización',
                     Icons.location_on,
                   ),
                   validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatori' : null,
+                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _category,
-                  decoration: _inputDecoration('Categoria', Icons.category),
+                  decoration: _inputDecoration('Categoría', Icons.category),
                   items: const [
                     DropdownMenuItem(value: 'venta', child: Text('Venta')),
                     DropdownMenuItem(
@@ -307,89 +281,110 @@ class _AddDroneScreenState extends State<AddDroneScreen>
                 ElevatedButton.icon(
                   onPressed: imageCount >= 4 ? null : _pickImage,
                   icon: const Icon(Icons.add_a_photo),
-                  label: Text('Afegir imatge ($imageCount/4)'),
+                  label: Text('Añadir imagen ($imageCount/4)'),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: imageCount,
-                    itemBuilder: (context, i) {
-                      if (kIsWeb) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Stack(
-                            children: [
-                              Image.memory(
-                                _imagesWebBytes[i],
+                if (showExistingImages)
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: existingImages.length,
+                      itemBuilder:
+                          (context, i) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                existingImages[i],
                                 width: 100,
                                 fit: BoxFit.cover,
                               ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imagesWeb.removeAt(i);
-                                      _imagesWebBytes.removeAt(i);
-                                    });
-                                  },
-                                  child: Container(
-                                    color: Colors.black54,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
+                            ),
+                          ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: imageCount,
+                      itemBuilder: (context, i) {
+                        if (kIsWeb) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Stack(
+                              children: [
+                                Image.memory(
+                                  _imagesWebBytes[i],
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _imagesWeb.removeAt(i);
+                                        _imagesWebBytes.removeAt(i);
+                                      });
+                                    },
+                                    child: Container(
+                                      color: Colors.black54,
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      } else {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Stack(
-                            children: [
-                              Image.file(
-                                _imagesMobile[i],
-                                width: 100,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imagesMobile.removeAt(i);
-                                    });
-                                  },
-                                  child: Container(
-                                    color: Colors.black54,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
+                              ],
+                            ),
+                          );
+                        } else {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Stack(
+                              children: [
+                                Image.file(
+                                  _imagesMobile[i],
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _imagesMobile.removeAt(i);
+                                      });
+                                    },
+                                    child: Container(
+                                      color: Colors.black54,
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    },
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
-                ),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   child:
                       _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Crear anunci'),
+                          : const Text('Guardar cambios'),
                 ),
               ],
             ),

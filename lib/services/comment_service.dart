@@ -6,7 +6,7 @@ class CommentService {
   CommentService(this.baseUrl);
 
   Future<List<dynamic>> getComments(String droneId) async {
-    final uri = Uri.parse('$baseUrl/api/comments/$droneId');
+    final uri = Uri.parse('$baseUrl/comments/$droneId');
     final res = await http.get(uri);
     if (res.statusCode == 200) {
       return json.decode(res.body);
@@ -16,7 +16,7 @@ class CommentService {
   }
 
   Future<void> addComment(Map<String, dynamic> data, String token) async {
-    final uri = Uri.parse('$baseUrl/api/comments');
+    final uri = Uri.parse('$baseUrl/comments');
     final res = await http.post(
       uri,
       headers: {

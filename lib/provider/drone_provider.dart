@@ -21,6 +21,27 @@ class DroneProvider with ChangeNotifier {
   int _page = 1;
   bool _hasMore = true;
 
+  // NUEVO: Estado de moneda
+  String _currency = 'EUR';
+  String get currency => _currency;
+  set currency(String value) {
+    if (_currency != value) {
+      _currency = value;
+      notifyListeners();
+      loadDrones(); // recarga al cambiar
+      // Recargar favoritos y mis drones si hay usuario
+      if (_userIdForReload != null && _userIdForReload!.isNotEmpty) {
+        loadFavorites(_userIdForReload!);
+        loadMyDrones(_userIdForReload!);
+      }
+    }
+  }
+
+  String? _userIdForReload;
+  void setUserIdForReload(String? uid) {
+    _userIdForReload = uid;
+  }
+
   List<Drone> get drones => _drones;
   List<Drone> get favorites => _favorites;
   List<Drone> get myDrones => _myDrones;
@@ -28,29 +49,44 @@ class DroneProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  void _setLoading(bool v) { _isLoading = v; notifyListeners(); }
-  void _setError(String? e)  { _error = e; notifyListeners(); }
+  void _setLoading(bool v) {
+    _isLoading = v;
+    notifyListeners();
+  }
+
+  void _setError(String? e) {
+    _error = e;
+    notifyListeners();
+  }
 
   Future<void> loadDrones() async {
-    _setLoading(true); _setError(null);
-    _page = 1; _hasMore = true;
+    _setLoading(true);
+    _setError(null);
+    _page = 1;
+    _hasMore = true;
     try {
-      _drones = await DroneService.getDrones();
+      _drones = await DroneService.getDrones(DroneQuery(currency: _currency));
     } catch (e) {
       _setError('Error loading drones: $e');
       _drones = [];
-    } finally { _setLoading(false); }
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> loadDronesFiltered(DroneQuery q) async {
-    _setLoading(true); _setError(null);
-    _page = 1; _hasMore = true;
+    _setLoading(true);
+    _setError(null);
+    _page = 1;
+    _hasMore = true;
     try {
-      _drones = await DroneService.getDrones(q);
+      _drones = await DroneService.getDrones(q.copyWith(currency: _currency));
     } catch (e) {
       _setError('Error: $e');
       _drones = [];
-    } finally { _setLoading(false); }
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> loadMore({DroneQuery? filter}) async {
@@ -59,8 +95,8 @@ class DroneProvider with ChangeNotifier {
     try {
       final next = await DroneService.getDrones(
         filter == null
-          ? DroneQuery(page: ++_page, limit: 20)
-          : filter.copyWith(page: _page + 1, limit: 20),
+            ? DroneQuery(page: ++_page, limit: 20)
+            : filter.copyWith(page: _page + 1, limit: 20),
       );
       if (next.isEmpty) _hasMore = false;
       _page++;
@@ -77,36 +113,75 @@ class DroneProvider with ChangeNotifier {
     required String ownerId,
     required String model,
     required double price,
+    String? currency, // NUEVO
     String? description,
     String? type,
     String? condition,
     String? location,
     String? contact,
     String? category,
-    List<XFile>? imagesWeb,       // para web
-    List<File>? imagesMobile,      // para móvil
+    int? stock,
+    List<XFile>? imagesWeb, // para web
+    List<File>? imagesMobile, // para móvil
+    List<String>? existingImages, // <-- Añade este parámetro opcional
+    String? id, // <-- Añadido para distinguir edición
   }) async {
-    _setLoading(true); _setError(null);
+    _setLoading(true);
+    _setError(null);
     try {
       final newDrone = Drone(
-        id: '',
+        id: id ?? '', // Si hay id, es edición
         ownerId: ownerId,
         model: model,
         price: price,
+        currency: currency ?? _currency, // NUEVO
         description: description,
         type: type,
         condition: condition,
         location: location,
         contact: contact,
         category: category,
-        images: const [],
+        stock: stock,
+        images: existingImages ?? const [],
         createdAt: null,
       );
-      final created = await DroneService.createDrone(newDrone);
-      _drones.insert(0, created);
+      Drone result;
+      if (id != null && id.isNotEmpty) {
+        // Es edición: actualiza el dron existente
+        result = await DroneService.updateDrone(
+          id,
+          newDrone,
+          images: imagesMobile,
+          imagesWeb: imagesWeb,
+        );
+        // Actualiza en _drones y _myDrones
+        final idx = _drones.indexWhere((d) => d.id == id);
+        if (idx != -1) _drones[idx] = result;
+        final myIdx = _myDrones.indexWhere((d) => d.id == id);
+        if (myIdx != -1) _myDrones[myIdx] = result;
+        // Recarga la tienda tras editar
+        await loadDrones();
+      } else {
+        // Es creación
+        if ((imagesMobile != null && imagesMobile.isNotEmpty) ||
+            (imagesWeb != null && imagesWeb.isNotEmpty) ||
+            ((existingImages != null && existingImages.isNotEmpty))) {
+          result = await DroneService.createDrone(
+            newDrone,
+            images: imagesMobile,
+            imagesWeb: imagesWeb,
+          );
+        } else {
+          throw Exception('Debes subir al menos 1 imagen.');
+        }
+        _drones.insert(0, result);
+        // Recarga la tienda tras crear
+        await loadDrones();
+      }
+      notifyListeners();
       return true;
     } catch (e) {
-      _setError('Error creating drone: $e');
+      _setError('Error creando/editando dron: $e');
       return false;
     } finally {
       _setLoading(false);
@@ -179,10 +254,19 @@ class DroneProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addReview(String id, int rating, String comment, String userId) async {
+  Future<bool> addReview(
+    String id,
+    int rating,
+    String comment,
+    String userId,
+  ) async {
     try {
       final upd = await DroneService.addReview(
-        droneId: id, userId: userId, rating: rating, comment: comment);
+        droneId: id,
+        userId: userId,
+        rating: rating,
+        comment: comment,
+      );
       _replace(upd);
       return true;
     } catch (e) {
@@ -199,6 +283,55 @@ class DroneProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _setError('Error update: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateDrone(
+    String id, {
+    required String model,
+    required String description,
+    required double price,
+    required String location,
+    required String category,
+    required String condition,
+    required String contact,
+    required int stock,
+    List<XFile>? imagesWeb,
+    List<File>? imagesMobile,
+  }) async {
+    final d = Drone(
+      id: id,
+      ownerId: '', // not needed for update
+      model: model,
+      price: price,
+      description: description,
+      location: location,
+      category: category,
+      condition: condition,
+      contact: contact,
+      stock: stock,
+      images: const [],
+      createdAt: null,
+    );
+    return await update(id, d);
+  }
+
+  Future<bool> deleteDrone(String id) async {
+    _setLoading(true);
+    try {
+      final ok = await DroneService.deleteDrone(id);
+      if (ok) {
+        _myDrones.removeWhere((d) => d.id == id);
+        // Recargar la lista general de drones
+        await loadDrones();
+        notifyListeners();
+      }
+      return ok;
+    } catch (e) {
+      _setError('Error al borrar: $e');
       return false;
     } finally {
       _setLoading(false);

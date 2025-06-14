@@ -7,11 +7,11 @@ import 'auth_service.dart';
 
 class UserService {
   static String get baseUrl {
-    final api = AuthService().baseApiUrl; 
+    final api = AuthService().baseApiUrl;
     return '$api/users';
   }
 
-  /// Obtiene la lista de usuarios, enviando el JWT 
+  /// Obtiene la lista de usuarios, enviando el JWT
   static Future<List<User>> getUsers() async {
     final token = await AuthService().token;
     final resp = await http.get(
@@ -83,9 +83,7 @@ class UserService {
     final token = await AuthService().token;
     final resp = await http.delete(
       Uri.parse('$baseUrl/$id'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (resp.statusCode == 200) {
       return true;
@@ -94,5 +92,65 @@ class UserService {
       return false;
     }
     throw Exception('Error deleting user $id: ${resp.statusCode}');
+  }
+
+  /// Obtiene el saldo de un usuario
+  static Future<Map<String, dynamic>> getUserBalance(String userId) async {
+    final token = await AuthService().token;
+    final api = AuthService().baseApiUrl;
+    final url = Uri.parse('$api/users/$userId/balance');
+    final resp = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    }
+    throw Exception('Error fetching balance: ${resp.statusCode}');
+  }
+
+  /// Historial de compras de un usuario
+  static Future<List<Map<String, dynamic>>> getPurchaseHistory(
+    String userId,
+  ) async {
+    final token = await AuthService().token;
+    final api = AuthService().baseApiUrl;
+    final url = Uri.parse('$api/users/$userId/purchase-history');
+    final resp = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final List data = jsonDecode(resp.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Error fetching purchase history: ${resp.statusCode}');
+  }
+
+  /// Historial de ventas de un usuario
+  static Future<List<Map<String, dynamic>>> getSalesHistory(
+    String userId,
+  ) async {
+    final token = await AuthService().token;
+    final api = AuthService().baseApiUrl;
+    final url = Uri.parse('$api/users/$userId/sales-history');
+    final resp = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final List data = jsonDecode(resp.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Error fetching sales history: ${resp.statusCode}');
   }
 }

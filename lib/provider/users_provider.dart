@@ -162,12 +162,20 @@ class UserProvider with ChangeNotifier {
 
   // ------------------ CRUD backend (opcional) ---------------------------
   Future<bool> crearUsuari(
-      String userName, String email, String password, String role) async {
+    String userName,
+    String email,
+    String password,
+    String role,
+  ) async {
     _setLoading(true);
     _setError(null);
     try {
       final nouUsuari = User(
-          userName: userName, email: email, password: password, role: role);
+        userName: userName,
+        email: email,
+        password: password,
+        role: role,
+      );
       final created = await UserService.createUser(nouUsuari);
       _users.add(created);
       notifyListeners();
@@ -210,6 +218,53 @@ class UserProvider with ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // ------------------ Historial de compras/ventas ----------------------
+  List<Map<String, dynamic>> _purchaseHistory = [];
+  List<Map<String, dynamic>> _salesHistory = [];
+  bool _historyLoading = false;
+  String? _historyError;
+
+  List<Map<String, dynamic>> get purchaseHistory =>
+      List.unmodifiable(_purchaseHistory);
+  List<Map<String, dynamic>> get salesHistory =>
+      List.unmodifiable(_salesHistory);
+  bool get isHistoryLoading => _historyLoading;
+  String? get historyError => _historyError;
+
+  Future<void> fetchPurchaseHistory() async {
+    if (_currentUser == null) return;
+    _historyLoading = true;
+    _historyError = null;
+    notifyListeners();
+    try {
+      final data = await UserService.getPurchaseHistory(_currentUser!.id!);
+      _purchaseHistory = data;
+    } catch (e) {
+      _historyError = 'Error cargando historial de compras: $e';
+      _purchaseHistory = [];
+    } finally {
+      _historyLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchSalesHistory() async {
+    if (_currentUser == null) return;
+    _historyLoading = true;
+    _historyError = null;
+    notifyListeners();
+    try {
+      final data = await UserService.getSalesHistory(_currentUser!.id!);
+      _salesHistory = data;
+    } catch (e) {
+      _historyError = 'Error cargando historial de ventas: $e';
+      _salesHistory = [];
+    } finally {
+      _historyLoading = false;
+      notifyListeners();
     }
   }
 }

@@ -44,11 +44,17 @@ class _StoreSidebarState extends State<StoreSidebar> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       children: [
-        const Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+        const Text(
+          'Filtros',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+        ),
         const SizedBox(height: 24),
         ExpansionTile(
           initiallyExpanded: true,
-          title: const Text('Búsqueda y precio', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Búsqueda y precio',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           children: [
             TextField(
               controller: _nameController,
@@ -61,7 +67,9 @@ class _StoreSidebarState extends State<StoreSidebar> {
                   child: TextField(
                     controller: _minPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Precio mínimo'),
+                    decoration: const InputDecoration(
+                      labelText: 'Precio mínimo',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -69,7 +77,9 @@ class _StoreSidebarState extends State<StoreSidebar> {
                   child: TextField(
                     controller: _maxPriceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Precio máximo'),
+                    decoration: const InputDecoration(
+                      labelText: 'Precio máximo',
+                    ),
                   ),
                 ),
               ],
@@ -79,31 +89,51 @@ class _StoreSidebarState extends State<StoreSidebar> {
         const SizedBox(height: 16),
         ExpansionTile(
           initiallyExpanded: true,
-          title: const Text('Categoría y condición', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Categoría y condición',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           children: [
             DropdownButtonFormField<String>(
               value: _selectedCategory,
-              items: ['venta', 'alquiler']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e[0].toUpperCase() + e.substring(1))))
-                  .toList(),
+              items:
+                  ['venta', 'alquiler']
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e[0].toUpperCase() + e.substring(1)),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) => setState(() => _selectedCategory = v),
-              decoration: const InputDecoration(labelText: 'Categoría'),
+              decoration: const InputDecoration(), // Sin labelText
+              hint: const Text('Selecciona categoría'),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedCondition,
-              items: ['nuevo', 'usado']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e[0].toUpperCase() + e.substring(1))))
-                  .toList(),
+              items:
+                  ['nuevo', 'usado']
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e[0].toUpperCase() + e.substring(1)),
+                        ),
+                      )
+                      .toList(),
               onChanged: (v) => setState(() => _selectedCondition = v),
-              decoration: const InputDecoration(labelText: 'Condición'),
+              decoration: const InputDecoration(), // Sin labelText
+              hint: const Text('Selecciona condición'),
             ),
           ],
         ),
         const SizedBox(height: 16),
         ExpansionTile(
           initiallyExpanded: true,
-          title: const Text('Rating mínimo', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Rating mínimo',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           children: [
             Row(
               children: [
@@ -131,7 +161,9 @@ class _StoreSidebarState extends State<StoreSidebar> {
                 icon: const Icon(Icons.filter_alt),
                 label: const Text('Aplicar filtros'),
                 onPressed: _applyFilters,
-                style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -140,7 +172,9 @@ class _StoreSidebarState extends State<StoreSidebar> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Resetear'),
                 onPressed: _resetFilters,
-                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
               ),
             ),
           ],
