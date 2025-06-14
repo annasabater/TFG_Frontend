@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../models/drone.dart';
 import '../services/drone_service.dart';
 import '../services/UserService.dart';
 import '../provider/users_provider.dart';
+import '../provider/drone_provider.dart';
 
 class CartItem {
   final Drone drone;
@@ -12,7 +15,6 @@ class CartItem {
 
 class CartProvider extends ChangeNotifier {
   final List<CartItem> _items = [];
-  String _currency = 'EUR';
 
   Map<String, dynamic> _latestStocks = {};
   Map<String, dynamic> _latestPrices = {};
@@ -21,11 +23,17 @@ class CartProvider extends ChangeNotifier {
   bool _loading = false;
 
   List<CartItem> get items => List.unmodifiable(_items);
-  String get currency => _currency;
 
-  void setCurrency(String value) {
-    _currency = value;
-    notifyListeners();
+  String get currency {
+    throw UnimplementedError('Usar CartProvider.of(context).currency');
+  }
+
+  static CartProvider of(BuildContext context) =>
+      Provider.of<CartProvider>(context, listen: false);
+
+  String currencyFromContext(BuildContext context) {
+    final droneProv = Provider.of<DroneProvider>(context, listen: false);
+    return droneProv.currency;
   }
 
   void addToCart(Drone drone) {
@@ -68,13 +76,11 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateCartForCurrency(
-    String currency,
-    List<CartItem> items,
-  ) async {
+  Future<void> updateCartForCurrency(BuildContext context) async {
+    final currency = currencyFromContext(context);
     _loading = true;
     notifyListeners();
-    for (final item in items) {
+    for (final item in _items) {
       final drone = await DroneService.getDroneByIdWithCurrency(
         item.drone.id,
         currency,
@@ -92,7 +98,8 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> purchaseCart(String userId, String currency) async {
+  Future<bool> purchaseCart(BuildContext context, String userId) async {
+    final currency = currencyFromContext(context);
     final itemsList =
         _items
             .map((e) => {'droneId': e.drone.id, 'quantity': e.quantity})

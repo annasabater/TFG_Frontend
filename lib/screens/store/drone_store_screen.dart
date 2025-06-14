@@ -11,6 +11,7 @@ import 'favorites_tab.dart';
 import 'my_drones_tab.dart';
 import '../../widgets/balance_form.dart';
 import '../../widgets/cart_modal.dart';
+import '../history/history_screen.dart';
 
 class DroneStoreScreen extends StatefulWidget {
   const DroneStoreScreen({Key? key}) : super(key: key);
@@ -65,6 +66,15 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
       appBar: AppBar(
         title: const Text('Botiga'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historial de compras/ventas',
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const HistoryScreen()));
+            },
+          ),
           // Cambio de moneda
           Consumer<DroneProvider>(
             builder: (context, droneProv, _) {

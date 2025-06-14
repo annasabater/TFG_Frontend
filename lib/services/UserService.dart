@@ -111,4 +111,46 @@ class UserService {
     }
     throw Exception('Error fetching balance: ${resp.statusCode}');
   }
+
+  /// Historial de compras de un usuario
+  static Future<List<Map<String, dynamic>>> getPurchaseHistory(
+    String userId,
+  ) async {
+    final token = await AuthService().token;
+    final api = AuthService().baseApiUrl;
+    final url = Uri.parse('$api/users/$userId/purchase-history');
+    final resp = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final List data = jsonDecode(resp.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Error fetching purchase history: ${resp.statusCode}');
+  }
+
+  /// Historial de ventas de un usuario
+  static Future<List<Map<String, dynamic>>> getSalesHistory(
+    String userId,
+  ) async {
+    final token = await AuthService().token;
+    final api = AuthService().baseApiUrl;
+    final url = Uri.parse('$api/users/$userId/sales-history');
+    final resp = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final List data = jsonDecode(resp.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Error fetching sales history: ${resp.statusCode}');
+  }
 }

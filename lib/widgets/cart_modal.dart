@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../provider/cart_provider.dart';
 import '../provider/users_provider.dart' as user_provider;
+import '../provider/drone_provider.dart';
 
 class CartModal extends StatefulWidget {
   const CartModal({super.key});
@@ -34,19 +35,10 @@ class _CartModalState extends State<CartModal> {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final items = cart.items;
-    final currencies = [
-      'EUR',
-      'USD',
-      'GBP',
-      'JPY',
-      'CHF',
-      'CAD',
-      'AUD',
-      'CNY',
-      'HKD',
-      'NZD',
-    ];
     final balances = cart.balances;
+    // Usar la moneda global de la tienda
+    final droneProv = Provider.of<DroneProvider>(context, listen: false);
+    final currency = droneProv.currency;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
@@ -96,10 +88,7 @@ class _CartModalState extends State<CartModal> {
                         1;
                     final price =
                         cart.latestPrices[item.drone.id] ?? item.drone.price;
-                    final currency =
-                        cart.latestCurrencies[item.drone.id] ??
-                        item.drone.currency ??
-                        cart.currency;
+                    // Usar la moneda global
                     return Row(
                       children: [
                         Expanded(child: Text(item.drone.model)),
@@ -144,7 +133,7 @@ class _CartModalState extends State<CartModal> {
                 children: [
                   const Text('Divisa:'),
                   Text(
-                    cart.currency,
+                    currency,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -158,7 +147,7 @@ class _CartModalState extends State<CartModal> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '${items.fold<double>(0, (sum, item) => sum + ((cart.latestPrices[item.drone.id] ?? item.drone.price) * item.quantity)).toStringAsFixed(2)} ${cart.currency}',
+                    '${items.fold<double>(0, (sum, item) => sum + ((cart.latestPrices[item.drone.id] ?? item.drone.price) * item.quantity)).toStringAsFixed(2)} $currency',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -175,7 +164,7 @@ class _CartModalState extends State<CartModal> {
                       ).currentUser?.id;
                   if (userId == null) return;
                   try {
-                    final ok = await cart.purchaseCart(userId, cart.currency);
+                    final ok = await cart.purchaseCart(context, userId);
                     if (ok) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
