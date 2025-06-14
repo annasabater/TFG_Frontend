@@ -16,27 +16,26 @@ class CommentsSection extends StatefulWidget {
 class _CommentsSectionState extends State<CommentsSection> {
   final _commentCtrl = TextEditingController();
   double? _rating;
-  bool _loading = false;
-  List<Comment> _comments = [];
   String? _replyTo;
   final _replyCtrl = TextEditingController();
+  Future<List<Comment>>? _commentsFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchComments();
+    _commentsFuture = _fetchComments();
   }
 
-  Future<void> _fetchComments() async {
-    setState(() => _loading = true);
-    try {
-      final service = CommentService(AuthService().baseApiUrl);
-      final data = await service.getComments(widget.droneId);
-      setState(() {
-        _comments = data.map<Comment>((e) => Comment.fromJson(e)).toList();
-      });
-    } catch (_) {}
-    setState(() => _loading = false);
+  Future<List<Comment>> _fetchComments() async {
+    final service = CommentService(AuthService().baseApiUrl);
+    final data = await service.getComments(widget.droneId);
+    return data.map<Comment>((e) => Comment.fromJson(e)).toList();
+  }
+
+  Future<void> _refreshComments() async {
+    setState(() {
+      _commentsFuture = _fetchComments();
+    });
   }
 
   Future<void> _addComment() async {
@@ -49,16 +48,14 @@ class _CommentsSectionState extends State<CommentsSection> {
       'text': _commentCtrl.text.trim(),
       if (_rating != null) 'rating': _rating!.round(),
     };
-    setState(() => _loading = true);
     try {
       final service = CommentService(AuthService().baseApiUrl);
       final token = await AuthService().token;
       await service.addComment(data, token);
       _commentCtrl.clear();
       _rating = null;
-      await _fetchComments();
+      await _refreshComments();
     } catch (_) {}
-    setState(() => _loading = false);
   }
 
   Future<void> _addReply(String parentId) async {
@@ -71,19 +68,17 @@ class _CommentsSectionState extends State<CommentsSection> {
       'text': _replyCtrl.text.trim(),
       'parentCommentId': parentId,
     };
-    setState(() => _loading = true);
     try {
       final service = CommentService(AuthService().baseApiUrl);
       final token = await AuthService().token;
       await service.addComment(data, token);
       _replyCtrl.clear();
       _replyTo = null;
-      await _fetchComments();
+      await _refreshComments();
     } catch (_) {}
-    setState(() => _loading = false);
   }
 
-  Widget _buildComment(Comment c) {
+  Widget _buildComment(Comment c, List<Comment> allComments) {
     final userProv = Provider.of<UserProvider>(context, listen: false);
     final user = userProv.currentUser;
     return Card(
@@ -96,7 +91,7 @@ class _CommentsSectionState extends State<CommentsSection> {
             Row(
               children: [
                 Text(
-                  c.userId,
+                  c.userName.isNotEmpty ? c.userName : c.userEmail,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
@@ -109,7 +104,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                   ),
                 const Spacer(),
                 Text(
-                  '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
+                  '${c.createdAt.day.toString().padLeft(2, '0')}/'
+                  '${c.createdAt.month.toString().padLeft(2, '0')}/'
+                  '${c.createdAt.year}  '
+                  '${c.createdAt.hour.toString().padLeft(2, '0')}:'
+                  '${c.createdAt.minute.toString().padLeft(2, '0')}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -151,7 +150,9 @@ class _CommentsSectionState extends State<CommentsSection> {
             if (c.replies.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 16, top: 8),
-                child: Column(children: c.replies.map(_buildReply).toList()),
+                child: Column(
+                  children: c.replies.map((r) => _buildReply(r)).toList(),
+                ),
               ),
           ],
         ),
@@ -171,12 +172,16 @@ class _CommentsSectionState extends State<CommentsSection> {
             Row(
               children: [
                 Text(
-                  c.userId,
+                  c.userName.isNotEmpty ? c.userName : c.userEmail,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 Text(
-                  '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
+                  '${c.createdAt.day.toString().padLeft(2, '0')}/'
+                  '${c.createdAt.month.toString().padLeft(2, '0')}/'
+                  '${c.createdAt.year}  '
+                  '${c.createdAt.hour.toString().padLeft(2, '0')}:'
+                  '${c.createdAt.minute.toString().padLeft(2, '0')}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -198,18 +203,34 @@ class _CommentsSectionState extends State<CommentsSection> {
       children: [
         const SizedBox(height: 18),
         Text('Comentarios', style: Theme.of(context).textTheme.titleMedium),
-        if (_loading)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        if (!_loading && _comments.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('No hay comentarios.'),
-          ),
-        if (!_loading && _comments.isNotEmpty)
-          ..._comments.map(_buildComment).toList(),
+        FutureBuilder<List<Comment>>(
+          future: _commentsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Error al cargar comentarios.'),
+              );
+            }
+            final comments = snapshot.data ?? [];
+            if (comments.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('No hay comentarios.'),
+              );
+            }
+            return Column(
+              children:
+                  comments.map((c) => _buildComment(c, comments)).toList(),
+            );
+          },
+        ),
         if (user != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
