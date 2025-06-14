@@ -4,6 +4,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:provider/provider.dart';
 import '../../provider/users_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'comments_section.dart';
 
 class DroneDetailModal extends StatelessWidget {
   final Drone drone;
@@ -153,6 +154,9 @@ class DroneDetailModal extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Sección de comentarios
+                const SizedBox(height: 24),
+                CommentsSection(droneId: drone.id),
               ],
             ),
           ),
