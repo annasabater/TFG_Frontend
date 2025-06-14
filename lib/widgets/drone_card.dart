@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/drone.dart';
 import '../provider/drone_provider.dart';
 import '../provider/cart_provider.dart';
+import 'drone_card_rating.dart';
 
 class DroneCard extends StatelessWidget {
   final Drone drone;
@@ -120,48 +121,7 @@ class DroneCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 13),
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      ...List.generate(
-                        5,
-                        (i) => Icon(
-                          i < rating.round() ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating.toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      const Spacer(),
-                      Consumer<CartProvider>(
-                        builder: (context, cart, _) {
-                          final inStock = (drone.stock ?? 1) > 0;
-                          return IconButton(
-                            icon: const Icon(Icons.add_shopping_cart),
-                            tooltip:
-                                inStock ? 'Añadir al carrito' : 'Sin stock',
-                            color: inStock ? Colors.teal : Colors.grey,
-                            onPressed:
-                                inStock
-                                    ? () {
-                                      cart.addToCart(drone);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Añadido al carrito'),
-                                        ),
-                                      );
-                                    }
-                                    : null,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                  DroneCardRating(droneId: drone.id),
                 ],
               ),
             ),

@@ -41,12 +41,13 @@ class _CommentsSectionState extends State<CommentsSection> {
   Future<void> _addComment() async {
     final userProv = Provider.of<UserProvider>(context, listen: false);
     final user = userProv.currentUser;
-    if (user == null || _commentCtrl.text.trim().isEmpty) return;
+    if (user == null || _commentCtrl.text.trim().isEmpty || _rating == null)
+      return;
     final data = {
       'droneId': widget.droneId,
       'userId': user.id,
       'text': _commentCtrl.text.trim(),
-      if (_rating != null) 'rating': _rating!.round(),
+      'rating': _rating!.round(),
     };
     try {
       final service = CommentService(AuthService().baseApiUrl);
@@ -225,9 +226,52 @@ class _CommentsSectionState extends State<CommentsSection> {
                 child: Text('No hay comentarios.'),
               );
             }
+            // Calcular average rating solo de comentarios raíz
+            final rootComments =
+                comments.where((c) => c.parentCommentId == null).toList();
+            final ratings =
+                rootComments
+                    .where((c) => c.rating != null)
+                    .map((c) => c.rating!)
+                    .toList();
+            double avg = 0;
+            if (ratings.isNotEmpty) {
+              avg = ratings.reduce((a, b) => a + b) / ratings.length;
+            }
             return Column(
-              children:
-                  comments.map((c) => _buildComment(c, comments)).toList(),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (ratings.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (i) => Icon(
+                            i < avg.round() ? Icons.star : Icons.star_border,
+                            color: Colors.amber,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          avg.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '(${ratings.length})',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ...comments.map((c) => _buildComment(c, comments)).toList(),
+              ],
             );
           },
         ),
@@ -261,7 +305,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                     ),
                     const Spacer(),
                     ElevatedButton(
-                      onPressed: _addComment,
+                      onPressed:
+                          (_commentCtrl.text.trim().isNotEmpty &&
+                                  _rating != null)
+                              ? _addComment
+                              : null,
                       child: const Text('Comentar'),
                     ),
                   ],
