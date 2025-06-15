@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:SkyNet/widgets/Layout.dart';
 import 'package:SkyNet/provider/users_provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
+  //final GoogleSignInAccount user;
+  //const HomeScreen({Key? key,}) : super (key: key);
   const HomeScreen({super.key});
-
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  
   @override
   void initState() {
     super.initState();

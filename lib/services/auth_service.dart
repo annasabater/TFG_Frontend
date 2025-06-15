@@ -1,8 +1,10 @@
 // lib/services/auth_service.dart
-
 import 'dart:convert';
 import 'dart:io' show Platform;
+import 'package:SkyNet/api/google_signin_api.dart';
+import 'package:SkyNet/config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +25,17 @@ class AuthService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt', token);
+      _jwt = token;
+      isLoggedIn = true;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+  Future<bool> _saveRefreshToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('refreshToken', token);
       _jwt = token;
       isLoggedIn = true;
       return true;
@@ -51,7 +64,7 @@ class AuthService {
   /// URL base REST (incluye '/api').
   String get baseApiUrl {
     if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
+    if (Platform.isAndroid) return 'http://192.168.1.131:9000/api';
     return 'http://localhost:9000/api';
   }
 
@@ -61,6 +74,7 @@ class AuthService {
   String get _loginUrl => '$baseApiUrl/auth/login';
   String get _signupUrl => '$baseApiUrl/auth/register';
   String get _userUrl => '$baseApiUrl/users';
+  String get _googleUrl => '$baseApiUrl/auth/google';
 
   /// Login: guarda currentUser + JWT.
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -75,10 +89,14 @@ class AuthService {
     }
     final body = jsonDecode(resp.body) as Map<String, dynamic>;
     final tokenStr = body['accesstoken'] as String?;
+    final refreshToken = body['refreshToken'] as String?;
     if (tokenStr == null) return {'error': 'No se recibió token del servidor'};
     final userData = (body['user'] as Map<String, dynamic>?) ?? {};
     currentUser = userData;
     final ok = await _saveToken(tokenStr);
+    if (refreshToken != null) {
+      final ok2 = await _saveRefreshToken(refreshToken);
+    }
     if (!ok) return {'error': 'No se pudo guardar el token localmente'};
     return {'user': userData};
   }
@@ -115,9 +133,13 @@ class AuthService {
     final jwt = await token;
     final resp = await http.get(
       Uri.parse('$_userUrl/$id'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $jwt'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
     );
-    if (resp.statusCode != 200) return {'error': 'No se pudo cargar el usuario'};
+    if (resp.statusCode != 200)
+      return {'error': 'No se pudo cargar el usuario'};
     final body = jsonDecode(resp.body) as Map<String, dynamic>;
     final userData = (body['user'] as Map<String, dynamic>?) ?? body;
     currentUser = userData;
@@ -131,7 +153,8 @@ class AuthService {
     String? password,
     String? role,
   }) async {
-    if (currentUser?['_id'] == null) return {'error': 'No hay usuario autenticado'};
+    if (currentUser?['_id'] == null)
+      return {'error': 'No hay usuario autenticado'};
     final id = currentUser!['_id'] as String;
     final jwt = await token;
     final bodyData = {
@@ -142,7 +165,10 @@ class AuthService {
     };
     final resp = await http.put(
       Uri.parse('$_userUrl/$id'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $jwt'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
       body: jsonEncode(bodyData),
     );
     if (resp.statusCode != 200) return {'error': 'Error al actualizar perfil'};
@@ -157,7 +183,10 @@ class AuthService {
     final jwt = await token;
     final resp = await http.delete(
       Uri.parse('$_userUrl/$id'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $jwt'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $jwt',
+      },
     );
     if (resp.statusCode != 200) {
       final err = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -170,23 +199,44 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt');
+    await prefs.remove('refreshToken');
+    await GoogleSignInApi.logout();
     isLoggedIn = false;
     currentUser = null;
     _jwt = null;
   }
 
-  Future<Map<String, dynamic>> loginWithGoogle(String accessToken) async {
-    final url = Uri.parse('http://localhost:9000/api/auth/google');
-    final res = await http.post(
-      url,
+  Future<Map<String, dynamic>> loginWithGoogle(GoogleSignInAccount user) async {
+    final response = await http.post(
+      Uri.parse(_googleUrl),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'accessToken': accessToken}),
+      body: jsonEncode({
+        "displayName": user.displayName,
+        "email": user.email,
+        "id": user.id,
+        "photoUrl": user.photoUrl,
+        "serverAuthCode": user.serverAuthCode,
+      }),
     );
-    if (res.statusCode != 200) {
-      final err = jsonDecode(res.body) as Map<String, dynamic>;
-      return {'error': err['message'] ?? 'Error al iniciar sesión con Google'};
+
+    if (response.statusCode != 200) {
+      final err = jsonDecode(response.body) as Map<String, dynamic>;
+      return {'error': err['message'] ?? 'Error en login con Google'};
     }
-    final body = jsonDecode(res.body);
-    return body;
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final tokenStr = body['accesstoken'] as String?;
+    final refreshToken = body['refreshToken'] as String?;
+    if (tokenStr == null) return {'error': 'No se recibió token del servidor'};
+
+    final userData = (body['user'] as Map<String, dynamic>?) ?? {};
+    currentUser = userData;
+
+    final ok = await _saveToken(tokenStr);
+    if (!ok) return {'error': 'No se pudo guardar el token localmente'};
+    if (refreshToken != null) {
+      final ok2 = await _saveRefreshToken(refreshToken);
+    }
+    return {'user': userData};
   }
 }

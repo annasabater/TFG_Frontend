@@ -1,5 +1,6 @@
 // lib/screens/perfil_screen.dart
 
+import 'package:SkyNet/api/google_signin_api.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -83,8 +84,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
             leading: const Icon(Icons.logout, color: Colors.redAccent),
             title: const Text('Cerrar sesión',
                 style: TextStyle(color: Colors.redAccent)),
-            onTap: () {
-              AuthService().logout();
+            onTap: () async {
+              await AuthService().logout();
               context.go('/login');
             },
           ),

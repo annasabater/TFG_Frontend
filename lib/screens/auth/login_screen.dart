@@ -9,6 +9,8 @@ import 'package:SkyNet/models/user.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:SkyNet/api/google_signin_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,16 +24,25 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
   bool _obscurePassword = true;
-  String? _errorMessage;  // Aquí almacenamos el error para mostrarlo en pantalla
+  String? _errorMessage; // Aquí almacenamos el error para mostrarlo en pantalla
 
   @override
   void initState() {
     super.initState();
+    _checkRefreshToken();
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() {
         _visible = true;
       });
     });
+  }
+
+  Future<void> _checkRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refresh = prefs.getString('refreshToken');
+    if (refresh != null && mounted) {
+      context.go('/'); // redirige si ya tiene sesión
+    }
   }
 
   Future<void> _signUserIn(BuildContext context) async {
@@ -72,36 +83,35 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _signInWithGoogle(BuildContext context) async {
-    setState(() => _errorMessage = null);
+  Future<void> signInWithGoogle(BuildContext context) async {
+    final user = await GoogleSignInApi.login();
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Login with google failed';
+      });
+      return;
+    }
     try {
-      final googleSignIn = GoogleSignIn(
-        clientId: '1094359522436-i3ojk2jlmmc85gvaf1ujtjjgp43tnqub.apps.googleusercontent.com', 
-      );
-      final googleUser = await googleSignIn.signIn();
-      if (googleUser == null) return; // User cancelled
+      final result = await AuthService().loginWithGoogle(user);
+      print(result);
 
-      final googleAuth = await googleUser.authentication;
-      final accessToken = googleAuth.accessToken;
-      if (accessToken == null) {
-        setState(() => _errorMessage = 'No se pudo obtener el token de Google.');
-        return;
-      }
-
-      final result = await AuthService().loginWithGoogle(accessToken);
-      if (result.containsKey('error')) {
-        setState(() => _errorMessage = result['error'] as String);
+      if (result.containsKey('error') || result['user'] == null) {
+        setState(() {
+          _errorMessage = result['error'] ?? 'Error al procesar la respuesta';
+        });
         return;
       }
 
       final mapUser = result['user'] as Map<String, dynamic>;
-      if (context.mounted) {
-        context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-        SocketService.setUserEmail(mapUser['email'] as String);
-        context.go('/');
-      }
+
+      if (!mounted) return;
+      context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+      SocketService.setUserEmail(mapUser['email']);
+      context.go('/');
     } catch (e) {
-      setState(() => _errorMessage = 'Error al iniciar sesión con Google: $e');
+      setState(() {
+        _errorMessage = 'Error al iniciar sesión con Google: $e';
+      });
     }
   }
 
@@ -144,10 +154,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 opacity: _visible ? 1.0 : 0.0,
                 curve: Curves.easeInOut,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 60,
+                  ),
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 420),
-                    padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 35,
+                      vertical: 40,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.97),
                       borderRadius: BorderRadius.circular(35),
@@ -196,7 +212,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: loc.password,
-                            prefixIcon: Icon(Icons.lock_outline, color: colors.onSurfaceVariant),
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: colors.onSurfaceVariant,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -212,7 +231,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                             filled: true,
                             fillColor: colors.surface.withOpacity(0.05),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -252,7 +274,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             height: 24,
                             width: 24,
                           ),
-                          label: const Text('Iniciar sesión con Google'),
+                          label: Text('Iniciar sesión con Google'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black87,
@@ -262,7 +284,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                             elevation: 2,
                           ),
-                          onPressed: () => _signInWithGoogle(context),
+                          onPressed: () => signInWithGoogle(context),
                         ),
                         const SizedBox(height: 20),
                         Row(
@@ -301,4 +323,3 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 }
-

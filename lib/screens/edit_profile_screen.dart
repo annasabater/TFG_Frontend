@@ -158,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     final res = await auth.deleteUserById(id);
     setState(() => _isUpdating = false);
     if (res['success'] == true) {
-      auth.logout();
+      await auth.logout();
       if (mounted) context.go('/login');
     } else {
       _showError(res['error'] ?? 'No se pudo eliminar la cuenta');
