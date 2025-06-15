@@ -98,6 +98,26 @@ class MyDronesTab extends StatelessWidget {
                         }
                       },
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.visibility, color: Colors.grey),
+                      tooltip: 'Ver detalles',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder:
+                              (_) => Dialog(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: DroneCard(
+                                    drone: drone,
+                                    onTap: null,
+                                    showAddToCart: false,
+                                  ),
+                                ),
+                              ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
