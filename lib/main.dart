@@ -71,9 +71,73 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lightScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF264653),
+    // Esquema de color personalizado: fondo y variantes en azul suave
+    const lightColorScheme = ColorScheme(
       brightness: Brightness.light,
+      primary: Color(0xFF3B5BA9), // Azul principal
+      onPrimary: Color(0xFFFFFFFF),
+      primaryContainer: Color(0xFFD6E3FF), // Azul claro
+      onPrimaryContainer: Color(0xFF001B3A),
+      secondary: Color(0xFF6B6478),
+      onSecondary: Color(0xFFFFFFFF),
+      secondaryContainer: Color(0xFFE8DEF8),
+      onSecondaryContainer: Color(0xFF231A2B),
+      tertiary: Color(0xFF7D5260),
+      onTertiary: Color(0xFFFFFFFF),
+      tertiaryContainer: Color(0xFFFFD8E4),
+      onTertiaryContainer: Color(0xFF31101B),
+      error: Color(0xFFBA1A1A),
+      onError: Color(0xFFFFFFFF),
+      errorContainer: Color(0xFFFFDAD6),
+      onErrorContainer: Color(0xFF410002),
+      outline: Color(0xFF79747E),
+      outlineVariant: Color(0xFFCAC4D0),
+      background: Color(0xFFF4F8FF), // Azul muy claro para fondo
+      onBackground: Color(0xFF1C1B1F),
+      surface: Color(0xFFEAF2FB), // Azul grisáceo claro para surface
+      onSurface: Color(0xFF1C1B1F),
+      surfaceVariant: Color(0xFFD6E3FF), // Azul claro para surface variant
+      onSurfaceVariant: Color(0xFF49454F),
+      inverseSurface: Color(0xFF322F35),
+      onInverseSurface: Color(0xFFF5EFF7),
+      inversePrimary: Color(0xFFA3B8FF), // Azul lavanda claro
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      surfaceTint: Color(0xFF3B5BA9),
+    );
+
+    const darkColorScheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: Color(0xFFA3B8FF), // Azul lavanda claro
+      onPrimary: Color(0xFF001B3A),
+      primaryContainer: Color(0xFF254377), // Azul oscuro
+      onPrimaryContainer: Color(0xFFD6E3FF),
+      secondary: Color(0xFFCCC2DC),
+      onSecondary: Color(0xFF332D41),
+      secondaryContainer: Color(0xFF4A4458),
+      onSecondaryContainer: Color(0xFFE8DEF8),
+      tertiary: Color(0xFFEFB8C8),
+      onTertiary: Color(0xFF492532),
+      tertiaryContainer: Color(0xFF633B48),
+      onTertiaryContainer: Color(0xFFFFD8E4),
+      error: Color(0xFFFFB4AB),
+      onError: Color(0xFF690005),
+      errorContainer: Color(0xFF93000A),
+      onErrorContainer: Color(0xFFFFDAD6),
+      outline: Color(0xFF938F99),
+      outlineVariant: Color(0xFF49454F),
+      background: Color(0xFF101624), // Azul grisáceo oscuro para fondo
+      onBackground: Color(0xFFE6E1E5),
+      surface: Color(0xFF18213A), // Azul oscuro para surface
+      onSurface: Color(0xFFE6E1E5),
+      surfaceVariant: Color(0xFF254377), // Azul oscuro para surface variant
+      onSurfaceVariant: Color(0xFFCAC4D0),
+      inverseSurface: Color(0xFFE6E1E5),
+      onInverseSurface: Color(0xFF322F35),
+      inversePrimary: Color(0xFF3B5BA9), // Azul principal
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      surfaceTint: Color(0xFFA3B8FF),
     );
 
     return MultiProvider(
@@ -116,18 +180,18 @@ class MyApp extends StatelessWidget {
 
               theme: ThemeData(
                 useMaterial3: true,
-                colorScheme: lightScheme,
-                scaffoldBackgroundColor: lightScheme.surface,
+                colorScheme: lightColorScheme,
+                scaffoldBackgroundColor: lightColorScheme.surface,
                 appBarTheme: AppBarTheme(
-                  backgroundColor: lightScheme.primary,
-                  foregroundColor: lightScheme.onPrimary,
+                  backgroundColor: lightColorScheme.primary,
+                  foregroundColor: lightColorScheme.onPrimary,
                   elevation: 0,
                 ),
                 drawerTheme: DrawerThemeData(
-                  backgroundColor: lightScheme.surface,
+                  backgroundColor: lightColorScheme.surface,
                 ),
                 cardTheme: CardTheme(
-                  color: lightScheme.surface,
+                  color: lightColorScheme.surface,
                   elevation: 2,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -135,8 +199,8 @@ class MyApp extends StatelessWidget {
                 ),
                 elevatedButtonTheme: ElevatedButtonThemeData(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: lightScheme.primary,
-                    foregroundColor: lightScheme.onPrimary,
+                    backgroundColor: lightColorScheme.primary,
+                    foregroundColor: lightColorScheme.onPrimary,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -150,18 +214,22 @@ class MyApp extends StatelessWidget {
                 inputDecorationTheme: InputDecorationTheme(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: lightScheme.primaryContainer),
+                    borderSide: BorderSide(
+                      color: lightColorScheme.primaryContainer,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: lightScheme.primaryContainer),
+                    borderSide: BorderSide(
+                      color: lightColorScheme.primaryContainer,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: lightScheme.primary),
+                    borderSide: BorderSide(color: lightColorScheme.primary),
                   ),
                   filled: true,
-                  fillColor: lightScheme.surfaceContainerHighest,
+                  fillColor: lightColorScheme.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -171,10 +239,7 @@ class MyApp extends StatelessWidget {
 
               darkTheme: ThemeData(
                 useMaterial3: true,
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: const Color(0xFF263238),
-                  brightness: Brightness.dark,
-                ),
+                colorScheme: darkColorScheme,
               ),
             ),
       ),
