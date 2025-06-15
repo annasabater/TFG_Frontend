@@ -95,7 +95,7 @@ class SocketService {
     }
 
     // Petición para obtener JWT de dron
-    final loginUrl = '${dotenv.env['SERVER_URL']}/api/auth/login';
+    final loginUrl = '${dotenv.env['SERVER_URL']}/auth/login';
     final resp = await http.post(
       Uri.parse(loginUrl),
       headers: {'Content-Type': 'application/json'},
