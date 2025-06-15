@@ -4,9 +4,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/notification.dart';
 import 'auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NotificationService {
-  static const _base = 'http://localhost:9000/api';
+  static final _base = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
 
   static Future<Map<String, String>> _headers() async {
     final token = await AuthService().token;

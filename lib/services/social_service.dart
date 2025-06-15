@@ -5,12 +5,13 @@ import 'dart:io' show File;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'auth_service.dart';
 import '../models/post.dart';
 import '../models/user.dart';
 
 class SocialService {
-  static const _base = 'http://localhost:9000/api';
+  static final _base = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   static String get _origin => _base.replaceAll('/api', '');
 
   /// Construye una URL absoluta a partir de una ruta relativa

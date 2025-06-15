@@ -14,9 +14,9 @@ import 'auth_service.dart';
 
 class DroneService {
   static String get _base {
-    if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
-    return 'http://localhost:9000/api';
+    if (kIsWeb) return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    if (Platform.isAndroid) return dotenv.env['SERVER_URL'] ?? 'http://10.0.2.2:9000/api';
+    return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   }
 
   static Uri _dronesUri([DroneQuery? q]) =>

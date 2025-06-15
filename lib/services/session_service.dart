@@ -4,14 +4,16 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class SessionService {
   static const _storage = FlutterSecureStorage();
 
   String get _baseApiUrl {
-    if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
-    return 'http://localhost:9000/api';
+    if (kIsWeb) return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    if (Platform.isAndroid) return dotenv.env['SERVER_URL'] ?? 'http://10.0.2.2:9000/api';
+    return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   }
 
   Map<String,String> _headers(String? token) => {

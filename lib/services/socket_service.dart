@@ -55,9 +55,18 @@ class SocketService {
   static IO.Socket? get socketInstance => _socket;
 
   static String get _wsBaseUrl {
-    final raw = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
-    return raw.replaceFirst(RegExp(r'^http'), 'ws');
+  final raw = dotenv.env['SERVER_URL'];
+
+  if (raw != null) {
+    // Elimina '/api' si hi és al final
+    final cleaned = raw.endsWith('/api') ? raw.substring(0, raw.length - 4) : raw;
+    return cleaned;
   }
+
+  // Si no ve de .env, retorna el valor local per defecte
+  return 'http://localhost:9000';
+}
+
 
   /// Permite a otros registrar un callback para cuando empiece el juego
   static void registerOnGameStarted(VoidCallback? callback) {
@@ -167,7 +176,7 @@ class SocketService {
 
     final token = await AuthService().token;
     final base  = AuthService().webSocketBaseUrl;
-    final url   = '${base.replaceFirst(RegExp(r'^http'), 'ws')}/chat';
+    final url   = '$base/chat';
 
     _chatSocket = IO.io(
       url,

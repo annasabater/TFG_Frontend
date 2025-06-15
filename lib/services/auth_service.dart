@@ -5,6 +5,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class AuthService {
   // Singleton
@@ -50,9 +52,9 @@ class AuthService {
 
   /// URL base REST (incluye '/api').
   String get baseApiUrl {
-    if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:9000/api';
-    return 'http://localhost:9000/api';
+    if (kIsWeb) return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    if (Platform.isAndroid) return dotenv.env['SERVER_URL'] ?? 'http://10.0.2.2:9000/api';
+    return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   }
 
   /// URL base para WebSockets (sin '/api').
