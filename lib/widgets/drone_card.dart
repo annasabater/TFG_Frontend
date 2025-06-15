@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/drone.dart';
 import '../provider/drone_provider.dart';
 import '../provider/cart_provider.dart';
+import '../provider/users_provider.dart';
 import 'drone_card_rating.dart';
 
 class DroneCard extends StatelessWidget {
@@ -15,6 +16,8 @@ class DroneCard extends StatelessWidget {
     final img =
         (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
     final currency = context.watch<DroneProvider>().currency;
+    final currentUser = context.watch<UserProvider>().currentUser;
+    final isMine = currentUser != null && currentUser.id == drone.ownerId;
     String currencySymbol;
     int decimals = 2;
     switch (currency) {
@@ -55,7 +58,6 @@ class DroneCard extends StatelessWidget {
     String priceStr =
         '${drone.price.toStringAsFixed(decimals)} $currencySymbol';
     final scheme = Theme.of(context).colorScheme;
-    // Considerar "nuevo" si la condición es "new" o creado hace menos de 30 días
     final isNew =
         (drone.condition == 'new') ||
         (drone.createdAt != null &&
@@ -143,30 +145,54 @@ class DroneCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: scheme.primary,
-                      foregroundColor: scheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isMine ? scheme.surfaceVariant : scheme.primary,
+                        foregroundColor:
+                            isMine ? scheme.onSurfaceVariant : scheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                      onPressed:
+                          isMine
+                              ? null
+                              : () {
+                                context.read<CartProvider>().addToCart(drone);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Añadido al carrito')),
+                                );
+                              },
+                      icon: Icon(
+                        isMine ? Icons.block : Icons.add_shopping_cart,
+                        size: 18,
+                      ),
+                      label: Text(
+                        isMine ? 'No puedes comprar tu dron' : 'Añadir',
                       ),
                     ),
-                    onPressed: () {
-                      context.read<CartProvider>().addToCart(drone);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Añadido al carrito')),
-                      );
-                    },
-                    icon: const Icon(Icons.add_shopping_cart, size: 18),
-                    label: const Text('Añadir'),
                   ),
                 ],
               ),
+              if (isMine)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'Este dron es tuyo',
+                    style: TextStyle(
+                      color: scheme.error,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

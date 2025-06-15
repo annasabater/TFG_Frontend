@@ -22,7 +22,6 @@ class DroneStoreScreen extends StatefulWidget {
 
 class _DroneStoreScreenState extends State<DroneStoreScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
   late final DroneProvider _droneProv;
   late final UserProvider _userProv;
 
@@ -32,7 +31,6 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
 
     _droneProv = context.read<DroneProvider>();
     _userProv = context.read<UserProvider>();
-    _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = _userProv.currentUser?.id;
@@ -50,12 +48,6 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
         _droneProv.loadMyDrones(uid),
       ]);
     }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -175,25 +167,8 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
                 ),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: scheme.onPrimary,
-          unselectedLabelColor: scheme.onPrimary.withOpacity(0.7),
-          indicatorColor: scheme.secondary,
-          indicatorWeight: 4,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-          tabs: const [
-            Tab(text: 'Tots'),
-            Tab(text: 'Favorits'),
-            Tab(text: 'Els meus'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [AllTab(), FavoritesTab(), MyDronesTab()],
-      ),
+      body: const AllTab(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/store/add'),
         tooltip: 'Nou anunci',

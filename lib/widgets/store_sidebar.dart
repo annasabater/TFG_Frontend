@@ -14,7 +14,6 @@ class _StoreSidebarState extends State<StoreSidebar> {
   final _maxPriceController = TextEditingController();
   String? _selectedCategory;
   String? _selectedCondition;
-  double _minRating = 0;
 
   void _resetFilters() {
     setState(() {
@@ -23,7 +22,6 @@ class _StoreSidebarState extends State<StoreSidebar> {
       _maxPriceController.clear();
       _selectedCategory = null;
       _selectedCondition = null;
-      _minRating = 0;
     });
     widget.onApply({});
   }
@@ -35,151 +33,196 @@ class _StoreSidebarState extends State<StoreSidebar> {
       'maxPrice': double.tryParse(_maxPriceController.text),
       'category': _selectedCategory,
       'condition': _selectedCondition,
-      'minRating': _minRating,
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      children: [
-        const Text(
-          'Filtros',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-        ),
-        const SizedBox(height: 24),
-        ExpansionTile(
-          initiallyExpanded: true,
-          title: const Text(
-            'Búsqueda y precio',
-            style: TextStyle(fontWeight: FontWeight.bold),
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Material(
+      color: color.surface,
+      elevation: 0,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.filter_alt, size: 28, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Text(
+                'Filtros',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Buscar por nombre'),
+          const SizedBox(height: 20),
+          Card(
+            elevation: 1,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _minPriceController,
-                    keyboardType: TextInputType.number,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Búsqueda y precio',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _nameController,
                     decoration: const InputDecoration(
-                      labelText: 'Precio mínimo',
+                      labelText: 'Buscar por nombre',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _minPriceController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Precio mínimo',
+                            prefixIcon: Icon(Icons.arrow_downward),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _maxPriceController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Precio máximo',
+                            prefixIcon: Icon(Icons.arrow_upward),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Card(
+            elevation: 1,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Categoría y condición',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    items:
+                        ['venta', 'alquiler']
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(
+                                  e[0].toUpperCase() + e.substring(1),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (v) => setState(() => _selectedCategory = v),
+                    decoration: const InputDecoration(
+                      labelText: 'Categoría',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.category),
+                    ),
+                    hint: const Text('Selecciona categoría'),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCondition,
+                    items:
+                        ['nuevo', 'usado']
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(
+                                  e[0].toUpperCase() + e.substring(1),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (v) => setState(() => _selectedCondition = v),
+                    decoration: const InputDecoration(
+                      labelText: 'Condición',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.check_circle_outline),
+                    ),
+                    hint: const Text('Selecciona condición'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.filter_alt),
+                  label: const Text('Aplicar filtros'),
+                  onPressed: _applyFilters,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _maxPriceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Precio máximo',
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Resetear'),
+                  onPressed: _resetFilters,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    foregroundColor: Colors.blueAccent,
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    side: const BorderSide(color: Colors.blueAccent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ExpansionTile(
-          initiallyExpanded: true,
-          title: const Text(
-            'Categoría y condición',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          children: [
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              items:
-                  ['venta', 'alquiler']
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e[0].toUpperCase() + e.substring(1)),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (v) => setState(() => _selectedCategory = v),
-              decoration: const InputDecoration(), // Sin labelText
-              hint: const Text('Selecciona categoría'),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedCondition,
-              items:
-                  ['nuevo', 'usado']
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e[0].toUpperCase() + e.substring(1)),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (v) => setState(() => _selectedCondition = v),
-              decoration: const InputDecoration(), // Sin labelText
-              hint: const Text('Selecciona condición'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ExpansionTile(
-          initiallyExpanded: true,
-          title: const Text(
-            'Rating mínimo',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          children: [
-            Row(
-              children: [
-                const Text('Mínimo rating:'),
-                Expanded(
-                  child: Slider(
-                    value: _minRating,
-                    min: 0,
-                    max: 5,
-                    divisions: 5,
-                    label: _minRating.toStringAsFixed(0),
-                    onChanged: (v) => setState(() => _minRating = v),
-                  ),
-                ),
-                Text(_minRating.toStringAsFixed(0)),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.filter_alt),
-                label: const Text('Aplicar filtros'),
-                onPressed: _applyFilters,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: const Text('Resetear'),
-                onPressed: _resetFilters,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
