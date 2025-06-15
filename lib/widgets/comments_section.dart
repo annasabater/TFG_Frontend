@@ -203,7 +203,18 @@ class _CommentsSectionState extends State<CommentsSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 18),
-        Text('Comentarios', style: Theme.of(context).textTheme.titleMedium),
+        Row(
+          children: [
+            Icon(Icons.comment, color: Colors.blueAccent, size: 26),
+            const SizedBox(width: 8),
+            Text(
+              'Comentarios',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         FutureBuilder<List<Comment>>(
           future: _commentsFuture,
           builder: (context, snapshot) {
@@ -220,13 +231,6 @@ class _CommentsSectionState extends State<CommentsSection> {
               );
             }
             final comments = snapshot.data ?? [];
-            if (comments.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No hay comentarios.'),
-              );
-            }
-            // Calcular average rating solo de comentarios raíz
             final rootComments =
                 comments.where((c) => c.parentCommentId == null).toList();
             final ratings =
@@ -246,14 +250,27 @@ class _CommentsSectionState extends State<CommentsSection> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        ...List.generate(
-                          5,
-                          (i) => Icon(
-                            i < avg.round() ? Icons.star : Icons.star_border,
-                            color: Colors.amber,
-                            size: 22,
-                          ),
-                        ),
+                        ...List.generate(5, (i) {
+                          if (avg >= i + 1) {
+                            return const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 22,
+                            );
+                          } else if (avg > i && avg < i + 1) {
+                            return const Icon(
+                              Icons.star_half,
+                              color: Colors.amber,
+                              size: 22,
+                            );
+                          } else {
+                            return const Icon(
+                              Icons.star_border,
+                              color: Colors.amber,
+                              size: 22,
+                            );
+                          }
+                        }),
                         const SizedBox(width: 8),
                         Text(
                           avg.toStringAsFixed(1),
@@ -270,53 +287,83 @@ class _CommentsSectionState extends State<CommentsSection> {
                       ],
                     ),
                   ),
-                ...comments.map((c) => _buildComment(c, comments)).toList(),
+                // Mostrar el formulario para comentar siempre que el usuario esté logueado
+                if (user != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Deja tu comentario',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _commentCtrl,
+                              decoration: const InputDecoration(
+                                hintText: 'Escribe un comentario...',
+                                border: OutlineInputBorder(),
+                              ),
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                DropdownButton<double>(
+                                  value: _rating,
+                                  hint: const Text('Puntuación'),
+                                  items:
+                                      [1, 2, 3, 4, 5]
+                                          .map(
+                                            (e) => DropdownMenuItem(
+                                              value: e.toDouble(),
+                                              child: Text('$e ⭐'),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (v) => setState(() => _rating = v),
+                                ),
+                                const Spacer(),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.send),
+                                  onPressed:
+                                      (_commentCtrl.text.trim().isNotEmpty &&
+                                              _rating != null)
+                                          ? _addComment
+                                          : null,
+                                  label: const Text('Comentar'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                // Mostrar todos los comentarios raíz
+                ...rootComments.map((c) => _buildComment(c, comments)).toList(),
               ],
             );
           },
         ),
-        if (user != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _commentCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Escribe un comentario...',
-                  ),
-                ),
-                Row(
-                  children: [
-                    DropdownButton<double>(
-                      value: _rating,
-                      hint: const Text('Puntuación'),
-                      items:
-                          [1, 2, 3, 4, 5]
-                              .map(
-                                (e) => DropdownMenuItem(
-                                  value: e.toDouble(),
-                                  child: Text('$e ⭐'),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (v) => setState(() => _rating = v),
-                    ),
-                    const Spacer(),
-                    ElevatedButton(
-                      onPressed:
-                          (_commentCtrl.text.trim().isNotEmpty &&
-                                  _rating != null)
-                              ? _addComment
-                              : null,
-                      child: const Text('Comentar'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         if (user == null)
           const Padding(
             padding: EdgeInsets.only(top: 12),

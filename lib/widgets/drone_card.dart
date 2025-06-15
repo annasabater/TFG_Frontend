@@ -9,7 +9,13 @@ import 'drone_card_rating.dart';
 class DroneCard extends StatelessWidget {
   final Drone drone;
   final VoidCallback? onTap;
-  const DroneCard({super.key, required this.drone, this.onTap});
+  final bool showAddToCart;
+  const DroneCard({
+    super.key,
+    required this.drone,
+    this.onTap,
+    this.showAddToCart = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -124,63 +130,68 @@ class DroneCard extends StatelessWidget {
               const SizedBox(height: 6),
               DroneCardRating(droneId: drone.id),
               const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (isNew)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Nuevo',
-                        style: TextStyle(
-                          color: scheme.onSecondaryContainer,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isMine ? scheme.surfaceVariant : scheme.primary,
-                        foregroundColor:
-                            isMine ? scheme.onSurfaceVariant : scheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
+              if (showAddToCart)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (isNew)
+                      Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Nuevo',
+                          style: TextStyle(
+                            color: scheme.onSecondaryContainer,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
-                      onPressed:
-                          isMine
-                              ? null
-                              : () {
-                                context.read<CartProvider>().addToCart(drone);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Añadido al carrito')),
-                                );
-                              },
-                      icon: Icon(
-                        isMine ? Icons.block : Icons.add_shopping_cart,
-                        size: 18,
-                      ),
-                      label: Text(
-                        isMine ? 'No puedes comprar tu dron' : 'Añadir',
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isMine ? scheme.surfaceVariant : scheme.primary,
+                          foregroundColor:
+                              isMine
+                                  ? scheme.onSurfaceVariant
+                                  : scheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        onPressed:
+                            isMine
+                                ? null
+                                : () {
+                                  context.read<CartProvider>().addToCart(drone);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Añadido al carrito'),
+                                    ),
+                                  );
+                                },
+                        icon: Icon(
+                          isMine ? Icons.block : Icons.add_shopping_cart,
+                          size: 18,
+                        ),
+                        label: Text(
+                          isMine ? 'No puedes comprar tu dron' : 'Añadir',
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               if (isMine)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
