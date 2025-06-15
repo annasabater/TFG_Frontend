@@ -8,6 +8,9 @@ import 'package:SkyNet/provider/users_provider.dart';
 import 'package:SkyNet/models/user.dart';
 import 'package:SkyNet/services/socket_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:SkyNet/api/google_signin_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,16 +24,25 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
   bool _obscurePassword = true;
-  String? _errorMessage;  // Aquí almacenamos el error para mostrarlo en pantalla
+  String? _errorMessage; // Aquí almacenamos el error para mostrarlo en pantalla
 
   @override
   void initState() {
     super.initState();
+    _checkRefreshToken();
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() {
         _visible = true;
       });
     });
+  }
+
+  Future<void> _checkRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refresh = prefs.getString('refreshToken');
+    if (refresh != null && mounted) {
+      context.go('/'); // redirige si ya tiene sesión
+    }
   }
 
   Future<void> _signUserIn(BuildContext context) async {
@@ -68,6 +80,38 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           _errorMessage = e.toString();
         });
       }
+    }
+  }
+
+  Future<void> signInWithGoogle(BuildContext context) async {
+    final user = await GoogleSignInApi.login();
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Login with google failed';
+      });
+      return;
+    }
+    try {
+      final result = await AuthService().loginWithGoogle(user);
+      print(result);
+
+      if (result.containsKey('error') || result['user'] == null) {
+        setState(() {
+          _errorMessage = result['error'] ?? 'Error al procesar la respuesta';
+        });
+        return;
+      }
+
+      final mapUser = result['user'] as Map<String, dynamic>;
+
+      if (!mounted) return;
+      context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+      SocketService.setUserEmail(mapUser['email']);
+      context.go('/');
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error al iniciar sesión con Google: $e';
+      });
     }
   }
 
@@ -110,10 +154,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 opacity: _visible ? 1.0 : 0.0,
                 curve: Curves.easeInOut,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 60,
+                  ),
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 420),
-                    padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 35,
+                      vertical: 40,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.97),
                       borderRadius: BorderRadius.circular(35),
@@ -162,7 +212,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: loc.password,
-                            prefixIcon: Icon(Icons.lock_outline, color: colors.onSurfaceVariant),
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: colors.onSurfaceVariant,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -178,7 +231,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                             filled: true,
                             fillColor: colors.surface.withOpacity(0.05),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -210,7 +266,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+                        // Google Sign-In button
+                        ElevatedButton.icon(
+                          icon: Image.asset(
+                            'assets/google_logo.png', // Add a Google logo asset if you want
+                            height: 24,
+                            width: 24,
+                          ),
+                          label: Text('Iniciar sesión con Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black87,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            elevation: 2,
+                          ),
+                          onPressed: () => signInWithGoogle(context),
+                        ),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

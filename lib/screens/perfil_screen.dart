@@ -1,5 +1,6 @@
 // lib/screens/perfil_screen.dart
 
+import 'package:SkyNet/api/google_signin_api.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -102,6 +103,29 @@ class _PerfilScreenState extends State<PerfilScreen> {
               ],
             ),
           ),
+<<<<<<< HEAD
+=======
+          ListTile(
+            leading: const Icon(Icons.dark_mode),
+            title: const Text('Modo oscuro'),
+            trailing: Switch(
+              value: themeProv.isDarkMode,
+              onChanged: (_) => themeProv.toggleTheme(),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: const Text('Cerrar sesión',
+                style: TextStyle(color: Colors.redAccent)),
+            onTap: () async {
+              await AuthService().logout();
+              context.go('/login');
+            },
+          ),
+        ]),
+      ),
+>>>>>>> Minim2-Jordi-Auth
     );
   }
 
