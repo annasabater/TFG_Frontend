@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../models/post.dart';
 import '../../services/social_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EditPostScreen extends StatelessWidget {
   final Post post;
@@ -13,7 +14,7 @@ class EditPostScreen extends StatelessWidget {
     final descCtrl = TextEditingController(text: post.description ?? '');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar post')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.editPost)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -21,7 +22,7 @@ class EditPostScreen extends StatelessWidget {
             TextField(
               controller: descCtrl,
               maxLines: 4,
-              decoration: const InputDecoration(labelText: 'Descripción'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -29,7 +30,7 @@ class EditPostScreen extends StatelessWidget {
                 await SocialService.updatePost(post.id, descCtrl.text.trim());
                 if (context.mounted) Navigator.pop(context);
               },
-              child: const Text('Guardar cambios'),
+              child: Text(AppLocalizations.of(context)!.saveChanges),
             ),
           ],
         ),

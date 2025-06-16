@@ -10,6 +10,9 @@ import 'all_tab.dart';
 import '../../widgets/balance_form.dart';
 import '../../widgets/cart_modal.dart';
 import '../history/history_screen.dart';
+import '../../widgets/language_selector.dart';
+import '../../provider/theme_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DroneStoreScreen extends StatefulWidget {
   const DroneStoreScreen({Key? key}) : super(key: key);
@@ -78,8 +81,16 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Botiga'),
+        title: Text(AppLocalizations.of(context)!.store),
         actions: [
+          const LanguageSelector(),
+          Consumer<ThemeProvider>(
+            builder: (_, t, __) => IconButton(
+              icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              tooltip: t.isDarkMode ? AppLocalizations.of(context)!.lightMode : AppLocalizations.of(context)!.darkMode,
+              onPressed: () => t.toggleTheme(),
+            ),
+          ),
           if (_changingCurrency)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),

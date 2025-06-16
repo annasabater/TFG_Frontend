@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StoreSidebar extends StatefulWidget {
   final void Function(Map<String, dynamic> filters) onApply;
@@ -51,7 +53,7 @@ class _StoreSidebarState extends State<StoreSidebar> {
               const Icon(Icons.filter_alt, size: 28, color: Colors.blueAccent),
               const SizedBox(width: 8),
               Text(
-                'Filtros',
+                AppLocalizations.of(context)!.filters,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -71,7 +73,7 @@ class _StoreSidebarState extends State<StoreSidebar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Búsqueda y precio',
+                    AppLocalizations.of(context)!.searchAndPrice,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -79,10 +81,10 @@ class _StoreSidebarState extends State<StoreSidebar> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Buscar por nombre',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.searchByName,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -92,10 +94,10 @@ class _StoreSidebarState extends State<StoreSidebar> {
                         child: TextField(
                           controller: _minPriceController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Precio mínimo',
-                            prefixIcon: Icon(Icons.arrow_downward),
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.minPrice,
+                            prefixIcon: const Icon(Icons.arrow_downward),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -104,10 +106,10 @@ class _StoreSidebarState extends State<StoreSidebar> {
                         child: TextField(
                           controller: _maxPriceController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Precio máximo',
-                            prefixIcon: Icon(Icons.arrow_upward),
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.maxPrice,
+                            prefixIcon: const Icon(Icons.arrow_upward),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -130,7 +132,7 @@ class _StoreSidebarState extends State<StoreSidebar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Categoría y condición',
+                    AppLocalizations.of(context)!.categoryAndCondition,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -150,12 +152,12 @@ class _StoreSidebarState extends State<StoreSidebar> {
                             )
                             .toList(),
                     onChanged: (v) => setState(() => _selectedCategory = v),
-                    decoration: const InputDecoration(
-                      labelText: 'Categoría',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.category),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.category,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.category),
                     ),
-                    hint: const Text('Selecciona categoría'),
+                    hint: Text(AppLocalizations.of(context)!.selectCategory),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -172,12 +174,12 @@ class _StoreSidebarState extends State<StoreSidebar> {
                             )
                             .toList(),
                     onChanged: (v) => setState(() => _selectedCondition = v),
-                    decoration: const InputDecoration(
-                      labelText: 'Condición',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.check_circle_outline),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.condition,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.check_circle_outline),
                     ),
-                    hint: const Text('Selecciona condición'),
+                    hint: Text(AppLocalizations.of(context)!.selectCondition),
                   ),
                 ],
               ),
@@ -189,7 +191,7 @@ class _StoreSidebarState extends State<StoreSidebar> {
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.filter_alt),
-                  label: const Text('Aplicar filtros'),
+                  label: Text(AppLocalizations.of(context)!.applyFilters),
                   onPressed: _applyFilters,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
@@ -206,7 +208,7 @@ class _StoreSidebarState extends State<StoreSidebar> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Resetear'),
+                  label: Text(AppLocalizations.of(context)!.resetFilters),
                   onPressed: _resetFilters,
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),

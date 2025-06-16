@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/social_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -78,7 +79,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final btnText = _uploading ? 'Publicando…' : 'Publicar';
+    final btnText = _uploading ? AppLocalizations.of(context)!.publishing : AppLocalizations.of(context)!.publish;
 
     Widget preview() {
       if (kIsWeb && _bytesWebPreview != null) {
@@ -89,13 +90,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       }
       return OutlinedButton.icon(
         icon: const Icon(Icons.photo_library),
-        label: const Text('Elegir foto'),
+        label: Text(AppLocalizations.of(context)!.choosePhoto),
         onPressed: _pick,
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nuevo post')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.newPost)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -105,9 +106,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
             TextField(
               controller: _descCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Descripción',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.description,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -115,9 +116,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
             TextField(
               controller: _locCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Ubicación',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.location,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 24),

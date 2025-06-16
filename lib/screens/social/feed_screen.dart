@@ -8,6 +8,7 @@ import '../../services/auth_service.dart';
 import '../../models/post.dart';
 import '../../provider/social_provider.dart';
 import '../../widgets/post_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -62,7 +63,7 @@ class _FeedScreenState extends State<FeedScreen> {
             Icon(Icons.hourglass_empty,
                 size: 60, color: scheme.primary.withOpacity(.6)),
             const SizedBox(height: 12),
-            Text('Sin publicaciones de quienes sigues',
+            Text(AppLocalizations.of(context)!.noFollowedPosts,
                 style: TextStyle(fontSize: 18, color: scheme.onSurfaceVariant)),
           ],
         ),

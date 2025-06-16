@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:SkyNet/screens/social/explore_screen.dart';
 import 'package:SkyNet/screens/social/feed_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class XarxesSocialsScreen extends StatelessWidget {
   const XarxesSocialsScreen({super.key});
@@ -14,7 +15,7 @@ class XarxesSocialsScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        //  Header “Red Social”
+        //  Header "Red Social"
         body: Column(
           children: [
             Container(
@@ -22,9 +23,9 @@ class XarxesSocialsScreen extends StatelessWidget {
               color: theme.colorScheme.primary,
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: const Text(
-                'Red Social',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.socialNetwork,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -38,7 +39,7 @@ class XarxesSocialsScreen extends StatelessWidget {
               children: [
                 TextButton.icon(
                   icon: const Icon(Icons.people_alt_outlined),
-                  label: const Text('Ver seguidos'),
+                  label: Text(AppLocalizations.of(context)!.seeFollowing),
                   style: TextButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,
                   ),
@@ -64,11 +65,11 @@ class XarxesSocialsScreen extends StatelessWidget {
                 unselectedLabelStyle: const TextStyle(
                   fontWeight: FontWeight.normal,
                 ),
-                tabs: const [
-                  Tab(icon: Icon(Icons.explore_outlined), text: 'EXPLORAR'),
+                tabs: [
+                  Tab(icon: const Icon(Icons.explore_outlined), text: AppLocalizations.of(context)!.exploreTab),
                   Tab(
-                    icon: Icon(Icons.dynamic_feed_outlined),
-                    text: 'SIGUIENDO',
+                    icon: const Icon(Icons.dynamic_feed_outlined),
+                    text: AppLocalizations.of(context)!.followingTab,
                   ),
                 ],
               ),

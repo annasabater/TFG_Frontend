@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../provider/users_provider.dart';
 import '../../services/social_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({Key? key}) : super(key: key);
@@ -80,7 +81,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     await _loadFollowing();
     setState(() => _loading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ahora sigues a este usuario')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.nowFollowing)),
     );
   }
 
@@ -90,14 +91,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
     await _loadFollowing();
     setState(() => _loading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Has dejado de seguir a este usuario')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.unfollowed)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Seguidos y buscar usuarios')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.followingAndSearch)),
       body:
           _loading
               ? const Center(child: CircularProgressIndicator())
@@ -108,7 +109,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Buscar usuarios...',
+                        hintText: AppLocalizations.of(context)!.searchUsers,
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon:
                             _query.isNotEmpty
@@ -143,7 +144,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Sigues a $followingCount usuario${followingCount == 1 ? '' : 's'}',
+                          AppLocalizations.of(context)!.followingCount(followingCount),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -161,7 +162,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                     Expanded(
                       child:
                           _followingUsers.isEmpty
-                              ? const Center(child: Text('No sigues a nadie.'))
+                              ? Center(child: Text(AppLocalizations.of(context)!.notFollowingAnyone))
                               : ListView.separated(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
@@ -295,10 +296,10 @@ class _FollowingScreenState extends State<FollowingScreen> {
                                         backgroundColor: Colors.green.shade100,
                                         foregroundColor: Colors.green.shade800,
                                       ),
-                                      child: const Text('Siguiendo'),
+                                      child: Text(AppLocalizations.of(context)!.following),
                                     )
                                     : ElevatedButton(
-                                      child: const Text('Seguir'),
+                                      child: Text(AppLocalizations.of(context)!.follow),
                                       onPressed: () => _followUser(user.id!),
                                     ),
                           );

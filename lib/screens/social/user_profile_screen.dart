@@ -8,6 +8,7 @@ import '../../models/post.dart';
 import '../../provider/theme_provider.dart';
 import '../../services/social_service.dart';
 import '../../widgets/post_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -40,7 +41,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar perfil: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadingProfile(e))),
       );
     } finally {
       setState(() => _loading = false);
@@ -53,16 +54,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         final confirm = await showDialog<bool>(
           context: context,
           builder: (c) => AlertDialog(
-            title: const Text('Dejar de seguir'),
-            content: Text('¿Quieres dejar de seguir a ${_user!['userName']}?'),
+            title: Text(AppLocalizations.of(context)!.unfollowTitle),
+            content: Text(AppLocalizations.of(context)!.unfollowConfirm(_user!['userName'])),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(c, false),
-                child: const Text('Cancelar'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(c, true),
-                child: const Text('Sí'),
+                child: Text(AppLocalizations.of(context)!.yes),
               ),
             ],
           ),
@@ -75,7 +76,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       await _loadProfile();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al ${_following ? 'dejar de seguir' : 'seguir'}: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorFollowAction(_following ? AppLocalizations.of(context)!.unfollow : AppLocalizations.of(context)!.follow, e))),
       );
     }
   }
@@ -101,7 +102,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text(''),
+        title: Text(''),
         centerTitle: true,
         actions: [
           IconButton(
@@ -162,7 +163,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       : scheme.primary,
                                 ),
                                 child: Text(
-                                  _following ? 'Siguiendo' : 'Seguir',
+                                  _following ? AppLocalizations.of(context)!.following : AppLocalizations.of(context)!.follow,
                                   style: TextStyle(
                                     color: _following
                                         ? scheme.onSecondaryContainer
@@ -173,7 +174,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               const SizedBox(width: 12),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.chat_bubble_outline),
-                                label: const Text('Mensaje'),
+                                label: Text(AppLocalizations.of(context)!.message),
                                 onPressed: () =>
                                     context.go('/chat/${widget.userId}'),
                               ),

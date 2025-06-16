@@ -43,8 +43,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       _loadPost();                // actualitzem
       setState(() => _showCommentField = false);
     } catch (e) {
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error enviant comentari: $e')),
+        SnackBar(content: Text(loc.errorSendingComment(e))),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -55,15 +56,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Eliminar comentari'),
-        content: const Text('Segur que vols eliminar aquest comentari?'),
+        title: Text(AppLocalizations.of(context)!.deleteCommentTitle),
+        content: Text(AppLocalizations.of(context)!.deleteCommentConfirm),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancel·lar')),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           ElevatedButton(
               onPressed: () => Navigator.pop(c, true),
-              child: const Text('Borrar')),
+              child: Text(AppLocalizations.of(context)!.delete)),
         ],
       ),
     );
@@ -75,7 +76,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       setState(() {});            // refresquem FutureBuilder
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error eliminant comentari: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingComment(e))),
       );
     }
   }
@@ -189,7 +190,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           },
                         ),
                         const SizedBox(width: 8),
-                        Text('${post.likes} likes',
+                        Text(loc.likesCount(post.likes),
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium

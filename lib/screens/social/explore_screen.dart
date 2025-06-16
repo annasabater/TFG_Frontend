@@ -8,6 +8,7 @@ import '../../services/auth_service.dart';
 import '../../provider/social_provider.dart';
 import '../../services/social_service.dart';
 import '../../widgets/post_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -128,7 +129,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               }
 
               if (posts.isEmpty) {
-                return const Center(child: Text('Sin publicaciones de otros usuarios'));
+                return Center(child: Text(AppLocalizations.of(context)!.noOtherUserPosts));
               }
 
               return GridView.builder(

@@ -6,6 +6,7 @@ import '../provider/cart_provider.dart';
 import '../provider/users_provider.dart';
 import 'drone_card_rating.dart';
 import '../utils/currency_utils.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DroneCard extends StatelessWidget {
   final Drone drone;
@@ -34,6 +35,7 @@ class DroneCard extends StatelessWidget {
         (drone.condition == 'new') ||
         (drone.createdAt != null &&
             DateTime.now().difference(drone.createdAt!).inDays < 30);
+    final loc = AppLocalizations.of(context)!;
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: onTap,
@@ -111,7 +113,7 @@ class DroneCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 3),
                       Text(
-                        'Stock: ${drone.stock ?? 1}',
+                        '${loc.stock}: ${drone.stock ?? 1}',
                         style: TextStyle(
                           color:
                               (drone.stock ?? 1) == 0
@@ -137,7 +139,7 @@ class DroneCard extends StatelessWidget {
                               Icon(Icons.block, color: scheme.error, size: 14),
                               const SizedBox(width: 2),
                               Text(
-                                'Sin stock',
+                                loc.noStock,
                                 style: TextStyle(
                                   color: scheme.error,
                                   fontWeight: FontWeight.bold,
@@ -166,7 +168,7 @@ class DroneCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 2),
                               Text(
-                                '¡Pocos!',
+                                loc.fewStock,
                                 style: TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
@@ -195,7 +197,7 @@ class DroneCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Nuevo',
+                                loc.newLabel,
                                 style: TextStyle(
                                   color: scheme.onSecondaryContainer,
                                   fontSize: 11,

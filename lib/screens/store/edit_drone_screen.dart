@@ -9,6 +9,7 @@ import '../../models/drone.dart';
 import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
 import '../../widgets/snack.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EditDroneScreen extends StatefulWidget {
   final Drone drone;
@@ -161,7 +162,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
     final showExistingImages = imageCount == 0 && existingImages.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar dron')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.editDrone)),
       body: AnimatedOpacity(
         duration: const Duration(milliseconds: 1200),
         opacity: _visible ? 1 : 0,
@@ -238,11 +239,11 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                 DropdownButtonFormField<String>(
                   value: _category,
                   decoration: _inputDecoration('Categoría', Icons.category),
-                  items: const [
-                    DropdownMenuItem(value: 'venta', child: Text('Venta')),
+                  items: [
+                    DropdownMenuItem(value: 'venta', child: Text(AppLocalizations.of(context)!.sale)),
                     DropdownMenuItem(
                       value: 'alquiler',
-                      child: Text('Alquiler'),
+                      child: Text(AppLocalizations.of(context)!.rental),
                     ),
                   ],
                   onChanged: (v) => setState(() => _category = v ?? 'venta'),
@@ -251,9 +252,9 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                 DropdownButtonFormField<String>(
                   value: _condition,
                   decoration: _inputDecoration('Condición', Icons.grade),
-                  items: const [
-                    DropdownMenuItem(value: 'nuevo', child: Text('Nuevo')),
-                    DropdownMenuItem(value: 'usado', child: Text('Usado')),
+                  items: [
+                    DropdownMenuItem(value: 'nuevo', child: Text(AppLocalizations.of(context)!.newLabel)),
+                    DropdownMenuItem(value: 'usado', child: Text(AppLocalizations.of(context)!.usedLabel)),
                   ],
                   onChanged: (v) => setState(() => _condition = v ?? 'nuevo'),
                 ),
@@ -281,7 +282,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                 ElevatedButton.icon(
                   onPressed: imageCount >= 4 ? null : _pickImage,
                   icon: const Icon(Icons.add_a_photo),
-                  label: Text('Añadir imagen ($imageCount/4)'),
+                  label: Text(AppLocalizations.of(context)!.addImage(imageCount)),
                 ),
                 const SizedBox(height: 20),
                 if (showExistingImages)
@@ -384,7 +385,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                   child:
                       _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Guardar cambios'),
+                          : Text(AppLocalizations.of(context)!.saveChanges),
                 ),
               ],
             ),
