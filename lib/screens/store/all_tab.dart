@@ -19,9 +19,18 @@ class _AllTabState extends State<AllTab> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
   final String _selectedCat = 'all';
-  int _dronesPerPage = 10;
   int _tabIndex = 0; // Añadido para controlar la tab activa
   bool _showFilters = true; // true: filtros, false: navegación
+
+  void _onApplyFilters(Map<String, dynamic> filters) {
+    // Llama al método de la vista de drones si está montada
+    final state = _allDronesViewKey.currentState;
+    if (state != null) {
+      state.applyFilters(filters);
+    }
+  }
+
+  final GlobalKey<_AllDronesViewState> _allDronesViewKey = GlobalKey();
 
   @override
   void initState() {
@@ -49,28 +58,12 @@ class _AllTabState extends State<AllTab> {
     super.dispose();
   }
 
-  void _applyFilters(Map<String, dynamic> filters) {
-    final prov = context.read<DroneProvider>();
-    prov.loadDronesFiltered(
-      DroneQuery(
-        q: filters['name'],
-        category: filters['category'],
-        condition: filters['condition'],
-        minPrice: filters['minPrice'],
-        maxPrice: filters['maxPrice'],
-        // location: ...
-        page: 1,
-        limit: _dronesPerPage,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
     Widget sidebarContent;
     if (_showFilters) {
-      sidebarContent = StoreSidebar(onApply: _applyFilters);
+      sidebarContent = StoreSidebar(onApply: _onApplyFilters);
     } else {
       sidebarContent = _NavSidebar(
         selectedIndex: _tabIndex,
@@ -94,7 +87,7 @@ class _AllTabState extends State<AllTab> {
     // NUEVO: Cambia el contenido principal según la opción seleccionada
     Widget mainContent;
     if (_tabIndex == 0) {
-      mainContent = _AllDronesView();
+      mainContent = _AllDronesView(key: _allDronesViewKey);
     } else {
       mainContent = _MyDronesView();
     }
@@ -176,11 +169,10 @@ class _AllDronesView extends StatefulWidget {
 
 class _AllDronesViewState extends State<_AllDronesView>
     with SingleTickerProviderStateMixin {
-  int _currentPage = 1;
-  int _dronesPerPage = 10;
   bool _isLastPage = false;
   late AnimationController _animController;
   Map<String, dynamic> _filters = const {};
+  String? _lastCurrency;
 
   @override
   void initState() {
@@ -190,6 +182,18 @@ class _AllDronesViewState extends State<_AllDronesView>
       duration: const Duration(milliseconds: 400),
     );
     _animController.forward();
+    _lastCurrency = Provider.of<DroneProvider>(context, listen: false).currency;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final prov = Provider.of<DroneProvider>(context);
+    if (_lastCurrency != prov.currency) {
+      _lastCurrency = prov.currency;
+      _filters = _filters; // mantener filtros
+      _changePage(1, prov, force: true);
+    }
   }
 
   @override
@@ -198,54 +202,74 @@ class _AllDronesViewState extends State<_AllDronesView>
     super.dispose();
   }
 
-  Future<void> _changePage(int page, DroneProvider prov) async {
-    setState(() => _currentPage = page);
-    final drones = await prov.loadDronesFiltered(
-      DroneQuery(
-        q: _filters['name'],
-        category: _filters['category'],
-        condition: _filters['condition'],
-        minPrice: _filters['minPrice'],
-        maxPrice: _filters['maxPrice'],
-        page: page,
-        limit: _dronesPerPage,
-        currency: prov.currency,
-      ),
-    );
-    setState(() {
-      _isLastPage = drones.length < _dronesPerPage;
-    });
-    _animController.forward(from: 0);
+  Future<void> _changePage(
+    int page,
+    DroneProvider prov, {
+    bool force = false,
+  }) async {
+    final filters = _filters.isNotEmpty ? _filters : {};
+    try {
+      await prov.loadDronesFiltered(
+        DroneQuery(
+          q: filters['name'],
+          category: filters['category'],
+          condition: filters['condition'],
+          minPrice: filters['minPrice'],
+          maxPrice: filters['maxPrice'],
+          page: page,
+          limit: prov.currentLimit,
+          currency: prov.currency,
+        ),
+      );
+      setState(() {
+        _isLastPage = prov.drones.length < prov.currentLimit;
+      });
+      _animController.forward(from: 0);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error cargando drones: $e')));
+    }
   }
 
   Future<void> _changeDronesPerPage(int? value, DroneProvider prov) async {
     if (value == null) return;
-    setState(() {
-      _dronesPerPage = value;
-      _currentPage = 1;
-    });
-    final drones = await prov.loadDronesFiltered(
-      DroneQuery(
-        q: _filters['name'],
-        category: _filters['category'],
-        condition: _filters['condition'],
-        minPrice: _filters['minPrice'],
-        maxPrice: _filters['maxPrice'],
-        page: 1,
-        limit: value,
-        currency: prov.currency,
-      ),
-    );
-    setState(() {
-      _isLastPage = drones.length < _dronesPerPage;
-    });
-    _animController.forward(from: 0);
+    try {
+      await prov.loadDronesFiltered(
+        DroneQuery(
+          q: _filters['name'],
+          category: _filters['category'],
+          condition: _filters['condition'],
+          minPrice: _filters['minPrice'],
+          maxPrice: _filters['maxPrice'],
+          page: 1,
+          limit: value,
+          currency: prov.currency,
+        ),
+      );
+      setState(() {
+        _isLastPage = prov.drones.length < value;
+      });
+      _animController.forward(from: 0);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cambiando número de items: $e')),
+      );
+    }
+  }
+
+  void applyFilters(Map<String, dynamic> filters) {
+    setState(() => _filters = filters);
+    final prov = Provider.of<DroneProvider>(context, listen: false);
+    _changePage(1, prov, force: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<DroneProvider>(context);
-    final totalPages = _isLastPage ? _currentPage : (_currentPage + 1);
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    _isLastPage = prov.drones.length < prov.currentLimit;
+    final totalPages = _isLastPage ? prov.currentPage : (prov.currentPage + 1);
     return Column(
       children: [
         Padding(
@@ -255,7 +279,7 @@ class _AllDronesViewState extends State<_AllDronesView>
               const Text('Mostrar:'),
               const SizedBox(width: 8),
               DropdownButton<int>(
-                value: _dronesPerPage,
+                value: prov.currentLimit,
                 items:
                     const [5, 10, 20]
                         .map(
@@ -270,13 +294,13 @@ class _AllDronesViewState extends State<_AllDronesView>
                 transitionBuilder:
                     (child, anim) => ScaleTransition(scale: anim, child: child),
                 child: Row(
-                  key: ValueKey(_currentPage),
+                  key: ValueKey(prov.currentPage),
                   children: [
                     IconButton(
                       icon: const Icon(Icons.chevron_left),
                       onPressed:
-                          _currentPage > 1
-                              ? () => _changePage(_currentPage - 1, prov)
+                          prov.currentPage > 1
+                              ? () => _changePage(prov.currentPage - 1, prov)
                               : null,
                     ),
                     for (int i = 1; i <= totalPages; i++)
@@ -285,14 +309,14 @@ class _AllDronesViewState extends State<_AllDronesView>
                         margin: const EdgeInsets.symmetric(horizontal: 2),
                         decoration: BoxDecoration(
                           color:
-                              i == _currentPage
+                              i == prov.currentPage
                                   ? Colors.blueAccent
                                   : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: InkWell(
                           onTap:
-                              i == _currentPage
+                              i == prov.currentPage
                                   ? null
                                   : () => _changePage(i, prov),
                           child: Padding(
@@ -304,7 +328,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                               '$i',
                               style: TextStyle(
                                 color:
-                                    i == _currentPage
+                                    i == prov.currentPage
                                         ? Colors.white
                                         : Colors.black87,
                                 fontWeight: FontWeight.bold,
@@ -317,7 +341,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                       icon: const Icon(Icons.chevron_right),
                       onPressed:
                           !_isLastPage
-                              ? () => _changePage(_currentPage + 1, prov)
+                              ? () => _changePage(prov.currentPage + 1, prov)
                               : null,
                     ),
                   ],
@@ -341,15 +365,19 @@ class _AllDronesViewState extends State<_AllDronesView>
                   return const Center(child: Text('No hay anuncios'));
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => prov.loadDrones(),
+                  onRefresh: () async => _changePage(prov.currentPage, prov),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount:
-                          MediaQuery.of(context).size.width < 600 ? 2 : 4,
+                          isMobile
+                              ? 1
+                              : (MediaQuery.of(context).size.width < 600
+                                  ? 2
+                                  : 4),
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
-                      childAspectRatio: 0.75,
+                      childAspectRatio: isMobile ? 2.2 : 0.75,
                     ),
                     itemCount: prov.drones.length,
                     itemBuilder:

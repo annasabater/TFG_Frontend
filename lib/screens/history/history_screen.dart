@@ -11,40 +11,133 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    final userProv = context.read<UserProvider>();
-    userProv.fetchPurchaseHistory();
-    userProv.fetchSalesHistory();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _HistoryScreenState extends State<HistoryScreen> {
+  int _tabIndex = 0; // 0: Compras, 1: Ventas
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Historial'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [Tab(text: 'Compras'), Tab(text: 'Ventas')],
-        ),
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+    Widget sidebarContent = _HistoryNavSidebar(
+      selectedIndex: _tabIndex,
+      onTabSelected: (i) => setState(() => _tabIndex = i),
+    );
+    Widget sidebar = SizedBox(
+      width: 240,
+      child: Material(
+        elevation: 2,
+        color: Theme.of(context).colorScheme.surface,
+        child: sidebarContent,
       ),
-      body: TabBarView(
-        controller: _tabController,
+    );
+    Widget mainContent =
+        _tabIndex == 0
+            ? const _HistoryList(type: HistoryType.purchase)
+            : const _HistoryList(type: HistoryType.sale);
+    return Scaffold(
+      drawer: isDesktop ? null : Drawer(child: sidebar),
+      appBar:
+          isDesktop
+              ? null
+              : AppBar(
+                title: const Text('Historial'),
+                leading: Builder(
+                  builder:
+                      (context) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                ),
+              ),
+      body: Row(
         children: [
-          _HistoryList(type: HistoryType.purchase),
-          _HistoryList(type: HistoryType.sale),
+          if (isDesktop)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 240,
+              child: sidebarContent,
+            ),
+          Expanded(child: mainContent),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryNavSidebar extends StatelessWidget {
+  final int selectedIndex;
+  final void Function(int) onTabSelected;
+  const _HistoryNavSidebar({
+    required this.selectedIndex,
+    required this.onTabSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = [
+      {
+        'icon': Icons.shopping_cart,
+        'label': 'Compras',
+        'color': Colors.blueAccent,
+      },
+      {'icon': Icons.sell, 'label': 'Ventas', 'color': Colors.green},
+    ];
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          for (int i = 0; i < tabs.length; i++)
+            Card(
+              elevation: selectedIndex == i ? 4 : 1,
+              color:
+                  selectedIndex == i
+                      ? (tabs[i]['color'] as Color).withOpacity(0.15)
+                      : Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side:
+                    selectedIndex == i
+                        ? BorderSide(color: tabs[i]['color'] as Color, width: 2)
+                        : BorderSide.none,
+              ),
+              child: ListTile(
+                leading: Icon(
+                  tabs[i]['icon'] as IconData,
+                  color: tabs[i]['color'] as Color,
+                ),
+                title: Text(
+                  tabs[i]['label'] as String,
+                  style: TextStyle(
+                    color: tabs[i]['color'] as Color,
+                    fontWeight:
+                        selectedIndex == i
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                  ),
+                ),
+                selected: i == selectedIndex,
+                onTap: () async {
+                  onTabSelected(i);
+                  final userProv = Provider.of<UserProvider>(
+                    context,
+                    listen: false,
+                  );
+                  try {
+                    if (i == 0) {
+                      await userProv.fetchPurchaseHistory();
+                    } else {
+                      await userProv.fetchSalesHistory();
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error cargando historial: $e')),
+                    );
+                  }
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -65,6 +158,16 @@ class _HistoryListState extends State<_HistoryList> {
   DateTime? _fromDate;
   DateTime? _toDate;
   String _search = '';
+
+  String _formatDate(String? iso) {
+    if (iso == null) return '-';
+    try {
+      final dt = DateTime.parse(iso);
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,67 +214,84 @@ class _HistoryListState extends State<_HistoryList> {
                 user.contains(_search.toLowerCase());
           }).toList();
     }
+    // Buscador siempre visible
+    final searchBar = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Buscar modelo o usuario',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.date_range),
+            tooltip: 'Filtrar por fecha',
+            onPressed: () async {
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+                initialDateRange:
+                    _fromDate != null && _toDate != null
+                        ? DateTimeRange(start: _fromDate!, end: _toDate!)
+                        : null,
+              );
+              if (picked != null) {
+                setState(() {
+                  _fromDate = picked.start;
+                  _toDate = picked.end;
+                });
+              }
+            },
+          ),
+          if (_fromDate != null || _toDate != null)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              tooltip: 'Limpiar filtro de fecha',
+              onPressed:
+                  () => setState(() {
+                    _fromDate = null;
+                    _toDate = null;
+                  }),
+            ),
+        ],
+      ),
+    );
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Column(
+        children: [
+          searchBar,
+          const Expanded(child: Center(child: CircularProgressIndicator())),
+        ],
+      );
     }
     if (error != null) {
-      return Center(child: Text(error));
+      return Column(
+        children: [searchBar, Expanded(child: Center(child: Text(error)))],
+      );
     }
     if (history.isEmpty) {
-      return const Center(child: Text('No hay historial.'));
+      return Column(
+        children: [
+          searchBar,
+          const Expanded(child: Center(child: Text('No hay historial.'))),
+        ],
+      );
     }
+    // Tarjetas laterales tipo "Mis drones"
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Buscar modelo o usuario',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (v) => setState(() => _search = v),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.date_range),
-                tooltip: 'Filtrar por fecha',
-                onPressed: () async {
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                    initialDateRange:
-                        _fromDate != null && _toDate != null
-                            ? DateTimeRange(start: _fromDate!, end: _toDate!)
-                            : null,
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _fromDate = picked.start;
-                      _toDate = picked.end;
-                    });
-                  }
-                },
-              ),
-              if (_fromDate != null || _toDate != null)
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  tooltip: 'Limpiar filtro de fecha',
-                  onPressed:
-                      () => setState(() {
-                        _fromDate = null;
-                        _toDate = null;
-                      }),
-                ),
-            ],
-          ),
-        ),
+        searchBar,
         Expanded(
-          child: ListView.builder(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             itemCount: history.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final item = history[i];
               final isSale = widget.type == HistoryType.sale;
@@ -179,86 +299,93 @@ class _HistoryListState extends State<_HistoryList> {
               final icon = isSale ? Icons.sell : Icons.shopping_cart;
               final userLabel = isSale ? 'Comprador' : 'Vendedor';
               final userValue = isSale ? item['buyer'] : item['seller'];
-              return Card(
-                color: color,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                elevation: 2,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isSale ? Colors.green : Colors.blue,
-                    child: Icon(icon, color: Colors.white),
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: isSale ? Colors.green : Colors.blue,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 32),
                   ),
-                  title: Text(
-                    item['model'] ?? 'Modelo desconocido',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Fecha: ${item['date'] ?? '-'}'),
-                      if (userValue != null) Text('$userLabel: $userValue'),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${item['price']} ${item['currency']}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isSale ? Colors.green : Colors.blue,
-                        ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Card(
+                      color: color,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
-                  ),
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder:
-                          (_) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            title: Row(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(
-                                  icon,
-                                  color: isSale ? Colors.green : Colors.blue,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(item['model'] ?? 'Modelo desconocido'),
-                              ],
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Fecha: ${item['date'] ?? '-'}'),
                                 Text(
-                                  'Precio: ${item['price']} ${item['currency']}',
-                                ),
-                                if (userValue != null)
-                                  Text('$userLabel: $userValue'),
-                                if (item['description'] != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(
-                                      'Descripción: ${item['description']}',
-                                    ),
+                                  item['model'] ?? 'Modelo desconocido',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
                                   ),
+                                ),
+                                Text(
+                                  '${item['price']} ${item['currency']}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSale ? Colors.green : Colors.blue,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ],
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('Cerrar'),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDate(item['date']),
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                            if (userValue != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    size: 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text('$userLabel: $userValue'),
+                                ],
                               ),
                             ],
-                          ),
-                    );
-                  },
-                ),
+                            if (item['description'] != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Descripción: ${item['description']}',
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),
