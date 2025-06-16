@@ -48,8 +48,8 @@ class _BalanceFormState extends State<BalanceForm> {
         setState(() => _balances = {});
         return;
       }
-      final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
-      final url = Uri.parse('$serverUrl/api/users/$userId/balance');
+      final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+      final url = Uri.parse('$serverUrl/users/$userId/balance');
       final res = await http.get(url);
       if (res.statusCode == 200) {
         setState(() {
