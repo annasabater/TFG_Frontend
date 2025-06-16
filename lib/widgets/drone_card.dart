@@ -53,201 +53,226 @@ class DroneCard extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: AspectRatio(
-                  aspectRatio: 1.2,
-                  child:
-                      img != null
-                          ? Image.network(img, fit: BoxFit.cover)
-                          : Container(
-                            color: scheme.primaryContainer,
-                            child: Icon(
-                              Icons.airplanemode_active,
-                              color: scheme.primary,
-                              size: 48,
-                            ),
-                          ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                drone.model,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: scheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                priceStr,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: scheme.primary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              DroneCardRating(droneId: drone.id),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2, color: scheme.secondary, size: 18),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Stock: ${drone.stock ?? 1}',
-                    style: TextStyle(
-                      color:
-                          (drone.stock ?? 1) == 0
-                              ? scheme.error
-                              : scheme.secondary,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    flex: 6,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        img ?? '',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              color: scheme.primaryContainer,
+                              child: Icon(
+                                Icons.airplanemode_active,
+                                color: scheme.primary,
+                                size: 48,
+                              ),
+                            ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if ((drone.stock ?? 1) == 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                  const SizedBox(height: 10),
+                  Text(
+                    drone.model,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: scheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    priceStr,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  DroneCardRating(droneId: drone.id),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inventory_2,
+                        color: scheme.secondary,
+                        size: 17,
                       ),
-                      decoration: BoxDecoration(
-                        color: scheme.error.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 3),
+                      Text(
+                        'Stock: ${drone.stock ?? 1}',
+                        style: TextStyle(
+                          color:
+                              (drone.stock ?? 1) == 0
+                                  ? scheme.error
+                                  : scheme.secondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
-                      child: Row(
+                      const SizedBox(width: 6),
+                      if ((drone.stock ?? 1) == 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.error.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.block, color: scheme.error, size: 14),
+                              const SizedBox(width: 2),
+                              Text(
+                                'Sin stock',
+                                style: TextStyle(
+                                  color: scheme.error,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if ((drone.stock ?? 1) < 5)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning,
+                                color: Colors.orange,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '¡Pocos!',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (showAddToCart)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Column(
                         children: [
-                          Icon(Icons.block, color: scheme.error, size: 16),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Sin stock',
-                            style: TextStyle(
-                              color: scheme.error,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                          if (isNew)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: scheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Nuevo',
+                                style: TextStyle(
+                                  color: scheme.onSecondaryContainer,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    isMine || (drone.stock ?? 1) == 0
+                                        ? scheme.surfaceVariant
+                                        : scheme.primary,
+                                foregroundColor:
+                                    isMine || (drone.stock ?? 1) == 0
+                                        ? scheme.onSurfaceVariant
+                                        : scheme.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onPressed:
+                                  isMine || (drone.stock ?? 1) == 0
+                                      ? null
+                                      : () {
+                                        context.read<CartProvider>().addToCart(
+                                          drone,
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Añadido al carrito'),
+                                          ),
+                                        );
+                                      },
+                              icon: Icon(
+                                isMine || (drone.stock ?? 1) == 0
+                                    ? Icons.block
+                                    : Icons.add_shopping_cart,
+                                size: 18,
+                              ),
+                              label: Text(
+                                isMine
+                                    ? 'No puedes comprar tu dron'
+                                    : (drone.stock ?? 1) == 0
+                                    ? 'Sin stock'
+                                    : 'Añadir',
+                                style: const TextStyle(fontSize: 15),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    )
-                  else if ((drone.stock ?? 1) < 5)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning, color: Colors.orange, size: 16),
-                          const SizedBox(width: 2),
-                          Text(
-                            '¡Pocos!',
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                    ),
+                  if (isMine)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Text(
+                        'Este dron es tuyo',
+                        style: TextStyle(
+                          color: scheme.error,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                 ],
-              ),
-              const Spacer(),
-              if (showAddToCart)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (isNew)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Nuevo',
-                          style: TextStyle(
-                            color: scheme.onSecondaryContainer,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isMine || (drone.stock ?? 1) == 0
-                                  ? scheme.surfaceVariant
-                                  : scheme.primary,
-                          foregroundColor:
-                              isMine || (drone.stock ?? 1) == 0
-                                  ? scheme.onSurfaceVariant
-                                  : scheme.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                        onPressed:
-                            isMine || (drone.stock ?? 1) == 0
-                                ? null
-                                : () {
-                                  context.read<CartProvider>().addToCart(drone);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Añadido al carrito'),
-                                    ),
-                                  );
-                                },
-                        icon: Icon(
-                          isMine || (drone.stock ?? 1) == 0
-                              ? Icons.block
-                              : Icons.add_shopping_cart,
-                          size: 18,
-                        ),
-                        label: Text(
-                          isMine
-                              ? 'No puedes comprar tu dron'
-                              : (drone.stock ?? 1) == 0
-                              ? 'Sin stock'
-                              : 'Añadir',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              if (isMine)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    'Este dron es tuyo',
-                    style: TextStyle(
-                      color: scheme.error,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-            ],
+              );
+            },
           ),
         ),
       ),

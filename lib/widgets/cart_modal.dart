@@ -53,6 +53,18 @@ class _CartModalState extends State<CartModal> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (cart.loading) const LinearProgressIndicator(),
+            if (_errorMsg != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  _errorMsg!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -232,23 +244,7 @@ class _CartModalState extends State<CartModal> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              if (_errorMsg != null)
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.08),
-                    border: Border.all(color: Colors.red),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _errorMsg!,
-                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+              const SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: const Icon(Icons.shopping_cart_checkout),
                 label: const Text('Comprar'),
