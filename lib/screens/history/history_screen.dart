@@ -159,10 +159,26 @@ class _HistoryListState extends State<_HistoryList> {
   DateTime? _toDate;
   String _search = '';
 
+  @override
+  void initState() {
+    super.initState();
+    // Forzar petición de historial al entrar
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final userProv = Provider.of<UserProvider>(context, listen: false);
+      if (widget.type == HistoryType.purchase) {
+        await userProv.fetchPurchaseHistory();
+      } else {
+        await userProv.fetchSalesHistory();
+      }
+    });
+  }
+
   String _formatDate(String? iso) {
     if (iso == null) return '-';
     try {
-      final dt = DateTime.parse(iso);
+      final dt = DateTime.parse(
+        iso,
+      ).add(const Duration(hours: 2)); // Sumar 2 horas
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return iso;

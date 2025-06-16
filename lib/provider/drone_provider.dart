@@ -40,6 +40,15 @@ class DroneProvider with ChangeNotifier {
   int _currentLimit = 10;
   int get currentPage => _currentPage;
   int get currentLimit => _currentLimit;
+  set currentPage(int value) {
+    _currentPage = value;
+    notifyListeners();
+  }
+
+  set currentLimit(int value) {
+    _currentLimit = value;
+    notifyListeners();
+  }
 
   String? _userIdForReload;
   void setUserIdForReload(String? uid) {

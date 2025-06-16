@@ -191,8 +191,8 @@ class _AllDronesViewState extends State<_AllDronesView>
     final prov = Provider.of<DroneProvider>(context);
     if (_lastCurrency != prov.currency) {
       _lastCurrency = prov.currency;
-      _filters = _filters; // mantener filtros
-      _changePage(1, prov, force: true);
+      // Mantener la página actual al cambiar de divisa
+      _changePage(prov.currentPage, prov, force: true);
     }
   }
 
@@ -224,6 +224,7 @@ class _AllDronesViewState extends State<_AllDronesView>
       setState(() {
         _isLastPage = prov.drones.length < prov.currentLimit;
       });
+      prov.currentPage = page; // <-- Usar setter público
       _animController.forward(from: 0);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -235,6 +236,8 @@ class _AllDronesViewState extends State<_AllDronesView>
   Future<void> _changeDronesPerPage(int? value, DroneProvider prov) async {
     if (value == null) return;
     try {
+      prov.currentLimit = value; // <-- Usar setter público
+      prov.currentPage = 1; // <-- Usar setter público
       await prov.loadDronesFiltered(
         DroneQuery(
           q: _filters['name'],
