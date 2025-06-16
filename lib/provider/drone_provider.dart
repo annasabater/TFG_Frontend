@@ -23,13 +23,15 @@ class DroneProvider with ChangeNotifier {
 
   // NUEVO: Estado de moneda
   String _currency = 'EUR';
+  int _lastPage = 1;
+  int _lastLimit = 10;
   String get currency => _currency;
   set currency(String value) {
     if (_currency != value) {
       _currency = value;
       notifyListeners();
-      loadDrones(); // recarga al cambiar
-      // Recargar favoritos y mis drones si hay usuario
+      // Recarga la página y el límite actuales
+      loadDrones(page: _lastPage, limit: _lastLimit);
       if (_userIdForReload != null && _userIdForReload!.isNotEmpty) {
         loadFavorites(_userIdForReload!);
         loadMyDrones(_userIdForReload!);
@@ -59,13 +61,18 @@ class DroneProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadDrones() async {
+  // Modificado para aceptar página y límite
+  Future<void> loadDrones({int page = 1, int limit = 10}) async {
     _setLoading(true);
     _setError(null);
-    _page = 1;
+    _page = page;
     _hasMore = true;
+    _lastPage = page;
+    _lastLimit = limit;
     try {
-      _drones = await DroneService.getDrones(DroneQuery(currency: _currency));
+      _drones = await DroneService.getDrones(
+        DroneQuery(currency: _currency, page: page, limit: limit),
+      );
     } catch (e) {
       _setError('Error loading drones: $e');
       _drones = [];
@@ -74,16 +81,21 @@ class DroneProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadDronesFiltered(DroneQuery q) async {
+  Future<List<Drone>> loadDronesFiltered(DroneQuery q) async {
     _setLoading(true);
     _setError(null);
-    _page = 1;
+    _page = q.page ?? 1;
     _hasMore = true;
     try {
-      _drones = await DroneService.getDrones(q.copyWith(currency: _currency));
+      final result = await DroneService.getDrones(
+        q.copyWith(currency: _currency),
+      );
+      _drones = result;
+      return result;
     } catch (e) {
       _setError('Error: $e');
       _drones = [];
+      return [];
     } finally {
       _setLoading(false);
     }

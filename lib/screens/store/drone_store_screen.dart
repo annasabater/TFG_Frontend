@@ -129,7 +129,12 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
                 ),
                 tooltip: 'Cambiar divisa',
                 onSelected: (value) async {
-                  droneProv.currency = value;
+                  // No usar findAncestorStateOfType, sino notificar a la vista principal
+                  final prov = Provider.of<DroneProvider>(
+                    context,
+                    listen: false,
+                  );
+                  prov.currency = value;
                   // Refrescar saldo al cambiar divisa
                   final userProv = Provider.of<UserProvider>(
                     context,

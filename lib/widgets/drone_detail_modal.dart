@@ -6,6 +6,8 @@ import '../../provider/users_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'comments_section.dart';
 import '../../provider/cart_provider.dart';
+import '../../provider/drone_provider.dart';
+import '../../utils/currency_utils.dart';
 
 class DroneDetailModal extends StatelessWidget {
   final Drone drone;
@@ -82,11 +84,18 @@ class DroneDetailModal extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${drone.price.toStringAsFixed(0)} €',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final currency = context.watch<DroneProvider>().currency;
+                    final currencySymbol = getCurrencySymbol(currency);
+                    final decimals = getCurrencyDecimals(currency);
+                    return Text(
+                      '${drone.price.toStringAsFixed(decimals)} $currencySymbol',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 if (drone.description?.isNotEmpty ?? false)

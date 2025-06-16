@@ -5,6 +5,7 @@ import '../provider/drone_provider.dart';
 import '../provider/cart_provider.dart';
 import '../provider/users_provider.dart';
 import 'drone_card_rating.dart';
+import '../utils/currency_utils.dart';
 
 class DroneCard extends StatelessWidget {
   final Drone drone;
@@ -22,48 +23,13 @@ class DroneCard extends StatelessWidget {
     final img =
         (drone.images?.isNotEmpty ?? false) ? drone.images!.first : null;
     final currency = context.watch<DroneProvider>().currency;
-    final currentUser = context.watch<UserProvider>().currentUser;
-    final isMine = currentUser != null && currentUser.id == drone.ownerId;
-    String currencySymbol;
-    int decimals = 2;
-    switch (currency) {
-      case 'USD':
-        currencySymbol = '\$'; // $ oficial
-        break;
-      case 'GBP':
-        currencySymbol = '£';
-        break;
-      case 'JPY':
-        currencySymbol = '¥';
-        decimals = 0;
-        break;
-      case 'CHF':
-        currencySymbol = 'CHF';
-        break;
-      case 'CAD':
-        currencySymbol = 'CA' + '\$';
-        break;
-      case 'AUD':
-        currencySymbol = 'A' + '\$';
-        break;
-      case 'CNY':
-        currencySymbol = 'CN¥';
-        decimals = 0;
-        break;
-      case 'HKD':
-        currencySymbol = 'HK' + '\$';
-        break;
-      case 'NZD':
-        currencySymbol = 'NZ' + '\$';
-        break;
-      case 'EUR':
-      default:
-        currencySymbol = '€';
-        break;
-    }
+    final currencySymbol = getCurrencySymbol(currency);
+    final decimals = getCurrencyDecimals(currency);
     String priceStr =
         '${drone.price.toStringAsFixed(decimals)} $currencySymbol';
     final scheme = Theme.of(context).colorScheme;
+    final currentUser = context.watch<UserProvider>().currentUser;
+    final isMine = currentUser != null && currentUser.id == drone.ownerId;
     final isNew =
         (drone.condition == 'new') ||
         (drone.createdAt != null &&

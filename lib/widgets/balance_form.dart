@@ -44,7 +44,10 @@ class _BalanceFormState extends State<BalanceForm> {
     setState(() => _loading = true);
     try {
       final userId = context.read<UserProvider>().currentUser?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        setState(() => _balances = {});
+        return;
+      }
       final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:8000';
       final url = Uri.parse('$serverUrl/api/users/$userId/balance');
       final res = await http.get(url);
@@ -52,7 +55,17 @@ class _BalanceFormState extends State<BalanceForm> {
         setState(() {
           _balances = json.decode(res.body);
         });
+      } else {
+        setState(() => _balances = {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al obtener saldo: ${res.statusCode}')),
+        );
       }
+    } catch (e) {
+      setState(() => _balances = {});
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al obtener saldo: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -78,9 +91,7 @@ class _BalanceFormState extends State<BalanceForm> {
         body: json.encode({'currency': _selectedCurrency, 'amount': _amount}),
       );
       if (res.statusCode == 200) {
-        setState(() {
-          _balances = json.decode(res.body);
-        });
+        await _fetchBalances();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saldo añadido correctamente')),
         );
@@ -90,9 +101,9 @@ class _BalanceFormState extends State<BalanceForm> {
           await cartProv.fetchUserBalances(userId);
         } catch (_) {}
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Error al añadir saldo')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al añadir saldo: ${res.statusCode}')),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(

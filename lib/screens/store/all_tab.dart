@@ -20,10 +20,7 @@ class _AllTabState extends State<AllTab> {
   final TextEditingController _searchCtrl = TextEditingController();
   final String _selectedCat = 'all';
   int _dronesPerPage = 10;
-  int _currentPage = 1;
   int _tabIndex = 0; // Añadido para controlar la tab activa
-  Map<String, dynamic> _lastFilters = {};
-  bool _showSidebar = true; // true: filtros, false: navegación
   bool _showFilters = true; // true: filtros, false: navegación
 
   @override
@@ -53,10 +50,6 @@ class _AllTabState extends State<AllTab> {
   }
 
   void _applyFilters(Map<String, dynamic> filters) {
-    setState(() {
-      _lastFilters = filters;
-      _currentPage = 1;
-    });
     final prov = context.read<DroneProvider>();
     prov.loadDronesFiltered(
       DroneQuery(
@@ -70,32 +63,6 @@ class _AllTabState extends State<AllTab> {
         limit: _dronesPerPage,
       ),
     );
-  }
-
-  void _changePage(int page) {
-    setState(() => _currentPage = page);
-    final prov = context.read<DroneProvider>();
-    prov.loadDronesFiltered(
-      DroneQuery(
-        q: _lastFilters['name'],
-        category: _lastFilters['category'],
-        condition: _lastFilters['condition'],
-        minPrice: _lastFilters['minPrice'],
-        maxPrice: _lastFilters['maxPrice'],
-        // location: ...
-        page: page,
-        limit: _dronesPerPage,
-      ),
-    );
-  }
-
-  void _changeDronesPerPage(int? value) {
-    if (value == null) return;
-    setState(() {
-      _dronesPerPage = value;
-      _currentPage = 1;
-    });
-    _applyFilters(_lastFilters);
   }
 
   @override
@@ -202,6 +169,7 @@ class _AllTabState extends State<AllTab> {
 
 // NUEVO: Vistas para cada sección
 class _AllDronesView extends StatefulWidget {
+  const _AllDronesView({Key? key}) : super(key: key);
   @override
   State<_AllDronesView> createState() => _AllDronesViewState();
 }
@@ -210,7 +178,9 @@ class _AllDronesViewState extends State<_AllDronesView>
     with SingleTickerProviderStateMixin {
   int _currentPage = 1;
   int _dronesPerPage = 10;
+  bool _isLastPage = false;
   late AnimationController _animController;
+  Map<String, dynamic> _filters = const {};
 
   @override
   void initState() {
@@ -228,55 +198,54 @@ class _AllDronesViewState extends State<_AllDronesView>
     super.dispose();
   }
 
-  void _changePage(int page, DroneProvider prov, Map<String, dynamic> filters) {
+  Future<void> _changePage(int page, DroneProvider prov) async {
     setState(() => _currentPage = page);
-    prov.loadDronesFiltered(
+    final drones = await prov.loadDronesFiltered(
       DroneQuery(
-        q: filters['name'],
-        category: filters['category'],
-        condition: filters['condition'],
-        minPrice: filters['minPrice'],
-        maxPrice: filters['maxPrice'],
+        q: _filters['name'],
+        category: _filters['category'],
+        condition: _filters['condition'],
+        minPrice: _filters['minPrice'],
+        maxPrice: _filters['maxPrice'],
         page: page,
         limit: _dronesPerPage,
         currency: prov.currency,
       ),
     );
+    setState(() {
+      _isLastPage = drones.length < _dronesPerPage;
+    });
     _animController.forward(from: 0);
   }
 
-  void _changeDronesPerPage(
-    int? value,
-    DroneProvider prov,
-    Map<String, dynamic> filters,
-  ) {
+  Future<void> _changeDronesPerPage(int? value, DroneProvider prov) async {
     if (value == null) return;
     setState(() {
       _dronesPerPage = value;
       _currentPage = 1;
     });
-    prov.loadDronesFiltered(
+    final drones = await prov.loadDronesFiltered(
       DroneQuery(
-        q: filters['name'],
-        category: filters['category'],
-        condition: filters['condition'],
-        minPrice: filters['minPrice'],
-        maxPrice: filters['maxPrice'],
+        q: _filters['name'],
+        category: _filters['category'],
+        condition: _filters['condition'],
+        minPrice: _filters['minPrice'],
+        maxPrice: _filters['maxPrice'],
         page: 1,
         limit: value,
         currency: prov.currency,
       ),
     );
+    setState(() {
+      _isLastPage = drones.length < _dronesPerPage;
+    });
     _animController.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<DroneProvider>(context);
-    final total = prov.drones.length; // Cambia esto si tienes total real
-    final totalPages = (total / _dronesPerPage).ceil().clamp(1, 999);
-    final filters =
-        const <String, dynamic>{}; // TODO: sincronizar con filtros reales
+    final totalPages = _isLastPage ? _currentPage : (_currentPage + 1);
     return Column(
       children: [
         Padding(
@@ -293,7 +262,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                           (v) => DropdownMenuItem(value: v, child: Text('$v')),
                         )
                         .toList(),
-                onChanged: (v) => _changeDronesPerPage(v, prov, filters),
+                onChanged: (v) => _changeDronesPerPage(v, prov),
               ),
               const Spacer(),
               AnimatedSwitcher(
@@ -307,8 +276,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                       icon: const Icon(Icons.chevron_left),
                       onPressed:
                           _currentPage > 1
-                              ? () =>
-                                  _changePage(_currentPage - 1, prov, filters)
+                              ? () => _changePage(_currentPage - 1, prov)
                               : null,
                     ),
                     for (int i = 1; i <= totalPages; i++)
@@ -326,7 +294,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                           onTap:
                               i == _currentPage
                                   ? null
-                                  : () => _changePage(i, prov, filters),
+                                  : () => _changePage(i, prov),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -348,9 +316,8 @@ class _AllDronesViewState extends State<_AllDronesView>
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed:
-                          _currentPage < totalPages
-                              ? () =>
-                                  _changePage(_currentPage + 1, prov, filters)
+                          !_isLastPage
+                              ? () => _changePage(_currentPage + 1, prov)
                               : null,
                     ),
                   ],
