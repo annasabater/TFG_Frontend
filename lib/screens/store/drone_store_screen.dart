@@ -22,6 +22,7 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
     with SingleTickerProviderStateMixin {
   late final DroneProvider _droneProv;
   late final UserProvider _userProv;
+  bool _changingCurrency = false;
 
   @override
   void initState() {
@@ -55,12 +56,35 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
     }
   }
 
+  Future<void> _changeCurrency(BuildContext context, String value) async {
+    setState(() => _changingCurrency = true);
+    final prov = Provider.of<DroneProvider>(context, listen: false);
+    // Usa la página y límite actuales del provider
+    final page = prov.currentPage;
+    final limit = prov.currentLimit;
+    prov.currency = value;
+    await prov.loadDrones(page: page, limit: limit);
+    // Refrescar saldo al cambiar divisa
+    final userProv = Provider.of<UserProvider>(context, listen: false);
+    final cartProv = Provider.of<CartProvider>(context, listen: false);
+    final uid = userProv.currentUser?.id;
+    if (uid != null && uid.isNotEmpty) {
+      await cartProv.fetchUserBalances(uid);
+    }
+    setState(() => _changingCurrency = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Botiga'),
         actions: [
+          if (_changingCurrency)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
           Builder(
             builder: (context) {
               final userProv = Provider.of<UserProvider>(
@@ -129,25 +153,7 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
                 ),
                 tooltip: 'Cambiar divisa',
                 onSelected: (value) async {
-                  // No usar findAncestorStateOfType, sino notificar a la vista principal
-                  final prov = Provider.of<DroneProvider>(
-                    context,
-                    listen: false,
-                  );
-                  prov.currency = value;
-                  // Refrescar saldo al cambiar divisa
-                  final userProv = Provider.of<UserProvider>(
-                    context,
-                    listen: false,
-                  );
-                  final cartProv = Provider.of<CartProvider>(
-                    context,
-                    listen: false,
-                  );
-                  final uid = userProv.currentUser?.id;
-                  if (uid != null && uid.isNotEmpty) {
-                    await cartProv.fetchUserBalances(uid);
-                  }
+                  await _changeCurrency(context, value);
                 },
                 itemBuilder:
                     (context) =>
@@ -232,7 +238,16 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
           ),
         ],
       ),
-      body: const AllTab(),
+      body: Stack(
+        children: [
+          const AllTab(),
+          if (_changingCurrency)
+            Container(
+              color: Colors.black.withOpacity(0.2),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/store/add'),
         tooltip: 'Nou anunci',

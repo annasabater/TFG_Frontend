@@ -23,21 +23,23 @@ class DroneProvider with ChangeNotifier {
 
   // NUEVO: Estado de moneda
   String _currency = 'EUR';
-  int _lastPage = 1;
-  int _lastLimit = 10;
   String get currency => _currency;
   set currency(String value) {
     if (_currency != value) {
       _currency = value;
       notifyListeners();
-      // Recarga la página y el límite actuales
-      loadDrones(page: _lastPage, limit: _lastLimit);
+      loadDrones(page: _currentPage, limit: _currentLimit);
       if (_userIdForReload != null && _userIdForReload!.isNotEmpty) {
         loadFavorites(_userIdForReload!);
         loadMyDrones(_userIdForReload!);
       }
     }
   }
+
+  int _currentPage = 1;
+  int _currentLimit = 10;
+  int get currentPage => _currentPage;
+  int get currentLimit => _currentLimit;
 
   String? _userIdForReload;
   void setUserIdForReload(String? uid) {
@@ -67,8 +69,8 @@ class DroneProvider with ChangeNotifier {
     _setError(null);
     _page = page;
     _hasMore = true;
-    _lastPage = page;
-    _lastLimit = limit;
+    _currentPage = page;
+    _currentLimit = limit;
     try {
       _drones = await DroneService.getDrones(
         DroneQuery(currency: _currency, page: page, limit: limit),
