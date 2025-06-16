@@ -111,5 +111,10 @@
   "socialNetwork": "Xarxa Social",
   "seeFollowing": "Veure seguits",
   "exploreTab": "EXPLORA",
-  "followingTab": "SEGINT"
+  "followingTab": "SEGINT",
+  "cannotBuyOwnDrone": "No pots comprar el teu dron",
+  "addToCart": "Afegir",
+  "ownDrone": "Aquest dron és teu",
+  "daltonicMode": "Mode daltònic",
+  "readingMode": "Mode lectura (filtre llum blava)"
 }

@@ -111,5 +111,10 @@
   "socialNetwork": "Social Network",
   "seeFollowing": "See following",
   "exploreTab": "EXPLORE",
-  "followingTab": "FOLLOWING"
+  "followingTab": "FOLLOWING",
+  "cannotBuyOwnDrone": "You cannot buy your own drone",
+  "addToCart": "Add",
+  "ownDrone": "This drone is yours",
+  "daltonicMode": "Colorblind mode",
+  "readingMode": "Reading mode (blue light filter)"
 }

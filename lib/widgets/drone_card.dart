@@ -249,10 +249,10 @@ class DroneCard extends StatelessWidget {
                               ),
                               label: Text(
                                 isMine
-                                    ? 'No puedes comprar tu dron'
+                                    ? loc.cannotBuyOwnDrone
                                     : (drone.stock ?? 1) == 0
-                                    ? 'Sin stock'
-                                    : 'Añadir',
+                                    ? loc.noStock
+                                    : loc.addToCart,
                                 style: const TextStyle(fontSize: 15),
                               ),
                             ),
@@ -264,7 +264,7 @@ class DroneCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 6.0),
                       child: Text(
-                        'Este dron es tuyo',
+                        loc.ownDrone,
                         style: TextStyle(
                           color: scheme.error,
                           fontWeight: FontWeight.bold,

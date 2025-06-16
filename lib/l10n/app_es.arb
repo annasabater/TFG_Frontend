@@ -111,5 +111,10 @@
   "socialNetwork": "Red Social",
   "seeFollowing": "Ver seguidos",
   "exploreTab": "EXPLORAR",
-  "followingTab": "SIGUIENDO"
+  "followingTab": "SIGUIENDO",
+  "cannotBuyOwnDrone": "No puedes comprar tu dron",
+  "addToCart": "Añadir",
+  "ownDrone": "Este dron es tuyo",
+  "daltonicMode": "Modo daltónico",
+  "readingMode": "Modo lectura (filtro luz azul)"
 }

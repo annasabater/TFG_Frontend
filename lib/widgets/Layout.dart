@@ -197,6 +197,28 @@ class LayoutWrapper extends StatelessWidget {
                   );
                 }),
                 const Divider(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, t, _) => SwitchListTile(
+                      title: Text(loc.daltonicMode),
+                      value: t.isDaltonicMode,
+                      onChanged: (_) => t.toggleDaltonicMode(),
+                      secondary: const Icon(Icons.visibility),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, t, _) => SwitchListTile(
+                      title: Text(loc.readingMode),
+                      value: t.isReadingMode,
+                      onChanged: (_) => t.toggleReadingMode(),
+                      secondary: const Icon(Icons.menu_book),
+                    ),
+                  ),
+                ),
                 if (!droneEmails.contains(email) && !isInvitado(email))
                   _reloadButton(context, loc),
                 _logoutButton(context, loc),

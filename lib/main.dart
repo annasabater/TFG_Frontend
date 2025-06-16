@@ -132,6 +132,41 @@ class MyApp extends StatelessWidget {
       surfaceTint: Color(0xFFA3B8FF),
     );
 
+    // Daltonic color scheme (alta visibilidad, colores seguros para daltónicos)
+    const daltonicColorScheme = ColorScheme(
+      brightness: Brightness.light,
+      primary: Color(0xFF0066CC), // Azul fuerte
+      onPrimary: Color(0xFFFFFFFF),
+      primaryContainer: Color(0xFFFFFF00), // Amarillo fuerte
+      onPrimaryContainer: Color(0xFF000000),
+      secondary: Color(0xFF00CC66), // Verde fuerte
+      onSecondary: Color(0xFF000000),
+      secondaryContainer: Color(0xFFFF9900), // Naranja fuerte
+      onSecondaryContainer: Color(0xFF000000),
+      tertiary: Color(0xFFCC0066), // Rosa fuerte
+      onTertiary: Color(0xFFFFFFFF),
+      tertiaryContainer: Color(0xFF00FFFF), // Cian fuerte
+      onTertiaryContainer: Color(0xFF000000),
+      error: Color(0xFFB00020),
+      onError: Color(0xFFFFFFFF),
+      errorContainer: Color(0xFFFFDAD6),
+      onErrorContainer: Color(0xFF410002),
+      outline: Color(0xFF000000),
+      outlineVariant: Color(0xFF888888),
+      background: Color(0xFFFFFFFF),
+      onBackground: Color(0xFF000000),
+      surface: Color(0xFFF2F2F2),
+      onSurface: Color(0xFF000000),
+      surfaceVariant: Color(0xFFE0E0E0),
+      onSurfaceVariant: Color(0xFF000000),
+      inverseSurface: Color(0xFF222222),
+      onInverseSurface: Color(0xFFFFFFFF),
+      inversePrimary: Color(0xFF0066CC),
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      surfaceTint: Color(0xFF0066CC),
+    );
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
@@ -169,21 +204,20 @@ class MyApp extends StatelessWidget {
                 Locale('es'), // Spanish
                 Locale('ca'), // Catalan
               ],
-
               theme: ThemeData(
                 useMaterial3: true,
-                colorScheme: lightColorScheme,
-                scaffoldBackgroundColor: lightColorScheme.surface,
+                colorScheme: themeProv.isDaltonicMode ? daltonicColorScheme : lightColorScheme,
+                scaffoldBackgroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.surface : lightColorScheme.surface,
                 appBarTheme: AppBarTheme(
-                  backgroundColor: lightColorScheme.primary,
-                  foregroundColor: lightColorScheme.onPrimary,
+                  backgroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.primary : lightColorScheme.primary,
+                  foregroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.onPrimary : lightColorScheme.onPrimary,
                   elevation: 0,
                 ),
                 drawerTheme: DrawerThemeData(
-                  backgroundColor: lightColorScheme.surface,
+                  backgroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.surface : lightColorScheme.surface,
                 ),
                 cardTheme: CardTheme(
-                  color: lightColorScheme.surface,
+                  color: themeProv.isDaltonicMode ? daltonicColorScheme.surface : lightColorScheme.surface,
                   elevation: 2,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -191,8 +225,8 @@ class MyApp extends StatelessWidget {
                 ),
                 elevatedButtonTheme: ElevatedButtonThemeData(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: lightColorScheme.primary,
-                    foregroundColor: lightColorScheme.onPrimary,
+                    backgroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.primary : lightColorScheme.primary,
+                    foregroundColor: themeProv.isDaltonicMode ? daltonicColorScheme.onPrimary : lightColorScheme.onPrimary,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -207,32 +241,48 @@ class MyApp extends StatelessWidget {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: lightColorScheme.primaryContainer,
+                      color: themeProv.isDaltonicMode ? daltonicColorScheme.primaryContainer : lightColorScheme.primaryContainer,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: lightColorScheme.primaryContainer,
+                      color: themeProv.isDaltonicMode ? daltonicColorScheme.primaryContainer : lightColorScheme.primaryContainer,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: lightColorScheme.primary),
+                    borderSide: BorderSide(
+                      color: themeProv.isDaltonicMode ? daltonicColorScheme.primary : lightColorScheme.primary,
+                    ),
                   ),
                   filled: true,
-                  fillColor: lightColorScheme.surfaceContainerHighest,
+                  fillColor: themeProv.isDaltonicMode ? daltonicColorScheme.surface : lightColorScheme.surfaceContainerHighest,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
                   ),
                 ),
               ),
-
               darkTheme: ThemeData(
                 useMaterial3: true,
                 colorScheme: darkColorScheme,
               ),
+              builder: (context, child) {
+                if (themeProv.isReadingMode) {
+                  return Stack(
+                    children: [
+                      child!,
+                      IgnorePointer(
+                        child: Container(
+                          color: const Color(0x33FFD580), // Filtro cálido (naranja claro, 20% opacidad)
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return child!;
+              },
             ),
       ),
     );
