@@ -128,8 +128,21 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
                   ],
                 ),
                 tooltip: 'Cambiar divisa',
-                onSelected: (value) {
+                onSelected: (value) async {
                   droneProv.currency = value;
+                  // Refrescar saldo al cambiar divisa
+                  final userProv = Provider.of<UserProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final cartProv = Provider.of<CartProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final uid = userProv.currentUser?.id;
+                  if (uid != null && uid.isNotEmpty) {
+                    await cartProv.fetchUserBalances(uid);
+                  }
                 },
                 itemBuilder:
                     (context) =>

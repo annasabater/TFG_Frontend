@@ -201,51 +201,206 @@ class _AllTabState extends State<AllTab> {
 }
 
 // NUEVO: Vistas para cada sección
-class _AllDronesView extends StatelessWidget {
+class _AllDronesView extends StatefulWidget {
+  @override
+  State<_AllDronesView> createState() => _AllDronesViewState();
+}
+
+class _AllDronesViewState extends State<_AllDronesView>
+    with SingleTickerProviderStateMixin {
+  int _currentPage = 1;
+  int _dronesPerPage = 10;
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _changePage(int page, DroneProvider prov, Map<String, dynamic> filters) {
+    setState(() => _currentPage = page);
+    prov.loadDronesFiltered(
+      DroneQuery(
+        q: filters['name'],
+        category: filters['category'],
+        condition: filters['condition'],
+        minPrice: filters['minPrice'],
+        maxPrice: filters['maxPrice'],
+        page: page,
+        limit: _dronesPerPage,
+        currency: prov.currency,
+      ),
+    );
+    _animController.forward(from: 0);
+  }
+
+  void _changeDronesPerPage(
+    int? value,
+    DroneProvider prov,
+    Map<String, dynamic> filters,
+  ) {
+    if (value == null) return;
+    setState(() {
+      _dronesPerPage = value;
+      _currentPage = 1;
+    });
+    prov.loadDronesFiltered(
+      DroneQuery(
+        q: filters['name'],
+        category: filters['category'],
+        condition: filters['condition'],
+        minPrice: filters['minPrice'],
+        maxPrice: filters['maxPrice'],
+        page: 1,
+        limit: value,
+        currency: prov.currency,
+      ),
+    );
+    _animController.forward(from: 0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Copia el contenido de la vista de "Todos" aquí
+    final prov = Provider.of<DroneProvider>(context);
+    final total = prov.drones.length; // Cambia esto si tienes total real
+    final totalPages = (total / _dronesPerPage).ceil().clamp(1, 999);
+    final filters =
+        const <String, dynamic>{}; // TODO: sincronizar con filtros reales
     return Column(
       children: [
-        // ... Copia la lógica de paginación, grid, etc. de la vista original de "Todos"
-        Expanded(
-          child: Consumer<DroneProvider>(
-            builder: (_, prov, __) {
-              if (prov.isLoading && prov.drones.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (prov.error != null) {
-                return Center(child: Text(prov.error!));
-              }
-              if (prov.drones.isEmpty) {
-                return const Center(child: Text('No hay anuncios'));
-              }
-              return RefreshIndicator(
-                onRefresh: () async => prov.loadDrones(),
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width < 600 ? 2 : 4,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemCount: prov.drones.length,
-                  itemBuilder:
-                      (context, i) => DroneCard(
-                        drone: prov.drones[i],
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder:
-                                (_) => DroneDetailModal(drone: prov.drones[i]),
-                          );
-                        },
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              const Text('Mostrar:'),
+              const SizedBox(width: 8),
+              DropdownButton<int>(
+                value: _dronesPerPage,
+                items:
+                    const [5, 10, 20]
+                        .map(
+                          (v) => DropdownMenuItem(value: v, child: Text('$v')),
+                        )
+                        .toList(),
+                onChanged: (v) => _changeDronesPerPage(v, prov, filters),
+              ),
+              const Spacer(),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder:
+                    (child, anim) => ScaleTransition(scale: anim, child: child),
+                child: Row(
+                  key: ValueKey(_currentPage),
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed:
+                          _currentPage > 1
+                              ? () =>
+                                  _changePage(_currentPage - 1, prov, filters)
+                              : null,
+                    ),
+                    for (int i = 1; i <= totalPages; i++)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          color:
+                              i == _currentPage
+                                  ? Colors.blueAccent
+                                  : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: InkWell(
+                          onTap:
+                              i == _currentPage
+                                  ? null
+                                  : () => _changePage(i, prov, filters),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            child: Text(
+                              '$i',
+                              style: TextStyle(
+                                color:
+                                    i == _currentPage
+                                        ? Colors.white
+                                        : Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed:
+                          _currentPage < totalPages
+                              ? () =>
+                                  _changePage(_currentPage + 1, prov, filters)
+                              : null,
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: FadeTransition(
+            opacity: _animController,
+            child: Consumer<DroneProvider>(
+              builder: (_, prov, __) {
+                if (prov.isLoading && prov.drones.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (prov.error != null) {
+                  return Center(child: Text(prov.error!));
+                }
+                if (prov.drones.isEmpty) {
+                  return const Center(child: Text('No hay anuncios'));
+                }
+                return RefreshIndicator(
+                  onRefresh: () async => prov.loadDrones(),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width < 600 ? 2 : 4,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: prov.drones.length,
+                    itemBuilder:
+                        (context, i) => DroneCard(
+                          drone: prov.drones[i],
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder:
+                                  (_) =>
+                                      DroneDetailModal(drone: prov.drones[i]),
+                            );
+                          },
+                        ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ],
