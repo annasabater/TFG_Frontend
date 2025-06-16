@@ -220,7 +220,11 @@ class LayoutWrapper extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset('assets/logo_skynet.png', width: 80),
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.white,
+            backgroundImage: AssetImage('assets/logo_skynet.png'),
+          ),
           const SizedBox(height: 12),
           const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
           const SizedBox(height: 12),

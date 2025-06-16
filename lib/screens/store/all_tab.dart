@@ -276,80 +276,118 @@ class _AllDronesViewState extends State<_AllDronesView>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 6 : 16,
+            vertical: isMobile ? 4 : 8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Mostrar:'),
-              const SizedBox(width: 8),
-              DropdownButton<int>(
-                value: prov.currentLimit,
-                items:
-                    const [5, 10, 20]
-                        .map(
-                          (v) => DropdownMenuItem(value: v, child: Text('$v')),
-                        )
-                        .toList(),
-                onChanged: (v) => _changeDronesPerPage(v, prov),
-              ),
-              const Spacer(),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                transitionBuilder:
-                    (child, anim) => ScaleTransition(scale: anim, child: child),
-                child: Row(
-                  key: ValueKey(prov.currentPage),
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed:
-                          prov.currentPage > 1
-                              ? () => _changePage(prov.currentPage - 1, prov)
-                              : null,
-                    ),
-                    for (int i = 1; i <= totalPages; i++)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        decoration: BoxDecoration(
-                          color:
-                              i == prov.currentPage
-                                  ? Colors.blueAccent
-                                  : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: InkWell(
-                          onTap:
-                              i == prov.currentPage
-                                  ? null
-                                  : () => _changePage(i, prov),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            child: Text(
-                              '$i',
-                              style: TextStyle(
+              Row(
+                children: [
+                  const Text('Mostrar:'),
+                  const SizedBox(width: 8),
+                  DropdownButton<int>(
+                    value: prov.currentLimit,
+                    items:
+                        const [5, 10, 20]
+                            .map(
+                              (v) =>
+                                  DropdownMenuItem(value: v, child: Text('$v')),
+                            )
+                            .toList(),
+                    onChanged: (v) => _changeDronesPerPage(v, prov),
+                  ),
+                  if (!isMobile) ...[
+                    const Spacer(),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      transitionBuilder:
+                          (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                      child: Row(
+                        key: ValueKey(prov.currentPage),
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed:
+                                prov.currentPage > 1
+                                    ? () =>
+                                        _changePage(prov.currentPage - 1, prov)
+                                    : null,
+                          ),
+                          for (int i = 1; i <= totalPages; i++)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
                                 color:
                                     i == prov.currentPage
-                                        ? Colors.white
-                                        : Colors.black87,
-                                fontWeight: FontWeight.bold,
+                                        ? Colors.blueAccent
+                                        : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: InkWell(
+                                onTap:
+                                    i == prov.currentPage
+                                        ? null
+                                        : () => _changePage(i, prov),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  child: Text(
+                                    '$i',
+                                    style: TextStyle(
+                                      color:
+                                          i == prov.currentPage
+                                              ? Colors.white
+                                              : Colors.black87,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed:
+                                !_isLastPage
+                                    ? () =>
+                                        _changePage(prov.currentPage + 1, prov)
+                                    : null,
                           ),
-                        ),
+                        ],
                       ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed:
-                          !_isLastPage
-                              ? () => _changePage(prov.currentPage + 1, prov)
-                              : null,
                     ),
                   ],
-                ),
+                ],
               ),
+              if (isMobile)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed:
+                            prov.currentPage > 1
+                                ? () => _changePage(prov.currentPage - 1, prov)
+                                : null,
+                      ),
+                      Text('Página ${prov.currentPage}'),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed:
+                            !_isLastPage
+                                ? () => _changePage(prov.currentPage + 1, prov)
+                                : null,
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -370,7 +408,7 @@ class _AllDronesViewState extends State<_AllDronesView>
                 return RefreshIndicator(
                   onRefresh: () async => _changePage(prov.currentPage, prov),
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(isMobile ? 6 : 16),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount:
                           isMobile
@@ -378,9 +416,9 @@ class _AllDronesViewState extends State<_AllDronesView>
                               : (MediaQuery.of(context).size.width < 600
                                   ? 2
                                   : 4),
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: isMobile ? 2.2 : 0.75,
+                      mainAxisSpacing: isMobile ? 8 : 16,
+                      crossAxisSpacing: isMobile ? 8 : 16,
+                      childAspectRatio: isMobile ? 1.1 : 0.75,
                     ),
                     itemCount: prov.drones.length,
                     itemBuilder:

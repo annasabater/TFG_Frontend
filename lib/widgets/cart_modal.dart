@@ -15,6 +15,8 @@ class CartModal extends StatefulWidget {
 }
 
 class _CartModalState extends State<CartModal> {
+  String? _errorMsg;
+
   @override
   void initState() {
     super.initState();
@@ -230,7 +232,23 @@ class _CartModalState extends State<CartModal> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              if (_errorMsg != null)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.shopping_cart_checkout),
                 label: const Text('Comprar'),
@@ -253,6 +271,7 @@ class _CartModalState extends State<CartModal> {
                         listen: false,
                       ).currentUser?.id;
                   if (userId == null) return;
+                  setState(() => _errorMsg = null);
                   try {
                     final ok = await cart.purchaseCart(context, userId);
                     if (ok) {
@@ -265,9 +284,13 @@ class _CartModalState extends State<CartModal> {
                       Navigator.of(context).pop();
                     }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error en la compra: $e')),
-                    );
+                    final error = e.toString().toLowerCase();
+                    String msg = 'No se ha podido realizar la compra.';
+                    if (error.contains('saldo') ||
+                        error.contains('insuficiente')) {
+                      msg = 'Saldo insuficiente';
+                    }
+                    setState(() => _errorMsg = msg);
                   }
                 },
               ),
