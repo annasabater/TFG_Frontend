@@ -7,8 +7,6 @@ import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
 import '../../provider/cart_provider.dart';
 import 'all_tab.dart';
-import 'favorites_tab.dart';
-import 'my_drones_tab.dart';
 import '../../widgets/balance_form.dart';
 import '../../widgets/cart_modal.dart';
 import '../history/history_screen.dart';
@@ -32,11 +30,18 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
     _droneProv = context.read<DroneProvider>();
     _userProv = context.read<UserProvider>();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final uid = _userProv.currentUser?.id;
       _droneProv.setUserIdForReload(uid);
       _droneProv.loadDrones();
       _loadExtras();
+      // Refrescar saldo al entrar
+      if (uid != null && uid.isNotEmpty) {
+        await Provider.of<CartProvider>(
+          context,
+          listen: false,
+        ).fetchUserBalances(uid);
+      }
     });
   }
 
@@ -52,12 +57,53 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Botiga'),
         actions: [
+          Builder(
+            builder: (context) {
+              final userProv = Provider.of<UserProvider>(
+                context,
+                listen: false,
+              );
+              final cartProv = Provider.of<CartProvider>(
+                context,
+                // listen: false, // Cambiar a true para que se actualice el saldo
+                listen: true,
+              );
+              final droneProv = Provider.of<DroneProvider>(
+                context,
+                listen: false,
+              );
+              final currency = droneProv.currency;
+              final saldo =
+                  cartProv.balances[currency]?.toStringAsFixed(2) ?? '0.00';
+              return GestureDetector(
+                onTap: () async {
+                  final uid = userProv.currentUser?.id;
+                  if (uid != null && uid.isNotEmpty) {
+                    await cartProv.fetchUserBalances(uid);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Chip(
+                    avatar: const Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                    label: Text(
+                      'Saldo: $saldo $currency',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Colors.amber.withOpacity(0.1),
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Historial de compras/ventas',

@@ -36,9 +36,13 @@ class _CartModalState extends State<CartModal> {
     final cart = context.watch<CartProvider>();
     final items = cart.items;
     final balances = cart.balances;
-    // Usar la moneda global de la tienda
     final droneProv = Provider.of<DroneProvider>(context, listen: false);
     final currency = droneProv.currency;
+    final userProv = Provider.of<user_provider.UserProvider>(
+      context,
+      listen: false,
+    );
+    final userBalance = balances[currency]?.toStringAsFixed(2) ?? '0.00';
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
@@ -50,9 +54,18 @@ class _CartModalState extends State<CartModal> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Carrito de compra',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    const Icon(Icons.shopping_cart, color: Colors.blueAccent),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Carrito de compra',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -61,14 +74,23 @@ class _CartModalState extends State<CartModal> {
               ],
             ),
             const SizedBox(height: 10),
-            if (balances.isNotEmpty)
-              Wrap(
-                spacing: 12,
-                children:
-                    balances.entries
-                        .map((e) => Chip(label: Text('${e.key}: ${e.value}')))
-                        .toList(),
+            // Saldo de la divisa seleccionada
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Chip(
+                avatar: const Icon(
+                  Icons.account_balance_wallet,
+                  color: Colors.amber,
+                  size: 20,
+                ),
+                label: Text(
+                  'Saldo: $userBalance $currency',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: Colors.amber.withOpacity(0.1),
               ),
+            ),
+            const SizedBox(height: 10),
             if (items.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
@@ -88,46 +110,99 @@ class _CartModalState extends State<CartModal> {
                         1;
                     final price =
                         cart.latestPrices[item.drone.id] ?? item.drone.price;
-                    // Usar la moneda global
-                    return Row(
-                      children: [
-                        Expanded(child: Text(item.drone.model)),
-                        Text('Stock: $stock'),
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed:
-                              item.quantity > 1
-                                  ? () => cart.updateQuantity(
-                                    item.drone.id,
-                                    item.quantity - 1,
-                                  )
-                                  : null,
+                    final img =
+                        (item.drone.images?.isNotEmpty ?? false)
+                            ? item.drone.images!.first
+                            : null;
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
                         ),
-                        Text('${item.quantity}'),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed:
-                              item.quantity < stock
-                                  ? () => cart.updateQuantity(
-                                    item.drone.id,
-                                    item.quantity + 1,
-                                  )
-                                  : null,
+                        child: Row(
+                          children: [
+                            if (img != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  img,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            else
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.airplanemode_active,
+                                  color: Colors.grey,
+                                  size: 28,
+                                ),
+                              ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                item.drone.model,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Stock: $stock',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed:
+                                  item.quantity > 1
+                                      ? () => cart.updateQuantity(
+                                        item.drone.id,
+                                        item.quantity - 1,
+                                      )
+                                      : null,
+                            ),
+                            Text('${item.quantity}'),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed:
+                                  item.quantity < stock
+                                      ? () => cart.updateQuantity(
+                                        item.drone.id,
+                                        item.quantity + 1,
+                                      )
+                                      : null,
+                            ),
+                            Text(
+                              '${(price * item.quantity).toStringAsFixed(2)} $currency',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed:
+                                  () => cart.removeFromCart(item.drone.id),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${(price * item.quantity).toStringAsFixed(2)} $currency',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => cart.removeFromCart(item.drone.id),
-                        ),
-                      ],
+                      ),
                     );
                   },
                 ),
               ),
               const SizedBox(height: 10),
-              // Quitar selección de divisa, solo mostrar la actual
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -148,7 +223,10 @@ class _CartModalState extends State<CartModal> {
                   ),
                   Text(
                     '${items.fold<double>(0, (sum, item) => sum + ((cart.latestPrices[item.drone.id] ?? item.drone.price) * item.quantity)).toStringAsFixed(2)} $currency',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -156,6 +234,18 @@ class _CartModalState extends State<CartModal> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.shopping_cart_checkout),
                 label: const Text('Comprar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 onPressed: () async {
                   final userId =
                       Provider.of<user_provider.UserProvider>(

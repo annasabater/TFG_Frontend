@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../provider/users_provider.dart';
+import '../provider/cart_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Añadido para dotenv
 
 class BalanceForm extends StatefulWidget {
@@ -62,7 +63,13 @@ class _BalanceFormState extends State<BalanceForm> {
     setState(() => _submitting = true);
     try {
       final userId = context.read<UserProvider>().currentUser?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Usuario no válido')));
+        setState(() => _submitting = false);
+        return;
+      }
       final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:8000';
       final url = Uri.parse('$serverUrl/api/users/$userId/balance');
       final res = await http.post(
@@ -77,11 +84,20 @@ class _BalanceFormState extends State<BalanceForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saldo añadido correctamente')),
         );
+        // Refrescar balances globales si es posible
+        try {
+          final cartProv = Provider.of<CartProvider>(context, listen: false);
+          await cartProv.fetchUserBalances(userId);
+        } catch (_) {}
       } else {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Error al añadir saldo')));
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => _submitting = false);
     }

@@ -129,6 +129,75 @@ class DroneCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               DroneCardRating(droneId: drone.id),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2, color: scheme.secondary, size: 18),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Stock: ${drone.stock ?? 1}',
+                    style: TextStyle(
+                      color:
+                          (drone.stock ?? 1) == 0
+                              ? scheme.error
+                              : scheme.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if ((drone.stock ?? 1) == 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.error.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, color: scheme.error, size: 16),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Sin stock',
+                            style: TextStyle(
+                              color: scheme.error,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if ((drone.stock ?? 1) < 5)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.orange, size: 16),
+                          const SizedBox(width: 2),
+                          Text(
+                            '¡Pocos!',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
               const Spacer(),
               if (showAddToCart)
                 Row(
@@ -156,9 +225,11 @@ class DroneCard extends StatelessWidget {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              isMine ? scheme.surfaceVariant : scheme.primary,
+                              isMine || (drone.stock ?? 1) == 0
+                                  ? scheme.surfaceVariant
+                                  : scheme.primary,
                           foregroundColor:
-                              isMine
+                              isMine || (drone.stock ?? 1) == 0
                                   ? scheme.onSurfaceVariant
                                   : scheme.onPrimary,
                           shape: RoundedRectangleBorder(
@@ -171,7 +242,7 @@ class DroneCard extends StatelessWidget {
                           ),
                         ),
                         onPressed:
-                            isMine
+                            isMine || (drone.stock ?? 1) == 0
                                 ? null
                                 : () {
                                   context.read<CartProvider>().addToCart(drone);
@@ -182,11 +253,17 @@ class DroneCard extends StatelessWidget {
                                   );
                                 },
                         icon: Icon(
-                          isMine ? Icons.block : Icons.add_shopping_cart,
+                          isMine || (drone.stock ?? 1) == 0
+                              ? Icons.block
+                              : Icons.add_shopping_cart,
                           size: 18,
                         ),
                         label: Text(
-                          isMine ? 'No puedes comprar tu dron' : 'Añadir',
+                          isMine
+                              ? 'No puedes comprar tu dron'
+                              : (drone.stock ?? 1) == 0
+                              ? 'Sin stock'
+                              : 'Añadir',
                         ),
                       ),
                     ),
