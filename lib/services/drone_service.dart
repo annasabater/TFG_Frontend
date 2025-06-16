@@ -268,8 +268,8 @@ class DroneService {
     required String payWithCurrency,
     required List<Map<String, dynamic>> items,
   }) async {
-    final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000';
-    final url = Uri.parse('$serverUrl/api/drones/purchase-multiple');
+    final serverUrl = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    final url = Uri.parse('$serverUrl/drones/purchase-multiple');
     final jwt = await AuthService().token;
     final resp = await http.post(
       url,
