@@ -51,14 +51,23 @@ class _DroneCardRatingState extends State<DroneCardRating> {
         }
         return Row(
           children: [
-            ...List.generate(
-              5,
-              (i) => Icon(
-                i < avg.round() ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-                size: 16,
-              ),
-            ),
+            ...List.generate(5, (i) {
+              if (avg >= i + 1) {
+                return const Icon(Icons.star, color: Colors.amber, size: 16);
+              } else if (avg > i && avg < i + 1) {
+                return const Icon(
+                  Icons.star_half,
+                  color: Colors.amber,
+                  size: 16,
+                );
+              } else {
+                return const Icon(
+                  Icons.star_border,
+                  color: Colors.amber,
+                  size: 16,
+                );
+              }
+            }),
             const SizedBox(width: 4),
             Text(avg.toStringAsFixed(1), style: const TextStyle(fontSize: 13)),
             if (ratings.isNotEmpty)

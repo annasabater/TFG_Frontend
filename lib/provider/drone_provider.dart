@@ -28,14 +28,18 @@ class DroneProvider with ChangeNotifier {
     if (_currency != value) {
       _currency = value;
       notifyListeners();
-      loadDrones(); // recarga al cambiar
-      // Recargar favoritos y mis drones si hay usuario
+      loadDrones(page: _currentPage, limit: _currentLimit);
       if (_userIdForReload != null && _userIdForReload!.isNotEmpty) {
         loadFavorites(_userIdForReload!);
         loadMyDrones(_userIdForReload!);
       }
     }
   }
+
+  int _currentPage = 1;
+  int _currentLimit = 10;
+  int get currentPage => _currentPage;
+  int get currentLimit => _currentLimit;
 
   String? _userIdForReload;
   void setUserIdForReload(String? uid) {
@@ -59,13 +63,18 @@ class DroneProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadDrones() async {
+  // Modificado para aceptar página y límite
+  Future<void> loadDrones({int page = 1, int limit = 10}) async {
     _setLoading(true);
     _setError(null);
-    _page = 1;
+    _page = page;
     _hasMore = true;
+    _currentPage = page;
+    _currentLimit = limit;
     try {
-      _drones = await DroneService.getDrones(DroneQuery(currency: _currency));
+      _drones = await DroneService.getDrones(
+        DroneQuery(currency: _currency, page: page, limit: limit),
+      );
     } catch (e) {
       _setError('Error loading drones: $e');
       _drones = [];
@@ -74,16 +83,21 @@ class DroneProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadDronesFiltered(DroneQuery q) async {
+  Future<List<Drone>> loadDronesFiltered(DroneQuery q) async {
     _setLoading(true);
     _setError(null);
-    _page = 1;
+    _page = q.page ?? 1;
     _hasMore = true;
     try {
-      _drones = await DroneService.getDrones(q.copyWith(currency: _currency));
+      final result = await DroneService.getDrones(
+        q.copyWith(currency: _currency),
+      );
+      _drones = result;
+      return result;
     } catch (e) {
       _setError('Error: $e');
       _drones = [];
+      return [];
     } finally {
       _setLoading(false);
     }
