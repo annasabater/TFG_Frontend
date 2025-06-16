@@ -65,15 +65,9 @@ class AuthService {
 
   /// URL base REST (incluye '/api').
   String get baseApiUrl {
-<<<<<<< HEAD
     if (kIsWeb) return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
     if (Platform.isAndroid) return dotenv.env['SERVER_URL'] ?? 'http://10.0.2.2:9000/api';
     return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
-=======
-    if (kIsWeb) return 'http://localhost:9000/api';
-    if (Platform.isAndroid) return 'http://192.168.1.131:9000/api';
-    return 'http://localhost:9000/api';
->>>>>>> Minim2-Jordi-Auth
   }
 
   /// URL base para WebSockets (sin '/api').

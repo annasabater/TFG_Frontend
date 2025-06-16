@@ -103,29 +103,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
               ],
             ),
           ),
-<<<<<<< HEAD
-=======
-          ListTile(
-            leading: const Icon(Icons.dark_mode),
-            title: const Text('Modo oscuro'),
-            trailing: Switch(
-              value: themeProv.isDarkMode,
-              onChanged: (_) => themeProv.toggleTheme(),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: const Text('Cerrar sesión',
-                style: TextStyle(color: Colors.redAccent)),
-            onTap: () async {
-              await AuthService().logout();
-              context.go('/login');
-            },
-          ),
-        ]),
-      ),
->>>>>>> Minim2-Jordi-Auth
     );
   }
 
