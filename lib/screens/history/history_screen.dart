@@ -330,10 +330,15 @@ class _HistoryListState extends State<_HistoryList> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Card(
-                      color: color,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.92)
+                          : color,
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
+                        side: Theme.of(context).brightness == Brightness.dark
+                            ? const BorderSide(color: Colors.white24, width: 1.2)
+                            : BorderSide.none,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),

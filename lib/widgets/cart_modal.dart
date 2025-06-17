@@ -129,10 +129,16 @@ class _CartModalState extends State<CartModal> {
                             ? item.drone.images!.first
                             : null;
                     return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.92)
+                          : Theme.of(context).colorScheme.surface,
                       elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: Theme.of(context).brightness == Brightness.dark
+                            ? const BorderSide(color: Colors.white24, width: 1.2)
+                            : BorderSide.none,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8,

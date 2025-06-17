@@ -43,7 +43,9 @@ class DroneCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          color: scheme.surface,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? scheme.surfaceVariant.withOpacity(0.92)
+              : scheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -52,6 +54,9 @@ class DroneCard extends StatelessWidget {
               offset: const Offset(0, 6),
             ),
           ],
+          border: Theme.of(context).brightness == Brightness.dark
+              ? Border.all(color: Colors.white24, width: 1.2)
+              : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),

@@ -54,17 +54,29 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (ctx, i) {
                     final user = convUsers[i];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(
-                          user.userName.isNotEmpty
-                              ? user.userName[0].toUpperCase()
-                              : '?',
-                        ),
+                    return Card(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.92)
+                          : Theme.of(context).colorScheme.surface,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: Theme.of(context).brightness == Brightness.dark
+                            ? const BorderSide(color: Colors.white24, width: 1.2)
+                            : BorderSide.none,
                       ),
-                      title: Text(user.userName),
-                      subtitle: Text(user.email),
-                      onTap: () => GoRouter.of(context).go('/chat/${user.id}'),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text(
+                            user.userName.isNotEmpty
+                                ? user.userName[0].toUpperCase()
+                                : '?',
+                          ),
+                        ),
+                        title: Text(user.userName),
+                        subtitle: Text(user.email),
+                        onTap: () => GoRouter.of(context).go('/chat/${user.id}'),
+                      ),
                     );
                   },
                 ),
