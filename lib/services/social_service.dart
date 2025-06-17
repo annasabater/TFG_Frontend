@@ -211,7 +211,7 @@ class SocialService {
 
   static Future<List<Map<String, dynamic>>> searchUsers(String q) async {
     final res = await http.get(
-      Uri.parse('$_base/users?query=$q&limit=10'),
+      Uri.parse('$_base/users?query=$q&limit=50'),
       headers: await _headers(),
     );
     _throwIfNot200(res);
