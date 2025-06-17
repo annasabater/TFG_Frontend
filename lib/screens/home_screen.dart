@@ -4,6 +4,7 @@ import 'package:SkyNet/widgets/Layout.dart';
 import 'package:SkyNet/provider/users_provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   //final GoogleSignInAccount user;
@@ -106,30 +107,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             'image': 'assets/drones_store.webp',
                             'title': loc.storeFeatureTitle,
                             'description': loc.storeFeatureDescription,
+                            'route': '/store',
+                            'color': Colors.deepPurpleAccent,
                           },
                           {
                             'image': 'assets/drones_community.webp',
                             'title': loc.socialFeatureTitle,
                             'description': loc.socialFeatureDescription,
+                            'route': '/xarxes',
+                            'color': Colors.blueAccent,
                           },
                           {
                             'image': 'assets/drones_chat.webp',
                             'title': loc.chatFeatureTitle,
                             'description': loc.chatFeatureDescription,
+                            'route': '/chat',
+                            'color': Colors.green,
                           },
                           {
                             'image': 'assets/drones_games.webp',
                             'title': loc.gamesFeatureTitle,
                             'description': loc.gamesFeatureDescription,
+                            'route': '/jocs',
+                            'color': Colors.orangeAccent,
                           },
                         ];
 
                         final feature = features[index];
 
-                        return _HoverFeatureCard(
-                          image: feature['image']!,
-                          title: feature['title']!,
-                          description: feature['description']!,
+                        return _DashboardButton(
+                          image: feature['image'] as String,
+                          title: feature['title'] as String,
+                          description: feature['description'] as String,
+                          route: feature['route'] as String,
+                          color: feature['color'] as Color,
                           maxWidth: cardWidth,
                         );
                       },
@@ -147,86 +158,104 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HoverFeatureCard extends StatefulWidget {
+class _DashboardButton extends StatefulWidget {
   final String image;
   final String title;
   final String description;
+  final Color color;
+  final String route;
   final double maxWidth;
 
-  const _HoverFeatureCard({
+  const _DashboardButton({
     super.key,
     required this.image,
     required this.title,
     required this.description,
+    required this.color,
+    required this.route,
     required this.maxWidth,
   });
 
   @override
-  State<_HoverFeatureCard> createState() => __HoverFeatureCardState();
+  State<_DashboardButton> createState() => _DashboardButtonState();
 }
 
-class __HoverFeatureCardState extends State<_HoverFeatureCard> {
+class _DashboardButtonState extends State<_DashboardButton> {
   bool _hovering = false;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: AnimatedScale(
-        scale: _hovering ? 1.1 : 1.0,
-        duration: const Duration(milliseconds: 300),
+        scale: _hovering ? 1.04 : 1.0,
+        duration: const Duration(milliseconds: 180),
         curve: Curves.easeInOut,
-        child: Container(
-          width: widget.maxWidth,
-          margin: const EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: colors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.asset(
-                  widget.image,
-                  height: 130,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: () => context.go(widget.route),
+            child: Container(
+              constraints: BoxConstraints(maxWidth: widget.maxWidth),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                color: _hovering ? widget.color.withOpacity(0.10) : colors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withOpacity(0.13),
+                    blurRadius: _hovering ? 18 : 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+                border: Border.all(
+                  color: widget.color.withOpacity(_hovering ? 0.7 : 0.3),
+                  width: _hovering ? 2.5 : 1.2,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    child: Image.asset(
+                      widget.image,
+                      height: 120,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                      color: widget.color,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: Text(
                       widget.description,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 15.5,
                         color: colors.onSurfaceVariant,
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -5,6 +5,9 @@ import 'package:SkyNet/screens/social/explore_screen.dart';
 import 'package:SkyNet/screens/social/feed_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:SkyNet/provider/theme_provider.dart';
+import 'package:SkyNet/widgets/language_selector.dart';
 
 class XarxesSocialsScreen extends StatelessWidget {
   const XarxesSocialsScreen({super.key});
@@ -12,42 +15,34 @@ class XarxesSocialsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        //  Header "Red Social"
-        body: Column(
-          children: [
-            Container(
-              height: 56,
-              color: theme.colorScheme.primary,
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                AppLocalizations.of(context)!.socialNetwork,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/'),
+          ),
+          title: Text(loc.socialNetwork),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.people_alt_outlined),
+              tooltip: loc.seeFollowing,
+              onPressed: () => context.go('/following'),
+            ),
+            const LanguageSelector(),
+            Consumer<ThemeProvider>(
+              builder: (_, t, __) => IconButton(
+                icon: Icon((t.isDarkMode) ? Icons.dark_mode : Icons.light_mode),
+                tooltip: (t.isDarkMode) ? loc.lightMode : loc.darkMode,
+                onPressed: () => t.toggleTheme(),
               ),
             ),
-
-            // Botón para ir a la pantalla de seguidos
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.people_alt_outlined),
-                  label: Text(AppLocalizations.of(context)!.seeFollowing),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                  ),
-                  onPressed: () => context.go('/following'),
-                ),
-              ],
-            ),
-
+          ],
+        ),
+        body: Column(
+          children: [
             // TabBar justo debajo, fondo blanco
             Material(
               color: Colors.white,
@@ -66,15 +61,14 @@ class XarxesSocialsScreen extends StatelessWidget {
                   fontWeight: FontWeight.normal,
                 ),
                 tabs: [
-                  Tab(icon: const Icon(Icons.explore_outlined), text: AppLocalizations.of(context)!.exploreTab),
+                  Tab(icon: const Icon(Icons.explore_outlined), text: loc.exploreTab),
                   Tab(
                     icon: const Icon(Icons.dynamic_feed_outlined),
-                    text: AppLocalizations.of(context)!.followingTab,
+                    text: loc.followingTab,
                   ),
                 ],
               ),
             ),
-
             // Contenido de las pestañas
             Expanded(
               child: TabBarView(
