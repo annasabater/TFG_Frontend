@@ -21,7 +21,6 @@ class DroneProvider with ChangeNotifier {
   int _page = 1;
   bool _hasMore = true;
 
-  // NUEVO: Estado de moneda
   String _currency = 'EUR';
   String get currency => _currency;
   set currency(String value) {
@@ -136,7 +135,7 @@ class DroneProvider with ChangeNotifier {
     required String ownerId,
     required String model,
     required double price,
-    String? currency, // NUEVO
+    String? currency, 
     String? description,
     String? type,
     String? condition,
@@ -146,8 +145,8 @@ class DroneProvider with ChangeNotifier {
     int? stock,
     List<XFile>? imagesWeb, // para web
     List<File>? imagesMobile, // para móvil
-    List<String>? existingImages, // <-- Añade este parámetro opcional
-    String? id, // <-- Añadido para distinguir edición
+    List<String>? existingImages, 
+    String? id, 
   }) async {
     _setLoading(true);
     _setError(null);
@@ -157,7 +156,7 @@ class DroneProvider with ChangeNotifier {
         ownerId: ownerId,
         model: model,
         price: price,
-        currency: currency ?? _currency, // NUEVO
+        currency: currency ?? _currency, 
         description: description,
         type: type,
         condition: condition,

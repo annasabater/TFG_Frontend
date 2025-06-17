@@ -8,19 +8,16 @@ import '../services/UserService.dart';
 import '../services/auth_service.dart';
 
 class UserProvider with ChangeNotifier {
-  // ------------------ Estado ---------------------------------------------
   final List<User> _users = [];
   User? _currentUser;
   bool _isLoading = false;
   String? _error;
 
-  // ------------------ Getters --------------------------------------------
   List<User> get users => List.unmodifiable(_users);
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // ------------------ Conversaciones activas ----------------------------
   final Set<String> _conversationUserIds = {};
   List<String> get conversationUserIds => _conversationUserIds.toList();
 
@@ -101,7 +98,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // ------------------ Restricciones de correo ---------------------------
   static const _restrictedEmails = {
     'dron_azul1@upc.edu',
     'dron_verde1@upc.edu',
@@ -115,7 +111,6 @@ class UserProvider with ChangeNotifier {
     return mail != null && _restrictedEmails.contains(mail);
   }
 
-  // ------------------ Competidor ----------------------------------------
   static const _competitorEmails = {
     'dron_azul1@upc.edu',
     'dron_verde1@upc.edu',
@@ -136,8 +131,6 @@ class UserProvider with ChangeNotifier {
         u.email.trim().toLowerCase().endsWith('@upc.edu');
   }
 
-  // ------------------ Helpers de sesión ---------------------------------
-  /// Establece el usuario actual (p. ej. tras login)
   void setCurrentUser(User user) {
     _currentUser = user;
     notifyListeners();
@@ -148,8 +141,6 @@ class UserProvider with ChangeNotifier {
     _currentUser = null;
     notifyListeners();
   }
-
-  // ------------------ Internos ------------------------------------------
   void _setLoading(bool v) {
     _isLoading = v;
     notifyListeners();
@@ -160,7 +151,6 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ------------------ CRUD backend (opcional) ---------------------------
   Future<bool> crearUsuari(
     String userName,
     String email,
@@ -221,7 +211,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // ------------------ Historial de compras/ventas ----------------------
   List<Map<String, dynamic>> _purchaseHistory = [];
   List<Map<String, dynamic>> _salesHistory = [];
   bool _historyLoading = false;

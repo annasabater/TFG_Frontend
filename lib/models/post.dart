@@ -29,7 +29,6 @@ class PostComment {
   }
 }
 
-
 class Post {
   final String id;
   final String authorId;

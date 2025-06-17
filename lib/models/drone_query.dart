@@ -5,7 +5,7 @@ class DroneQuery {
   final String? q, category, condition, location;
   final double? minPrice, maxPrice;
   final int? page, limit;
-  final String? currency; // NUEVO: divisa
+  final String? currency; 
 
   const DroneQuery({
     this.q,
@@ -16,7 +16,7 @@ class DroneQuery {
     this.maxPrice,
     this.page,
     this.limit,
-    this.currency, // NUEVO
+    this.currency, 
   });
 
   /// Converteix l’objecte en map per a `Uri.replace(queryParameters: …)`
@@ -30,7 +30,7 @@ class DroneQuery {
     if (page != null) 'page': page.toString(),
     if (limit != null) 'limit': limit.toString(),
     if (currency != null && currency!.isNotEmpty)
-      'currency': currency!, // NUEVO
+      'currency': currency!, 
   };
 
   /// Permet actualitzar nuls i pàgina (afegit)
@@ -43,7 +43,7 @@ class DroneQuery {
     double? maxPrice,
     int? page,
     int? limit,
-    String? currency, // NUEVO
+    String? currency, 
   }) {
     return DroneQuery(
       q: q ?? this.q,
@@ -54,7 +54,7 @@ class DroneQuery {
       maxPrice: maxPrice ?? this.maxPrice,
       page: page ?? this.page,
       limit: limit ?? this.limit,
-      currency: currency ?? this.currency, // NUEVO
+      currency: currency ?? this.currency, 
     );
   }
 }

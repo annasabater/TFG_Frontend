@@ -58,7 +58,7 @@ class Drone {
     this.location,
     this.contact,
     this.category,
-    this.currency, // NUEVO
+    this.currency, 
     this.createdAt,
     this.images,
     this.ratings = const [],
@@ -67,8 +67,6 @@ class Drone {
     this.isService = false,
     this.stock,
   });
-
-  /* --------------------------- JSON helpers --------------------------- */
 
   factory Drone.fromJson(Map<String, dynamic> json) => Drone(
     id: json['_id'] as String,
@@ -103,7 +101,7 @@ class Drone {
     'ownerId': ownerId,
     'model': model,
     'price': price,
-    'currency': currency, // NUEVO
+    'currency': currency, 
 
     'details': description,
     'type': type,

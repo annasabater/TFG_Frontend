@@ -1,4 +1,4 @@
-//lib/widgets/Layout.dart
+// lib/widgets/Layout.dart
 
 import 'package:SkyNet/api/google_signin_api.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../provider/users_provider.dart';
 import '../provider/theme_provider.dart';
-import '../services/auth_service.dart';
 import '../widgets/language_selector.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -40,7 +39,6 @@ class LayoutWrapper extends StatelessWidget {
       'dron_amarillo1@upc.edu',
     };
     bool isInvitado(String e) => RegExp(r'^invitado\d+@upc\.edu$').hasMatch(e);
-
     bool isRoute(String r) => GoRouterState.of(context).uri.toString() == r;
 
     List<Widget> navItems = [
@@ -48,76 +46,23 @@ class LayoutWrapper extends StatelessWidget {
     ];
 
     if (droneEmails.contains(email)) {
-      navItems.add(
-        _navItem(
-          context,
-          loc.games,
-          Icons.sports_esports,
-          '/jocs',
-          isRoute('/jocs'),
-        ),
-      );
+      navItems.add(_navItem(context, loc.games, Icons.sports_esports, '/jocs', isRoute('/jocs')));
     } else if (isInvitado(email)) {
       navItems.addAll([
-        _navItem(
-          context,
-          'Xarxes Socials',
-          Icons.people,
-          '/xarxes',
-          isRoute('/xarxes'),
-        ),
+        _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
-        _navItem(
-          context,
-          loc.spectateGames,
-          Icons.visibility,
-          '/jocs/spectate',
-          isRoute('/jocs/spectate'),
-        ),
+        _navItem(context, loc.spectateGames, Icons.visibility, '/jocs/spectate', isRoute('/jocs/spectate')),
       ]);
     } else {
       navItems.addAll([
-        _navItem(
-          context,
-          'Xarxes Socials',
-          Icons.people,
-          '/xarxes',
-          isRoute('/xarxes'),
-        ),
+        _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
-        _navItem(
-          context,
-          loc.users,
-          Icons.info_outline,
-          '/details',
-          isRoute('/details'),
-        ),
-        if (admin)
-          _navItem(
-            context,
-            loc.createUser,
-            Icons.person_add,
-            '/editar',
-            isRoute('/editar'),
-          ),
-        if (admin)
-          _navItem(
-            context,
-            loc.deleteUser,
-            Icons.delete_outline,
-            '/borrar',
-            isRoute('/borrar'),
-          ),
-        _navItem(
-          context,
-          loc.profile,
-          Icons.account_circle,
-          '/profile',
-          isRoute('/profile'),
-        ),
+        if (admin) _navItem(context, loc.createUser, Icons.person_add, '/editar', isRoute('/editar')),
+        if (admin) _navItem(context, loc.deleteUser, Icons.delete_outline, '/borrar', isRoute('/borrar')),
+        _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
         _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
-        _navItem(context, 'Play Testing', Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
+        _navItem(context, loc.games, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
       ]);
     }
 
@@ -127,12 +72,11 @@ class LayoutWrapper extends StatelessWidget {
         actions: [
           const LanguageSelector(),
           Consumer<ThemeProvider>(
-            builder:
-                (_, t, __) => IconButton(
-                  icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
-                  tooltip: t.isDarkMode ? loc.lightMode : loc.darkMode,
-                  onPressed: () => t.toggleTheme(),
-                ),
+            builder: (_, t, __) => IconButton(
+              icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              tooltip: t.isDarkMode ? loc.lightMode : loc.darkMode,
+              onPressed: () => t.toggleTheme(),
+            ),
           ),
         ],
       ),
@@ -155,66 +99,31 @@ class LayoutWrapper extends StatelessWidget {
               children: [
                 SizedBox(height: 220, child: _header(scheme)),
                 ...navItems.map((item) {
-                  // Detectar si el item está seleccionado
-                  bool isSelected = false;
-                  if (item is ListTile) {
-                    isSelected = item.selected;
-                  }
+                  bool isSelected = item is ListTile && item.selected;
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? scheme.primaryContainer.darken(
-                                  0.18,
-                                ) // Más oscuro para contraste 1:3
-                                : Colors.transparent,
+                        color: isSelected
+                            ? scheme.primaryContainer.darken(0.18)
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(18),
-                        boxShadow:
-                            isSelected
-                                ? [
-                                  BoxShadow(
-                                    color: scheme.primary.withOpacity(0.10),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ]
-                                : [],
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: scheme.primary.withOpacity(0.10),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 2),
+                                ),
+                              ]
+                            : [],
                       ),
                       child: item,
                     ),
                   );
                 }),
                 const Divider(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Consumer<ThemeProvider>(
-                    builder: (context, t, _) => SwitchListTile(
-                      title: Text(loc.daltonicMode),
-                      value: t.isDaltonicMode,
-                      onChanged: (_) => t.toggleDaltonicMode(),
-                      secondary: const Icon(Icons.visibility),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Consumer<ThemeProvider>(
-                    builder: (context, t, _) => SwitchListTile(
-                      title: Text(loc.readingMode),
-                      value: t.isReadingMode,
-                      onChanged: (_) => t.toggleReadingMode(),
-                      secondary: const Icon(Icons.menu_book),
-                    ),
-                  ),
-                ),
-                if (!droneEmails.contains(email) && !isInvitado(email))
-                  _reloadButton(context, loc),
-                _logoutButton(context, loc),
+              
               ],
             ),
           ),
@@ -228,34 +137,31 @@ class LayoutWrapper extends StatelessWidget {
   }
 
   DrawerHeader _header(ColorScheme scheme) => DrawerHeader(
-    decoration: BoxDecoration(color: scheme.primary),
-    margin: EdgeInsets.zero,
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: SizedBox(
-      width: double.infinity,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.white,
-            backgroundImage: AssetImage('assets/logo_skynet.png'),
-          ),
-          const SizedBox(height: 12),
-          const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
-          const SizedBox(height: 12),
-          Text(
-            'S K Y N E T',
-            style: TextStyle(
-              color: scheme.onPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
+        decoration: BoxDecoration(color: scheme.primary),
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.white,
+              backgroundImage: AssetImage('assets/logo_skynet.png'),
             ),
-          ),
-        ],
-      ),
-    ),
-  );
+            const SizedBox(height: 12),
+            const Icon(Icons.people_alt_rounded, color: Colors.white, size: 30),
+            const SizedBox(height: 12),
+            Text(
+              'S K Y N E T',
+              style: TextStyle(
+                color: scheme.onPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+              ),
+            ),
+          ],
+        ),
+      );
 
   ListTile _navItem(
     BuildContext ctx,
@@ -283,34 +189,6 @@ class LayoutWrapper extends StatelessWidget {
       },
     );
   }
-
-  Padding _reloadButton(BuildContext ctx, AppLocalizations loc) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: ElevatedButton.icon(
-      onPressed: () {
-        ctx.read<UserProvider>().loadUsers();
-        Navigator.pop(ctx);
-      },
-      icon: const Icon(Icons.refresh),
-      label: Text(loc.reloadUsers),
-    ),
-  );
-
-  Padding _logoutButton(BuildContext ctx, AppLocalizations loc) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-      onPressed: () async {
-        await AuthService().logout();
-        if (ctx.mounted) {
-          Navigator.pop(ctx);
-          ctx.go('/login');
-        }
-      },
-      icon: const Icon(Icons.logout),
-      label: Text(loc.logout),
-    ),
-  );
 }
 
 // Extensión para oscurecer un color

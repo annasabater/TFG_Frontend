@@ -43,68 +43,82 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   void _openSettingsMenu() {
-    final themeProv = Provider.of<ThemeProvider>(context, listen: false);
-    final langProv = Provider.of<LanguageProvider>(context, listen: false);
+  final themeProv = Provider.of<ThemeProvider>(context, listen: false);
+  final langProv = Provider.of<LanguageProvider>(context, listen: false);
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder:
-          (c) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Editar Perfil'),
-                  onTap: () {
-                    Navigator.pop(c);
-                    context.go('/profile/edit');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.language),
-                  title: const Text('Idioma'),
-                  trailing: DropdownButton<String>(
-                    value: langProv.currentLocale.languageCode,
-                    items: const [
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                      DropdownMenuItem(value: 'es', child: Text('Español')),
-                      DropdownMenuItem(value: 'ca', child: Text('Català')),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) langProv.setLanguage(v);
-                    },
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.dark_mode),
-                  title: const Text('Modo oscuro'),
-                  trailing: Switch(
-                    value: themeProv.isDarkMode,
-                    onChanged: (_) => themeProv.toggleTheme(),
-                  ),
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.redAccent),
-                  title: const Text(
-                    'Cerrar sesión',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                  onTap: () {
-                    AuthService().logout();
-                    context.go('/login');
-                  },
-                ),
-              ],
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true, 
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (c) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Editar Perfil'),
+              onTap: () {
+                Navigator.pop(c);
+                context.go('/profile/edit');
+              },
             ),
-          ),
-    );
-  }
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text('Idioma'),
+              trailing: DropdownButton<String>(
+                value: langProv.currentLocale.languageCode,
+                items: const [
+                  DropdownMenuItem(value: 'en', child: Text('English')),
+                  DropdownMenuItem(value: 'es', child: Text('Español')),
+                  DropdownMenuItem(value: 'ca', child: Text('Català')),
+                ],
+                onChanged: (v) {
+                  if (v != null) langProv.setLanguage(v);
+                },
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode),
+              title: const Text('Modo oscuro'),
+              trailing: Switch(
+                value: themeProv.isDarkMode,
+                onChanged: (_) => themeProv.toggleTheme(),
+              ),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.visibility),
+              title: const Text('Modo daltonic'),
+              value: themeProv.isDaltonicMode,
+              onChanged: (_) => themeProv.toggleDaltonicMode(),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.menu_book),
+              title: const Text('Modo de lectura'),
+              value: themeProv.isReadingMode,
+              onChanged: (_) => themeProv.toggleReadingMode(),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text(
+                'Cerrar sesión',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+              onTap: () {
+                AuthService().logout();
+                context.go('/login');
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   int _columnsForWidth(double w) {
     if (w >= 1280) return 4;
@@ -219,15 +233,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: const Text('Modificar usuario'),
-              onPressed: () => context.go('/profile/edit'),
-            ),
-            const SizedBox(height: 16),
+    
             ElevatedButton.icon(
               icon: const Icon(Icons.group),
-              label: const Text('Ir a seguidos (red social)'),
+              label: const Text('Seguidos'),
               onPressed: () => context.go('/following'),
             ),
             const SizedBox(height: 32),
