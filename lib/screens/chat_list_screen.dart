@@ -42,7 +42,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
             icon: const Icon(Icons.search),
             onPressed: () => GoRouter.of(context).go('/chat/search'),
           ),
-          const LanguageSelector(), 
         ],
       ),
       body: provider.isLoading

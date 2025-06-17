@@ -31,7 +31,6 @@ class XarxesSocialsScreen extends StatelessWidget {
               tooltip: loc.seeFollowing,
               onPressed: () => context.go('/following'),
             ),
-            const LanguageSelector(),
             Consumer<ThemeProvider>(
               builder: (_, t, __) => IconButton(
                 icon: Icon((t.isDarkMode) ? Icons.dark_mode : Icons.light_mode),

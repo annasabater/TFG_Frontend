@@ -83,7 +83,6 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.store),
         actions: [
-          const LanguageSelector(),
           Consumer<ThemeProvider>(
             builder: (_, t, __) => IconButton(
               icon: Icon(t.isDarkMode ? Icons.dark_mode : Icons.light_mode),
