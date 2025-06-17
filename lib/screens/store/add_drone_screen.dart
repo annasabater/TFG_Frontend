@@ -30,7 +30,7 @@ class _AddDroneScreenState extends State<AddDroneScreen>
   int _stock = 1;
   String _category = 'venta';
   String _condition = 'nuevo';
-  String _currency = 'EUR'; // NUEVO
+  String _currency = 'EUR'; 
 
   static const List<String> _currencies = [
     'EUR',

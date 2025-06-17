@@ -66,7 +66,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
         d.category != null && _currencies.contains(d.category)
             ? d.category!
             : 'EUR';
-    _currency = d.currency ?? 'EUR'; // Usa el campo currency si existe
+    _currency = d.currency ?? 'EUR'; 
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() => _visible = true);
     });
@@ -108,12 +108,12 @@ class _EditDroneScreenState extends State<EditDroneScreen>
     final droneProv = context.read<DroneProvider>();
     try {
       final ok = await droneProv.createDrone(
-        id: widget.drone.id, // <-- Añadido: indica edición
+        id: widget.drone.id, 
         ownerId: widget.drone.ownerId,
         model: _modelCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-        currency: _currency, // NUEVO
+        currency: _currency,
         location: _locCtrl.text.trim(),
         category: _category,
         condition: _condition,
@@ -121,7 +121,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
         stock: _stock,
         imagesWeb: kIsWeb ? _imagesWeb : null,
         imagesMobile: !kIsWeb ? _imagesMobile : null,
-        existingImages: widget.drone.images, // <-- Añade las imágenes previas
+        existingImages: widget.drone.images, 
       );
       if (ok && mounted) {
         showSnack(context, 'Anuncio actualizado');
@@ -157,7 +157,6 @@ class _EditDroneScreenState extends State<EditDroneScreen>
   @override
   Widget build(BuildContext context) {
     final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
-    // Mostrar imágenes existentes si no hay nuevas seleccionadas
     final existingImages = widget.drone.images ?? [];
     final showExistingImages = imageCount == 0 && existingImages.isNotEmpty;
 

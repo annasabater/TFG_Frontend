@@ -33,7 +33,7 @@ class SocketService {
     _envLoaded = true;
   }
 
-  /// Base HTTP (per login, etc) sense el `/api`
+  /// Base HTTP (per login, etc) 
   static String get _httpBase {
     final raw = dotenv.env['SERVER_URL'];
     if (raw != null && raw.isNotEmpty) {

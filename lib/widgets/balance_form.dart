@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../provider/users_provider.dart';
 import '../provider/cart_provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Añadido para dotenv
+import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 
 class BalanceForm extends StatefulWidget {
   const BalanceForm({super.key});
@@ -95,7 +95,6 @@ class _BalanceFormState extends State<BalanceForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saldo añadido correctamente')),
         );
-        // Refrescar balances globales si es posible
         try {
           final cartProv = Provider.of<CartProvider>(context, listen: false);
           await cartProv.fetchUserBalances(userId);

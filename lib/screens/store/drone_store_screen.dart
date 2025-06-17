@@ -104,7 +104,7 @@ class _DroneStoreScreenState extends State<DroneStoreScreen>
               );
               final cartProv = Provider.of<CartProvider>(
                 context,
-                // listen: false, // Cambiar a true para que se actualice el saldo
+                // listen: true para que se actualice el saldo
                 listen: true,
               );
               final droneProv = Provider.of<DroneProvider>(

@@ -30,7 +30,6 @@ class FlightZone {
         .map((coord) => LatLng(coord[1] as double, coord[0] as double))
         .toList();
 
-    // Nombre robusto
     String nombre = json['properties']?['zona'] as String? ??
         json['properties']?['message'] as String? ??
         'Zona sin nombre';

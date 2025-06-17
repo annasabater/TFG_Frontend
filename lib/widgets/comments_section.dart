@@ -287,7 +287,6 @@ class _CommentsSectionState extends State<CommentsSection> {
                       ],
                     ),
                   ),
-                // Mostrar el formulario para comentar siempre que el usuario esté logueado
                 if (user != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -358,7 +357,6 @@ class _CommentsSectionState extends State<CommentsSection> {
                       ),
                     ),
                   ),
-                // Mostrar todos los comentarios raíz
                 ...rootComments.map((c) => _buildComment(c, comments)).toList(),
               ],
             );

@@ -73,7 +73,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       await SocialService.deleteComment(widget.postId, cid);
       _loadPost();
-      setState(() {});            // refresquem FutureBuilder
+      setState(() {});           
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingComment(e))),
@@ -149,7 +149,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
           body: Column(
             children: [
-              // ---------- CONTINGUT ----------
+              //  CONTINGUT 
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),

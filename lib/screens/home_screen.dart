@@ -7,8 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
-  //final GoogleSignInAccount user;
-  //const HomeScreen({Key? key,}) : super (key: key);
   const HomeScreen({super.key});
   @override
   State<HomeScreen> createState() => _HomeScreenState();

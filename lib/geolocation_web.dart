@@ -10,7 +10,7 @@ Future<LatLng> getCurrentPosition() {
   bool isCompleted = false;
   
   try {
-    // Solicitar la ubicación actual con el método básico
+    // Solicitar la ubicación actual 
     html.window.navigator.geolocation.getCurrentPosition().then((pos) {
       try {
         if (!isCompleted) {

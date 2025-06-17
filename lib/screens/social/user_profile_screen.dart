@@ -96,8 +96,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // Usamos el color por defecto del AppBar para mantener consistencia
-        // backgroundColor y elevation quedan como los del tema global
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),

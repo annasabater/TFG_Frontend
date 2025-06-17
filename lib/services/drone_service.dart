@@ -49,8 +49,8 @@ class DroneService {
   // Método createDrone adaptado para enviar imágenes con multipart/form-data
   static Future<Drone> createDrone(
     Drone d, {
-    List<File>? images, // lista opcional de imágenes para subir
-    List<XFile>? imagesWeb, // lista opcional de imágenes para web
+    List<File>? images, 
+    List<XFile>? imagesWeb, 
   }) async {
     final jwt = await AuthService().token;
     final uri = _dronesUri();

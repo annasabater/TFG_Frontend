@@ -7,7 +7,7 @@ import '../../provider/drone_provider.dart';
 import '../../widgets/drone_card.dart';
 import '../../widgets/store_sidebar.dart';
 import '../../widgets/drone_detail_modal.dart';
-import 'my_drones_tab.dart'; // Asegúrate de importar el archivo correcto
+import 'my_drones_tab.dart';
 
 class AllTab extends StatefulWidget {
   const AllTab({super.key});
@@ -19,11 +19,10 @@ class _AllTabState extends State<AllTab> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
   final String _selectedCat = 'all';
-  int _tabIndex = 0; // Añadido para controlar la tab activa
-  bool _showFilters = true; // true: filtros, false: navegación
+  int _tabIndex = 0; 
+  bool _showFilters = true; 
 
   void _onApplyFilters(Map<String, dynamic> filters) {
-    // Llama al método de la vista de drones si está montada
     final state = _allDronesViewKey.currentState;
     if (state != null) {
       state.applyFilters(filters);
@@ -84,7 +83,6 @@ class _AllTabState extends State<AllTab> {
       ),
     );
 
-    // NUEVO: Cambia el contenido principal según la opción seleccionada
     Widget mainContent;
     if (_tabIndex == 0) {
       mainContent = _AllDronesView(key: _allDronesViewKey);
@@ -160,7 +158,6 @@ class _AllTabState extends State<AllTab> {
   }
 }
 
-// NUEVO: Vistas para cada sección
 class _AllDronesView extends StatefulWidget {
   const _AllDronesView({Key? key}) : super(key: key);
   @override
@@ -191,7 +188,6 @@ class _AllDronesViewState extends State<_AllDronesView>
     final prov = Provider.of<DroneProvider>(context);
     if (_lastCurrency != prov.currency) {
       _lastCurrency = prov.currency;
-      // Mantener la página actual al cambiar de divisa
       _changePage(prov.currentPage, prov, force: true);
     }
   }
@@ -224,7 +220,7 @@ class _AllDronesViewState extends State<_AllDronesView>
       setState(() {
         _isLastPage = prov.drones.length < prov.currentLimit;
       });
-      prov.currentPage = page; // <-- Usar setter público
+      prov.currentPage = page; 
       _animController.forward(from: 0);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -236,8 +232,8 @@ class _AllDronesViewState extends State<_AllDronesView>
   Future<void> _changeDronesPerPage(int? value, DroneProvider prov) async {
     if (value == null) return;
     try {
-      prov.currentLimit = value; // <-- Usar setter público
-      prov.currentPage = 1; // <-- Usar setter público
+      prov.currentLimit = value; 
+      prov.currentPage = 1; 
       await prov.loadDronesFiltered(
         DroneQuery(
           q: _filters['name'],
@@ -447,7 +443,6 @@ class _AllDronesViewState extends State<_AllDronesView>
 class _MyDronesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Usar el widget original para mostrar los drones del usuario
     return const MyDronesTab();
   }
 }

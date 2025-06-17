@@ -1,11 +1,11 @@
 // lib/geolocation_mobile.dart
 
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart'; // o el paquete que uses para LatLng
+import 'package:latlong2/latlong.dart'; 
 
 /// Devuelve la posición usando Geolocator en iOS/Android.
 Future<LatLng> getCurrentPosition() async {
-  // 1) Comprueba servicios y permisos...
+  // Comprueba servicios y permisos...
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
     throw Exception('Servicios de localización desactivados.');
@@ -24,6 +24,5 @@ Future<LatLng> getCurrentPosition() async {
     desiredAccuracy: LocationAccuracy.high,
   );
 
-  // ¡Aquí es donde mapeas Position → LatLng!
   return LatLng(pos.latitude, pos.longitude);
 }

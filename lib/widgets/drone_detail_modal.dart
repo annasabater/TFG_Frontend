@@ -236,7 +236,6 @@ class DroneDetailModal extends StatelessWidget {
                         );
                       },
                     ),
-                    // Botón de añadir al carrito
                     Builder(
                       builder: (context) {
                         final userProv = Provider.of<UserProvider>(
@@ -298,7 +297,6 @@ class DroneDetailModal extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Sección de comentarios
                 const SizedBox(height: 24),
                 CommentsSection(droneId: drone.id),
               ],

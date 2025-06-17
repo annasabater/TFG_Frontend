@@ -21,7 +21,6 @@ class DroneZonesService {
         throw Exception('Error al obtener zonas: ${response.statusCode}');
       }
     } catch (e) {
-      // Si falla, devolvemos datos de ejemplo para desarrollo
       return _getMockZones();
     }
   }
@@ -48,6 +47,3 @@ class DroneZonesService {
     ];
   }
 }
-
-// NOTA: Ahora las zonas de drones se gestionan desde GeoJSON usando GeoJSONService.
-// Este servicio queda obsoleto para la gestión de zonas visuales en el mapa. 

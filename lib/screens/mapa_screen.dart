@@ -43,24 +43,18 @@ class _MapaScreenState extends State<MapaScreen> {
     'Limpiar mapa',
   ];
 
-  // Nuevo: punto marcado por el usuario
   LatLng? _markedPoint;
-  // Nuevo: puntos de la ruta
   List<LatLng> _routePoints = [];
-  // Nuevo: distancia de la ruta en metros
   double? _routeDistance;
-  // Nuevo: para mostrar loading en la ruta
   bool _fetchingRoute = false;
 
   List<FlightZone> _flightZones = [];
   bool _loadingZones = true;
 
-  // Añadir variable para el destino buscado y su display
   String? _searchDestinationName;
   LatLng? _searchDestination;
   bool _showRoute = false;
 
-  // Mejorar el buscador: sugerencias rápidas y debounce
   Timer? _debounce;
 
   @override
@@ -182,7 +176,6 @@ class _MapaScreenState extends State<MapaScreen> {
     }
   }
 
-  // Nuevo: función para obtener la ruta usando OSRM
   Future<void> _getRoute(LatLng from, LatLng to) async {
     setState(() {
       _fetchingRoute = true;
@@ -217,15 +210,12 @@ class _MapaScreenState extends State<MapaScreen> {
         final data = jsonDecode(response.body);
         final route = data['routes'][0];
 
-        // 1) Distancia en metros
+        // Distancia en metros
         final distance = (route['summary']['distance'] as num).toDouble();
-
-        // 2) Polyline encodeada
         final encoded = route['geometry'] as String;
         final poly = PolylinePoints();
         final decoded = poly.decodePolyline(encoded);
 
-        // 3) Mapa de PointLatLng → LatLng
         final pts =
             decoded.map((pt) => LatLng(pt.latitude, pt.longitude)).toList();
 
@@ -279,7 +269,7 @@ class _MapaScreenState extends State<MapaScreen> {
     setState(() => _fetchingRoute = false);
   }
 
-  // Nuevo: manejar tap izquierdo en el mapa
+  // manejar tap izquierdo en el mapa
   void _onMapTap(TapPosition tapPosition, LatLng latlng) {
     if (_currentPosition != null) {
       setState(() {
@@ -422,8 +412,8 @@ class _MapaScreenState extends State<MapaScreen> {
                                   }
                                 },
                                 onSecondaryTap:
-                                    _onMapSecondaryTap, // <-- Añadido para click derecho
-                                onTap: _onMapTap, // <-- Nuevo: tap izquierdo
+                                    _onMapSecondaryTap, 
+                                onTap: _onMapTap, 
                               ),
                               children: [
                                 TileLayer(
@@ -734,7 +724,7 @@ class _MapaScreenState extends State<MapaScreen> {
     );
   }
 
-  // Añadir función para calcular tiempo estimado
+  //  calcular tiempo estimado
   String _getEstimatedTime(double distance, TransportMode mode) {
     // Velocidad media: a pie 5km/h, en coche 40km/h
     final speed = mode == TransportMode.walking ? 5.0 : 40.0;

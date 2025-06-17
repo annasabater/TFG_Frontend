@@ -19,7 +19,7 @@ class LayoutWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener provider de usuarios; puede estar cargando
+    // Obtener provider de usuarios
     final usersProv = context.watch<UserProvider?>();
     final currentUser = usersProv?.currentUser;
 
@@ -116,13 +116,6 @@ class LayoutWrapper extends StatelessWidget {
           isRoute('/profile'),
         ),
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
-        _navItem(
-          context,
-          loc.spectateGames,
-          Icons.visibility,
-          '/jocs/spectate',
-          isRoute('/jocs/spectate'),
-        ),
         _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
         _navItem(context, 'Play Testing', Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
       ]);

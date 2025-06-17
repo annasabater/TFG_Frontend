@@ -88,7 +88,6 @@ class _CartModalState extends State<CartModal> {
               ],
             ),
             const SizedBox(height: 10),
-            // Saldo de la divisa seleccionada
             Align(
               alignment: Alignment.centerLeft,
               child: Chip(

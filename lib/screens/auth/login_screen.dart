@@ -24,25 +24,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
   bool _obscurePassword = true;
-  String? _errorMessage; // Aquí almacenamos el error para mostrarlo en pantalla
+  String? _errorMessage; //  almacenamos el error para mostrarlo en pantalla
 
   @override
   void initState() {
     super.initState();
-    _checkRefreshToken();
     Future.delayed(const Duration(milliseconds: 200), () {
       setState(() {
         _visible = true;
       });
     });
-  }
-
-  Future<void> _checkRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final refresh = prefs.getString('refreshToken');
-    if (refresh != null && mounted) {
-      context.go('/'); // redirige si ya tiene sesión
-    }
   }
 
   Future<void> _signUserIn(BuildContext context) async {
@@ -198,7 +189,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Campo email con tu MyTextfield personalizado
+                
                         MyTextfield(
                           controller: emailController,
                           hintText: loc.email,
@@ -206,7 +197,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           prefixIcon: Icons.email_outlined,
                         ),
                         const SizedBox(height: 25),
-                        // Campo contraseña con TextField estándar para usar suffixIcon
+       
                         TextField(
                           controller: passwordController,
                           obscureText: _obscurePassword,
@@ -242,7 +233,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Aquí mostramos el error si existe
+               
                         if (_errorMessage != null)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 20),
@@ -270,7 +261,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         // Google Sign-In button
                         ElevatedButton.icon(
                           icon: Image.asset(
-                            'assets/google_logo.png', // Add a Google logo asset if you want
+                            'assets/google_logo.png', // Add a Google logo 
                             height: 24,
                             width: 24,
                           ),
