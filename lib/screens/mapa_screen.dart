@@ -290,8 +290,8 @@ class _MapaScreenState extends State<MapaScreen> {
               Icons.drive_eta,
               color:
                   _transportMode == TransportMode.driving
-                      ? Colors.white
-                      : Colors.white70,
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
             onPressed:
                 () => setState(() => _transportMode = TransportMode.driving),
@@ -301,8 +301,8 @@ class _MapaScreenState extends State<MapaScreen> {
               Icons.directions_walk,
               color:
                   _transportMode == TransportMode.walking
-                      ? Colors.white
-                      : Colors.white70,
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
             onPressed:
                 () => setState(() => _transportMode = TransportMode.walking),
@@ -362,8 +362,8 @@ class _MapaScreenState extends State<MapaScreen> {
                             icon: const Icon(Icons.clear),
                             label: const Text('Limpiar distancia'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.blue,
+                              backgroundColor: Theme.of(context).colorScheme.surface,
+                              foregroundColor: Theme.of(context).colorScheme.primary,
                               side: const BorderSide(color: Colors.blue),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -440,7 +440,7 @@ class _MapaScreenState extends State<MapaScreen> {
                                     polylines: [
                                       Polyline(
                                         points: _routePoints,
-                                        color: Colors.blue,
+                                        color: Theme.of(context).colorScheme.primary,
                                         strokeWidth: 5,
                                       ),
                                     ],
@@ -533,7 +533,7 @@ class _MapaScreenState extends State<MapaScreen> {
                       hintText: 'Buscar lloc...',
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).colorScheme.surface,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 0,
@@ -551,7 +551,7 @@ class _MapaScreenState extends State<MapaScreen> {
                       width: 350,
                       constraints: const BoxConstraints(maxHeight: 200),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(color: Colors.black26, blurRadius: 4),
@@ -603,7 +603,7 @@ class _MapaScreenState extends State<MapaScreen> {
               right: 24,
               child: Card(
                 elevation: 8,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -614,7 +614,7 @@ class _MapaScreenState extends State<MapaScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Destino seleccionado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue[900])),
+                            Text('Destino seleccionado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.primary)),
                             const SizedBox(height: 8),
                             if (_searchDestinationName != null)
                               Text(_searchDestinationName!, style: const TextStyle(fontSize: 16)),
@@ -625,8 +625,8 @@ class _MapaScreenState extends State<MapaScreen> {
                         icon: const Icon(Icons.directions),
                         label: const Text('Cómo llegar'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -665,7 +665,7 @@ class _MapaScreenState extends State<MapaScreen> {
               right: 24,
               child: Card(
                 elevation: 8,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -676,7 +676,7 @@ class _MapaScreenState extends State<MapaScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Cómo llegar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue[900])),
+                            Text('Cómo llegar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).colorScheme.primary)),
                             const SizedBox(height: 8),
                             if (_searchDestinationName != null)
                               Text(_searchDestinationName!, style: const TextStyle(fontSize: 16)),

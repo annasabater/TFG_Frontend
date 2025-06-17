@@ -167,6 +167,41 @@ class MyApp extends StatelessWidget {
       surfaceTint: Color(0xFF0066CC),
     );
 
+    // Daltonic dark color scheme (alta visibilidad, colores seguros para daltónicos en oscuro)
+    const daltonicDarkColorScheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: Color(0xFF00BFFF), // Azul fuerte
+      onPrimary: Color(0xFF000000),
+      primaryContainer: Color(0xFFFFFF00), // Amarillo fuerte
+      onPrimaryContainer: Color(0xFF000000),
+      secondary: Color(0xFF00FF99), // Verde fuerte
+      onSecondary: Color(0xFF000000),
+      secondaryContainer: Color(0xFFFFB300), // Naranja fuerte
+      onSecondaryContainer: Color(0xFF000000),
+      tertiary: Color(0xFFFF00FF), // Magenta fuerte
+      onTertiary: Color(0xFF000000),
+      tertiaryContainer: Color(0xFF00FFFF), // Cian fuerte
+      onTertiaryContainer: Color(0xFF000000),
+      error: Color(0xFFFF3333),
+      onError: Color(0xFF000000),
+      errorContainer: Color(0xFFFFDAD6),
+      onErrorContainer: Color(0xFF410002),
+      outline: Color(0xFFFFFFFF),
+      outlineVariant: Color(0xFF888888),
+      background: Color(0xFF222222),
+      onBackground: Color(0xFFFFFFFF),
+      surface: Color(0xFF333333),
+      onSurface: Color(0xFFFFFFFF),
+      surfaceVariant: Color(0xFF444444),
+      onSurfaceVariant: Color(0xFFFFFFFF),
+      inverseSurface: Color(0xFFFFFFFF),
+      onInverseSurface: Color(0xFF222222),
+      inversePrimary: Color(0xFF00BFFF),
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      surfaceTint: Color(0xFF00BFFF),
+    );
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
@@ -266,7 +301,63 @@ class MyApp extends StatelessWidget {
               ),
               darkTheme: ThemeData(
                 useMaterial3: true,
-                colorScheme: darkColorScheme,
+                colorScheme: themeProv.isDaltonicMode ? daltonicDarkColorScheme : darkColorScheme,
+                scaffoldBackgroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.surface : darkColorScheme.surface,
+                appBarTheme: AppBarTheme(
+                  backgroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.primary : darkColorScheme.primary,
+                  foregroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.onPrimary : darkColorScheme.onPrimary,
+                  elevation: 0,
+                ),
+                drawerTheme: DrawerThemeData(
+                  backgroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.surface : darkColorScheme.surface,
+                ),
+                cardTheme: CardTheme(
+                  color: themeProv.isDaltonicMode ? daltonicDarkColorScheme.surface : darkColorScheme.surface,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.primary : darkColorScheme.primary,
+                    foregroundColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.onPrimary : darkColorScheme.onPrimary,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                inputDecorationTheme: InputDecorationTheme(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: themeProv.isDaltonicMode ? daltonicDarkColorScheme.primaryContainer : darkColorScheme.primaryContainer,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: themeProv.isDaltonicMode ? daltonicDarkColorScheme.primaryContainer : darkColorScheme.primaryContainer,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: themeProv.isDaltonicMode ? daltonicDarkColorScheme.primary : darkColorScheme.primary,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: themeProv.isDaltonicMode ? daltonicDarkColorScheme.surface : darkColorScheme.surface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
               ),
               builder: (context, child) {
                 if (themeProv.isReadingMode) {

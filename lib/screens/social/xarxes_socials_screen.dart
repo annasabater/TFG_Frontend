@@ -43,9 +43,9 @@ class XarxesSocialsScreen extends StatelessWidget {
         ),
         body: Column(
           children: [
-            // TabBar justo debajo, fondo blanco
+            // TabBar justo debajo, fondo adaptado al tema
             Material(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               child: TabBar(
                 indicator: UnderlineTabIndicator(
                   borderSide: BorderSide(
@@ -55,7 +55,7 @@ class XarxesSocialsScreen extends StatelessWidget {
                   insets: const EdgeInsets.symmetric(horizontal: 24),
                 ),
                 labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: Colors.grey.shade600,
+                unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                 unselectedLabelStyle: const TextStyle(
                   fontWeight: FontWeight.normal,
