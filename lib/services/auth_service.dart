@@ -70,7 +70,7 @@ class AuthService {
     return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   }
 
-  /// URL base para WebSockets (sin '/api')
+  /// URL base para WebSockets (sin '/api').
   String get webSocketBaseUrl => baseApiUrl.replaceAll('/api', '');
 
   String get _loginUrl => '$baseApiUrl/auth/login';

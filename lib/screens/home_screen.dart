@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'image': 'assets/drones_games.webp',
                             'title': loc.gamesFeatureTitle,
                             'description': loc.gamesFeatureDescription,
-                            'route': '/jocs',
+                            'route': '/play-testing',
                             'color': Colors.orangeAccent,
                           },
                         ];

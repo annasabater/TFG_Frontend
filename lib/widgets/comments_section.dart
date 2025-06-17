@@ -357,6 +357,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                       ),
                     ),
                   ),
+
                 ...rootComments.map((c) => _buildComment(c, comments)).toList(),
               ],
             );
