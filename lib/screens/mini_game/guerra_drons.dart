@@ -292,6 +292,28 @@ class _GuerraDronsGameState extends State<GuerraDronsGame> {
     });
   }
   
+  void moveDrone1Left() {
+    setState(() {
+      drone1X = (drone1X - moveSpeed * 10).clamp(0, MediaQuery.of(context).size.width - droneSize);
+    });
+  }
+  void moveDrone1Right() {
+    setState(() {
+      drone1X = (drone1X + moveSpeed * 10).clamp(0, MediaQuery.of(context).size.width - droneSize);
+    });
+  }
+  
+  void moveDrone2Left() {
+    setState(() {
+      drone2X = (drone2X - moveSpeed * 10).clamp(0, MediaQuery.of(context).size.width - droneSize);
+    });
+  }
+  void moveDrone2Right() {
+    setState(() {
+      drone2X = (drone2X + moveSpeed * 10).clamp(0, MediaQuery.of(context).size.width - droneSize);
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -396,6 +418,106 @@ class _GuerraDronsGameState extends State<GuerraDronsGame> {
                   ),
                 ),
               ),
+            // Controles táctiles para móvil (siempre visibles)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Izquierda
+                  GestureDetector(
+                    onTapDown: (_) => moveDrone1Left(),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_left, size: 40, color: Colors.white),
+                    ),
+                  ),
+                  // Disparo
+                  GestureDetector(
+                    onTapDown: (_) => shoot(1),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.bolt, size: 40, color: Colors.white),
+                    ),
+                  ),
+                  // Derecha
+                  GestureDetector(
+                    onTapDown: (_) => moveDrone1Right(),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_right, size: 40, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Controles táctiles para el jugador 2 (abajo a la derecha)
+            Positioned(
+              bottom: 120,
+              right: 10,
+              child: Row(
+                children: [
+                  // Izquierda
+                  GestureDetector(
+                    onTapDown: (_) => moveDrone2Left(),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_left, size: 32, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Disparo
+                  GestureDetector(
+                    onTapDown: (_) => shoot(2),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.bolt, size: 32, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Derecha
+                  GestureDetector(
+                    onTapDown: (_) => moveDrone2Right(),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_right, size: 32, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

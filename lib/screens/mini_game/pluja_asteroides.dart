@@ -223,6 +223,20 @@ class _GameViewState extends State<_GameView> {
     });
   }
 
+  void movePlayerLeft() {
+    final size = MediaQuery.of(context).size;
+    setState(() {
+      playerX = (playerX! - moveSpeed * 10).clamp(0, size.width - playerSize);
+    });
+  }
+
+  void movePlayerRight() {
+    final size = MediaQuery.of(context).size;
+    setState(() {
+      playerX = (playerX! + moveSpeed * 10).clamp(0, size.width - playerSize);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -366,6 +380,43 @@ class _GameViewState extends State<_GameView> {
                   ),
                 ),
               ),
+            // Controles táctiles para móvil (siempre visibles)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Izquierda
+                  GestureDetector(
+                    onTapDown: (_) => movePlayerLeft(),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_left, size: 40, color: Colors.white),
+                    ),
+                  ),
+                  // Derecha
+                  GestureDetector(
+                    onTapDown: (_) => movePlayerRight(),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_right, size: 40, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
