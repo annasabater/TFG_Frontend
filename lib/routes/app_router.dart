@@ -39,13 +39,38 @@ import 'package:SkyNet/screens/mini_game/drone_battle_screen.dart';
 import 'package:SkyNet/screens/mini_game/menu_jocs.dart';
 import 'package:SkyNet/screens/mini_game/pluja_asteroides.dart';
 import 'package:SkyNet/screens/mini_game/guerra_drons.dart';
+import 'package:flutter/material.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
   routes: [
 
-    GoRoute(path: '/login', builder: (_, __) => LoginPage()),
-    GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
+    GoRoute(
+      path: '/login',
+      builder: (_, __) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light().copyWith(
+            primary: Color(0xFF3B5BA9),
+            surface: Color(0xFFEAF2FB),
+            background: Color(0xFFF4F8FF),
+          ),
+        ),
+        child: LoginPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (_, __) => Theme(
+        data: ThemeData.light().copyWith(
+          colorScheme: const ColorScheme.light().copyWith(
+            primary: Color(0xFF3B5BA9),
+            surface: Color(0xFFEAF2FB),
+            background: Color(0xFFF4F8FF),
+          ),
+        ),
+        child: const RegisterPage(),
+      ),
+    ),
 
     GoRoute(
       path: '/xarxes',
