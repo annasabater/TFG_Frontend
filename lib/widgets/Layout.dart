@@ -62,7 +62,7 @@ class LayoutWrapper extends StatelessWidget {
         _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
         _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
-        _navItem(context, loc.games, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
+        _navItem(context, loc.playTesting, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
       ]);
     }
 
