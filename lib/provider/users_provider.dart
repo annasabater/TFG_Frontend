@@ -39,12 +39,13 @@ class UserProvider with ChangeNotifier {
     await loadConversations();
   }
 
-  /// Carga desde la API todos los usuarios
+  /// Carga desde la API todos los usuarios (paginados internamente)
   Future<void> loadUsers() async {
     _setLoading(true);
     _setError(null);
     try {
-      final fetched = await UserService.getUsers();
+      // Ajusta pageSize según lo que acepte tu API
+      final fetched = await UserService.getUsers(pageSize: 100);
       _users
         ..clear()
         ..addAll(fetched);
@@ -141,6 +142,7 @@ class UserProvider with ChangeNotifier {
     _currentUser = null;
     notifyListeners();
   }
+
   void _setLoading(bool v) {
     _isLoading = v;
     notifyListeners();

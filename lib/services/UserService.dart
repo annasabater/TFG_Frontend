@@ -1,5 +1,4 @@
 // lib/services/UserService.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
@@ -11,24 +10,37 @@ class UserService {
     return '$api/users';
   }
 
-  /// Obtiene la lista de usuarios, enviando el JWT
-  static Future<List<User>> getUsers() async {
+  /// Devuelve *todos* los usuarios de la BBDD,
+  /// recibiendo por páginas (`page`, `limit`).
+  static Future<List<User>> getUsers({int pageSize = 100}) async {
     final token = await AuthService().token;
-    final resp = await http.get(
-      Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    if (resp.statusCode == 200) {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    final allUsers = <User>[];
+    var page = 1;
+
+    while (true) {
+      // Si tu API usa otros nombres (offset/skip), ajústalo aquí
+      final uri = Uri.parse('$baseUrl?page=$page&limit=$pageSize');
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode != 200) {
+        throw Exception('Error fetching users (página $page): ${resp.statusCode}');
+      }
+
       final List data = jsonDecode(resp.body);
-      return data.map((json) => User.fromJson(json)).toList();
+      if (data.isEmpty) break;
+
+      allUsers.addAll(data.map((j) => User.fromJson(j)));
+      if (data.length < pageSize) break;
+      page++;
     }
-    throw Exception('Error fetching users: ${resp.statusCode}');
+
+    return allUsers;
   }
 
-  /// Crea un usuario, incluyendo el JWT
   static Future<User> createUser(User user) async {
     final token = await AuthService().token;
     final resp = await http.post(
@@ -45,7 +57,6 @@ class UserService {
     throw Exception('Error creating user: ${resp.statusCode}');
   }
 
-  /// Obtiene un usuario por ID
   static Future<User> getUserById(String id) async {
     final token = await AuthService().token;
     final resp = await http.get(
@@ -61,7 +72,6 @@ class UserService {
     throw Exception('Error fetching user $id: ${resp.statusCode}');
   }
 
-  /// Actualiza un usuario
   static Future<User> updateUser(String id, User user) async {
     final token = await AuthService().token;
     final resp = await http.put(
@@ -78,23 +88,17 @@ class UserService {
     throw Exception('Error updating user $id: ${resp.statusCode}');
   }
 
-  /// Elimina un usuario por ID
   static Future<bool> deleteUser(String id) async {
     final token = await AuthService().token;
     final resp = await http.delete(
       Uri.parse('$baseUrl/$id'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    if (resp.statusCode == 200) {
-      return true;
-    }
-    if (resp.statusCode == 404) {
-      return false;
-    }
+    if (resp.statusCode == 200) return true;
+    if (resp.statusCode == 404) return false;
     throw Exception('Error deleting user $id: ${resp.statusCode}');
   }
 
-  /// Obtiene el saldo de un usuario
   static Future<Map<String, dynamic>> getUserBalance(String userId) async {
     final token = await AuthService().token;
     final api = AuthService().baseApiUrl;
@@ -112,10 +116,7 @@ class UserService {
     throw Exception('Error fetching balance: ${resp.statusCode}');
   }
 
-  /// Historial de compras de un usuario
-  static Future<List<Map<String, dynamic>>> getPurchaseHistory(
-    String userId,
-  ) async {
+  static Future<List<Map<String, dynamic>>> getPurchaseHistory(String userId) async {
     final token = await AuthService().token;
     final api = AuthService().baseApiUrl;
     final url = Uri.parse('$api/users/$userId/purchase-history');
@@ -133,10 +134,7 @@ class UserService {
     throw Exception('Error fetching purchase history: ${resp.statusCode}');
   }
 
-  /// Historial de ventas de un usuario
-  static Future<List<Map<String, dynamic>>> getSalesHistory(
-    String userId,
-  ) async {
+  static Future<List<Map<String, dynamic>>> getSalesHistory(String userId) async {
     final token = await AuthService().token;
     final api = AuthService().baseApiUrl;
     final url = Uri.parse('$api/users/$userId/sales-history');

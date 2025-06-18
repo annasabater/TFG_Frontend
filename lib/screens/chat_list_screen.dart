@@ -1,11 +1,10 @@
-//lib/screens/chat_list_screen.dart
-
+// lib/screens/chat_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../provider/users_provider.dart';
 import '../models/user.dart';
-import '../widgets/language_selector.dart'; 
+import '../widgets/language_selector.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});

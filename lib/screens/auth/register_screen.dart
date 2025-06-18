@@ -1,3 +1,5 @@
+// lib/screens/register_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/services/auth_service.dart';
@@ -14,8 +16,8 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _isLoading = false;
-  bool _visible = false;
+  bool _isLoading     = false;
+  bool _visible       = false;
   String _selectedRole = 'Usuario';
 
   static const _allRoles = [
@@ -26,16 +28,16 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   ];
 
   // Variables para validar la contraseña
-  bool _hasMinLength = false;  // mínimo 8 caracteres
-  bool _hasMaxLength = false;  // máximo 20 caracteres
-  bool _hasLowercase = false;
-  bool _hasUppercase = false;
-  bool _hasNumber = false;
-  bool _hasSpecialChar = false;
+  bool _hasMinLength    = false;
+  bool _hasMaxLength    = false;
+  bool _hasLowercase    = false;
+  bool _hasUppercase    = false;
+  bool _hasNumber       = false;
+  bool _hasSpecialChar  = false;
 
   // Validaciones visuales para username y email
   bool _isUsernameValid = false;
-  bool _isEmailValid = false;
+  bool _isEmailValid    = false;
 
   @override
   void initState() {
@@ -49,7 +51,8 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
     _emailCtrl.addListener(() {
       setState(() {
-        _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(_emailCtrl.text.trim());
+        _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$")
+            .hasMatch(_emailCtrl.text.trim());
       });
       _refreshRoles();
     });
@@ -67,7 +70,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _emailCtrl.removeListener(_refreshRoles);
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -78,43 +80,36 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   void _validatePassword(String pw) {
     setState(() {
-      _hasMinLength = pw.length >= 8;
-      _hasMaxLength = pw.length <= 20;
-      _hasLowercase = RegExp(r'[a-z]').hasMatch(pw);
-      _hasUppercase = RegExp(r'[A-Z]').hasMatch(pw);
-      _hasNumber = RegExp(r'[0-9]').hasMatch(pw);
+      _hasMinLength   = pw.length >= 8;
+      _hasMaxLength   = pw.length <= 20;
+      _hasLowercase   = RegExp(r'[a-z]').hasMatch(pw);
+      _hasUppercase   = RegExp(r'[A-Z]').hasMatch(pw);
+      _hasNumber      = RegExp(r'\d').hasMatch(pw);
       _hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(pw);
     });
   }
 
   String _getRoleTranslation(String role) {
-    final localizations = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context)!;
     switch (role) {
-      case 'Administrador':
-        return localizations.roleAdministrator;
-      case 'Usuario':
-        return localizations.roleUser;
-      case 'Empresa':
-        return localizations.roleCompany;
-      case 'Gobierno':
-        return localizations.roleGovernment;
-      default:
-        return role;
+      case 'Administrador': return loc.roleAdministrator;
+      case 'Usuario':       return loc.roleUser;
+      case 'Empresa':       return loc.roleCompany;
+      case 'Gobierno':      return loc.roleGovernment;
+      default:              return role;
     }
   }
 
   Future<void> _register() async {
-    final localizations = AppLocalizations.of(context)!;
+    final loc   = AppLocalizations.of(context)!;
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim().toLowerCase();
     final pw    = _passwordCtrl.text;
 
     if (name.isEmpty || email.isEmpty || pw.isEmpty) {
-      _showError(localizations.emptyFieldsError);
+      _showError(loc.emptyFieldsError);
       return;
     }
-
-    // Validaciones username y email
     if (!_isUsernameValid) {
       _showError('El nombre de usuario debe tener al menos 3 caracteres');
       return;
@@ -123,21 +118,19 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _showError('El email no tiene un formato válido');
       return;
     }
-
-    // Contraseña debe cumplir todas las condiciones
-    if (!(_hasMinLength && _hasMaxLength && _hasLowercase && _hasUppercase && _hasNumber && _hasSpecialChar)) {
+    if (!(_hasMinLength && _hasMaxLength && _hasLowercase &&
+          _hasUppercase && _hasNumber && _hasSpecialChar)) {
       _showError('La contraseña no cumple todos los requisitos');
       return;
     }
 
     final isUpc = email.endsWith('@upc.edu');
     if (_selectedRole == 'Administrador' && !isUpc) {
-      _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
+      _showError('Solo puedes registrarte como Administrador con un correo @upc.edu');
       return;
     }
 
     setState(() => _isLoading = true);
-
     try {
       await AuthService().signup(
         userName: name,
@@ -145,68 +138,58 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
         password: pw,
         role:     _selectedRole,
       );
-      if (mounted) {
-        context.go('/login');
-      }
+      if (mounted) context.go('/login');
     } catch (e) {
-      _showError(e.toString());
+      // e.toString() viene como "Exception: mensaje", así que lo limpiamos
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      _showError(msg);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _showError(String msg) {
-    final localizations = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(localizations.error),
+        title: Text(loc.error),
         content: Text(msg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(localizations.ok),
+            child: Text(loc.ok),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCheckItem(bool conditionMet, String text) {
+  Widget _buildCheckItem(bool met, String text) {
     return Row(
       children: [
         Icon(
-          conditionMet ? Icons.check_circle : Icons.cancel,
-          color: conditionMet ? Colors.green : Colors.red,
+          met ? Icons.check_circle : Icons.cancel,
+          color: met ? Colors.green : Colors.red,
           size: 18,
         ),
         const SizedBox(width: 8),
-        Text(text, style: TextStyle(color: conditionMet ? Colors.green : Colors.red)),
+        Text(text, style: TextStyle(color: met ? Colors.green : Colors.red)),
       ],
     );
   }
 
-  InputDecoration _inputDecoration(String hintText, IconData prefixIcon, bool isValid) {
+  InputDecoration _inputDecoration(String hint, IconData icon, bool valid) {
     return InputDecoration(
-      hintText: hintText,
-      prefixIcon: Icon(prefixIcon),
+      hintText: hint,
+      prefixIcon: Icon(icon),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 2),
+        borderSide: BorderSide(color: valid ? Colors.green : Colors.red, width: 2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 3),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.red, width: 3),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.red, width: 3),
+        borderSide: BorderSide(color: valid ? Colors.green : Colors.red, width: 3),
       ),
     );
   }
@@ -214,11 +197,11 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final localizations = AppLocalizations.of(context)!;
+    final loc    = AppLocalizations.of(context)!;
     final isWide = MediaQuery.of(context).size.width > 700;
 
-    final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
-    final roles  = isUpc
+    final isUpc = _emailCtrl.text.endsWith('@upc.edu');
+    final roles = isUpc
         ? _allRoles
         : _allRoles.where((r) => r != 'Administrador').toList();
     if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
@@ -227,34 +210,26 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       backgroundColor: colors.surface,
       body: Row(
         children: [
-          if (isWide)
-            Expanded(
-              flex: 3,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 1500),
-                opacity: _visible ? 1.0 : 0.0,
-                curve: Curves.easeInOut,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                  child: Image.asset(
-                    'assets/barcelona.jpg',
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    width: double.infinity,
-                  ),
+          if (isWide) Expanded(
+            flex: 3,
+            child: AnimatedOpacity(
+              opacity: _visible ? 1 : 0,
+              duration: const Duration(milliseconds: 1500),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
+                child: Image.asset('assets/barcelona.jpg', fit: BoxFit.cover),
               ),
             ),
+          ),
           Expanded(
             flex: 3,
             child: Center(
               child: AnimatedOpacity(
+                opacity: _visible ? 1 : 0,
                 duration: const Duration(milliseconds: 1500),
-                opacity: _visible ? 1.0 : 0.0,
-                curve: Curves.easeInOut,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
                   child: Container(
@@ -263,59 +238,36 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.97),
                       borderRadius: BorderRadius.circular(35),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 30,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
+                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 30)],
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Center(
-                          child: Image.asset(
-                            'assets/logo_skynet.png',
-                            width: 100,
-                            height: 100,
-                          ),
-                        ),
+                        Center(child: Image.asset('assets/logo_skynet.png', width: 100, height: 100)),
                         const SizedBox(height: 30),
-                        Text(
-                          localizations.register,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: colors.primary,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
+                        Text(loc.register, textAlign: TextAlign.center, style: TextStyle(
+                          color: colors.primary, fontSize: 28, fontWeight: FontWeight.bold,
+                        )),
                         const SizedBox(height: 40),
 
-                        // Username
                         TextFormField(
                           controller: _nameCtrl,
-                          decoration: _inputDecoration(localizations.username, Icons.person_outline, _isUsernameValid),
+                          decoration: _inputDecoration(loc.username, Icons.person_outline, _isUsernameValid),
                         ),
                         const SizedBox(height: 25),
 
-                        // Email
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: _inputDecoration(localizations.email, Icons.email_outlined, _isEmailValid),
+                          decoration: _inputDecoration(loc.email, Icons.email_outlined, _isEmailValid),
                         ),
                         const SizedBox(height: 25),
 
-                        // Password
                         TextFormField(
                           controller: _passwordCtrl,
                           obscureText: true,
                           decoration: InputDecoration(
-                            hintText: localizations.password,
+                            hintText: loc.password,
                             prefixIcon: const Icon(Icons.lock_outline),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
                           ),
@@ -325,12 +277,12 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCheckItem(_hasMinLength, 'Min 8 characters'),
-                            _buildCheckItem(_hasMaxLength, 'Max 20 characters'),
-                            _buildCheckItem(_hasLowercase, 'At least one lowercase letter'),
-                            _buildCheckItem(_hasUppercase, 'At least one uppercase letter'),
-                            _buildCheckItem(_hasNumber, 'At least one number'),
-                            _buildCheckItem(_hasSpecialChar, 'At least one special character'),
+                            _buildCheckItem(_hasMinLength, 'Min 8 caracteres'),
+                            _buildCheckItem(_hasMaxLength, 'Max 20 caracteres'),
+                            _buildCheckItem(_hasLowercase, 'Al menos una minúscula'),
+                            _buildCheckItem(_hasUppercase, 'Al menos una mayúscula'),
+                            _buildCheckItem(_hasNumber, 'Al menos un número'),
+                            _buildCheckItem(_hasSpecialChar, 'Al menos un carácter especial'),
                           ],
                         ),
                         const SizedBox(height: 25),
@@ -340,12 +292,9 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: colors.surface.withOpacity(0.05),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            labelText: localizations.role,
+                            labelText: loc.role,
                           ),
                           items: roles.map((r) => DropdownMenuItem(
                             value: r,
@@ -356,49 +305,26 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         const SizedBox(height: 40),
 
                         _isLoading
-                            ? Center(child: CircularProgressIndicator(color: colors.primary))
-                            : ElevatedButton(
-                                onPressed: _register,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  minimumSize: const Size(double.infinity, 55),
-                                ),
-                                child: Text(
-                                  localizations.register,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                          ? Center(child: CircularProgressIndicator(color: colors.primary))
+                          : ElevatedButton(
+                              onPressed: _register,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colors.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                minimumSize: const Size(double.infinity, 55),
                               ),
-
+                              child: Text(loc.register, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                            ),
                         const SizedBox(height: 40),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              localizations.login,
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
-                            ),
+                            Text(loc.login, style: TextStyle(color: colors.onSurfaceVariant)),
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () => context.go('/login'),
-                              child: Text(
-                                localizations.login,
-                                style: TextStyle(
-                                  color: colors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              child: Text(loc.login, style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -411,6 +337,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
           ),
         ],
       ),
-   );
-}
+    );
+  }
 }

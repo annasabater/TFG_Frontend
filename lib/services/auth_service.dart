@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-
 class AuthService {
   // Singleton
   static final AuthService _instance = AuthService._internal();
@@ -22,7 +21,6 @@ class AuthService {
   Map<String, dynamic>? currentUser;
   String? _jwt;
 
-  /// Guarda el token en SharedPreferences y en memoria.
   Future<bool> _saveToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -46,7 +44,6 @@ class AuthService {
     }
   }
 
-  /// Carga el token si no está en memoria.
   Future<void> _loadToken() async {
     if (_jwt != null) return;
     final prefs = await SharedPreferences.getInstance();
@@ -54,7 +51,6 @@ class AuthService {
     isLoggedIn = _jwt != null;
   }
 
-  /// Devuelve el JWT o lanza si no existe.
   Future<String> get token async {
     await _loadToken();
     if (_jwt == null || _jwt!.isEmpty) {
@@ -63,22 +59,18 @@ class AuthService {
     return _jwt!;
   }
 
-  /// URL base REST (incluye '/api').
   String get baseApiUrl {
     if (kIsWeb) return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
     if (Platform.isAndroid) return dotenv.env['SERVER_URL'] ?? 'http://10.0.2.2:9000/api';
     return dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
   }
 
-  /// URL base para WebSockets (sin '/api').
   String get webSocketBaseUrl => baseApiUrl.replaceAll('/api', '');
-
-  String get _loginUrl => '$baseApiUrl/auth/login';
+  String get _loginUrl  => '$baseApiUrl/auth/login';
   String get _signupUrl => '$baseApiUrl/auth/register';
-  String get _userUrl => '$baseApiUrl/users';
+  String get _userUrl   => '$baseApiUrl/users';
   String get _googleUrl => '$baseApiUrl/auth/google';
 
-  /// Login: guarda currentUser + JWT.
   Future<Map<String, dynamic>> login(String email, String password) async {
     final resp = await http.post(
       Uri.parse(_loginUrl),
@@ -90,20 +82,18 @@ class AuthService {
       return {'error': err['message'] ?? 'Email o contraseña incorrectos'};
     }
     final body = jsonDecode(resp.body) as Map<String, dynamic>;
-    final tokenStr = body['accesstoken'] as String?;
+    final tokenStr    = body['accesstoken'] as String?;
     final refreshToken = body['refreshToken'] as String?;
-    if (tokenStr == null) return {'error': 'No se recibió token del servidor'};
-    final userData = (body['user'] as Map<String, dynamic>?) ?? {};
-    currentUser = userData;
-    final ok = await _saveToken(tokenStr);
-    if (refreshToken != null) {
-      final ok2 = await _saveRefreshToken(refreshToken);
+    if (tokenStr == null) {
+      return {'error': 'No se recibió token del servidor'};
     }
-    if (!ok) return {'error': 'No se pudo guardar el token localmente'};
-    return {'user': userData};
+    currentUser = body['user'] as Map<String, dynamic>? ?? {};
+    await _saveToken(tokenStr);
+    if (refreshToken != null) await _saveRefreshToken(refreshToken);
+    return {'user': currentUser!};
   }
 
-  /// Registro: devuelve user (sin token).
+  /// Ahora lanza Exception si algo falla, y usa `username` en lugar de `userName`.
   Future<Map<String, dynamic>> signup({
     required String userName,
     required String email,
@@ -114,21 +104,24 @@ class AuthService {
       Uri.parse(_signupUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'userName': userName,
+        'username': userName,    // clave corregida
         'email': email,
         'password': password,
         'role': role,
       }),
     );
-    if (resp.statusCode != 200 && resp.statusCode != 201) {
-      final err = jsonDecode(resp.body) as Map<String, dynamic>;
-      return {'error': err['message'] ?? 'Error en registro'};
-    }
+
     final body = jsonDecode(resp.body) as Map<String, dynamic>;
-    final userData = (body['user'] as Map<String, dynamic>?) ?? {};
-    currentUser = userData;
-    return {'user': userData};
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
+      final msg = body['message'] ?? 'Error en registro';
+      throw Exception(msg);
+    }
+
+    // Si tu API devuelve el usuario recién creado en `body['user']`:
+    currentUser = body['user'] as Map<String, dynamic>? ?? body;
+    return {'user': currentUser!};
   }
+
 
   /// Obtener usuario por ID.
   Future<Map<String, dynamic>> getUserById(String id) async {
