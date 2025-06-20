@@ -22,6 +22,7 @@ Aquest projecte és una aplicació Flutter per a la competició i control en tem
 
 
 ## Configuració de l’entorn
+
 Crea un fitxer `.env` a la carpeta arrel que contingui el següent:  
 
 # URL pùblica de la teva API (ngrok tunnel cap al port 9000) + /api
@@ -44,6 +45,7 @@ GOOGLE_MAPS_API_KEY=AIzaSyB3kZh-VYxXIJXrNhZKX-KjiXFGQIbM2LI
 
 
 ## Instal·lació de dependències
+
 Des de la carpeta arrel del projecte, executa:
 
 Això instal·larà:
@@ -57,6 +59,7 @@ Això instal·larà:
 
 
 ## Executar l’aplicació
+
 # En web
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
 
