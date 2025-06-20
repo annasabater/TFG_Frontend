@@ -25,7 +25,7 @@ Aquest projecte és una aplicació Flutter per a la competició i control en tem
 
 Crea un fitxer `.env` a la carpeta arrel que contingui el següent:  
 
-# URL pùblica de la teva API (ngrok tunnel cap al port 9000) + /api
+### URL pùblica de la teva API (ngrok tunnel cap al port 9000) + /api
 SERVER_URL=https://e7f0-85-49-132-44.ngrok-free.app/api
 ADMIN_KEY=profe1234
 
@@ -60,10 +60,10 @@ Això instal·larà:
 
 ## Executar l’aplicació
 
-# En web
+### En web
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
 
-# En mode desenvolupament
+### En mode desenvolupament
 flutter run
 
 
