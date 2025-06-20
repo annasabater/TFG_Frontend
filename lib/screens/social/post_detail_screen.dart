@@ -1,4 +1,3 @@
-// lib/screens/social/post_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -18,6 +17,7 @@ class PostDetailScreen extends StatefulWidget {
 class _PostDetailScreenState extends State<PostDetailScreen> {
   late Future<Post> _futurePost;
   final String? _myId = AuthService().currentUser?['_id'];
+  final bool _isAdmin = AuthService().currentUser?['role'] == 'admin';
   final _commentCtrl = TextEditingController();
 
   bool _submitting = false;
@@ -40,7 +40,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       await SocialService.comment(widget.postId, txt);
       _commentCtrl.clear();
-      _loadPost();                // actualitzem
+      _loadPost();
       setState(() => _showCommentField = false);
     } catch (e) {
       final loc = AppLocalizations.of(context)!;
@@ -73,7 +73,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     try {
       await SocialService.deleteComment(widget.postId, cid);
       _loadPost();
-      setState(() {});           
+      setState(() {});
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingComment(e))),
@@ -104,6 +104,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
         final post   = snap.data!;
         final isMine = post.authorId == _myId;
+        final canModify = isMine || _isAdmin;
 
         return Scaffold(
           appBar: AppBar(
@@ -113,7 +114,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
             title: Text(post.authorName),
             actions: [
-              if (isMine)
+              if (canModify)
                 PopupMenuButton<_PostMenu>(
                   onSelected: (choice) async {
                     if (choice == _PostMenu.edit) {
@@ -136,7 +137,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       );
                       if (ok == true) {
                         await SocialService.deletePost(post.id);
-                        if (mounted) context.go('/u/${post.authorId}');
+                        if (mounted) context.go('/xarxes');
                       }
                     }
                   },
@@ -149,12 +150,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
           body: Column(
             children: [
-              //  CONTINGUT 
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    // Media
                     (post.mediaType == 'image')
                         ? Center(
                             child: ClipRRect(
@@ -173,7 +172,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           ),
                     const SizedBox(height: 12),
 
-                    // Likes
                     Row(
                       children: [
                         IconButton(
@@ -204,7 +202,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 24),
 
-                    // Capçalera comentaris
                     Row(
                       children: [
                         Text(loc.comments,
@@ -223,7 +220,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // Llistat comentaris
                     if (post.comments.isEmpty)
                       Text(loc.noComments, style: TextStyle(color: cs.outline)),
                     ...post.comments.map(
@@ -233,9 +229,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         title: Text(c.authorName,
                             style: const TextStyle(fontSize: 14)),
                         subtitle: Text(c.content),
-                        trailing: (c.authorId == _myId || isMine)
+                        trailing: (c.authorId == _myId || isMine || _isAdmin)
                             ? IconButton(
-                                icon: const Icon(Icons.delete_outline),
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
                                 onPressed: () => _deleteComment(c.id),
                               )
                             : null,
@@ -245,7 +241,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ),
               ),
 
-              // Input (plegable) per escriure comentari
               if (_showCommentField)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

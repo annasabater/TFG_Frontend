@@ -10,6 +10,10 @@ import '../../provider/drone_provider.dart';
 import '../../provider/users_provider.dart';
 import '../../widgets/snack.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../services/auth_service.dart';
+import 'package:go_router/go_router.dart';
+import '../../provider/users_provider.dart';
+import '../store/edit_drone_screen.dart';
 
 class EditDroneScreen extends StatefulWidget {
   final Drone drone;
@@ -27,6 +31,7 @@ class _EditDroneScreenState extends State<EditDroneScreen>
   late final TextEditingController _priceCtrl;
   late final TextEditingController _locCtrl;
   late final TextEditingController _contactCtrl;
+  final bool _isAdmin = AuthService().currentUser?['role'] == 'admin';
   late int _stock;
   late String _category;
   late String _condition;
@@ -80,6 +85,24 @@ class _EditDroneScreenState extends State<EditDroneScreen>
     _locCtrl.dispose();
     _contactCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _delete() async {
+    final loc = AppLocalizations.of(context)!;
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(loc.delete),
+        content: Text(loc.delete), 
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(loc.cancel)),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: Text(loc.accept)),
+        ],
+      ),
+    );
+    if (sure != true) return;
+    await context.read<DroneProvider>().deleteDrone(widget.drone.id!);
+    if (mounted) context.go('/store');
   }
 
   Future<void> _pickImage() async {
@@ -156,12 +179,23 @@ class _EditDroneScreenState extends State<EditDroneScreen>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final imageCount = kIsWeb ? _imagesWeb.length : _imagesMobile.length;
     final existingImages = widget.drone.images ?? [];
     final showExistingImages = imageCount == 0 && existingImages.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.editDrone)),
+      appBar: AppBar(
+        title: Text(loc.editDrone),
+        actions: [
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: loc.delete,
+              onPressed: _delete,
+            ),
+        ],
+      ),
       body: AnimatedOpacity(
         duration: const Duration(milliseconds: 1200),
         opacity: _visible ? 1 : 0,
@@ -172,30 +206,26 @@ class _EditDroneScreenState extends State<EditDroneScreen>
             key: _formKey,
             child: ListView(
               children: [
+                // Modelo
                 TextFormField(
                   controller: _modelCtrl,
-                  decoration: _inputDecoration('Model', Icons.title),
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                  decoration: _inputDecoration('Modelo', Icons.title),
+                  validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
+                // Descripción
                 TextFormField(
                   controller: _descCtrl,
-                  decoration: _inputDecoration(
-                    'Descripción',
-                    Icons.description,
-                  ),
+                  decoration: _inputDecoration('Descripción', Icons.description),
                   maxLines: 3,
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                  validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
+                // Precio
                 TextFormField(
                   controller: _priceCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: _inputDecoration('Precio', Icons.euro),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _inputDecoration('Precio (€)', Icons.euro),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Obligatorio';
                     if (double.tryParse(v) == null) return 'Precio inválido';
@@ -203,95 +233,81 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                   },
                 ),
                 const SizedBox(height: 20),
+                // Divisa
                 DropdownButtonFormField<String>(
                   value: _currency,
-                  decoration: _inputDecoration(
-                    'Divisa',
-                    Icons.currency_exchange,
-                  ),
-                  items:
-                      _currencies
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() => _currency = v);
-                  },
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obligatorio';
-                    if (!_currencies.contains(v)) return 'Divisa no permitida';
-                    return null;
-                  },
+                  decoration: _inputDecoration('Divisa', Icons.currency_exchange),
+                  items: _currencies
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _currency = v ?? _currency),
+                  validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
+                // Localización
                 TextFormField(
                   controller: _locCtrl,
-                  decoration: _inputDecoration(
-                    'Localización',
-                    Icons.location_on,
-                  ),
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                  decoration: _inputDecoration('Localización', Icons.location_on),
+                  validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
+                // Categoría
                 DropdownButtonFormField<String>(
                   value: _category,
                   decoration: _inputDecoration('Categoría', Icons.category),
-                  items: [
-                    DropdownMenuItem(value: 'venta', child: Text(AppLocalizations.of(context)!.sale)),
-                    DropdownMenuItem(
-                      value: 'alquiler',
-                      child: Text(AppLocalizations.of(context)!.rental),
-                    ),
+                  items: const [
+                    DropdownMenuItem(value: 'venta', child: Text('Venta')),
+                    DropdownMenuItem(value: 'alquiler', child: Text('Alquiler')),
                   ],
-                  onChanged: (v) => setState(() => _category = v ?? 'venta'),
+                  onChanged: (v) => setState(() => _category = v ?? _category),
                 ),
                 const SizedBox(height: 20),
+                // Condición
                 DropdownButtonFormField<String>(
                   value: _condition,
                   decoration: _inputDecoration('Condición', Icons.grade),
-                  items: [
-                    DropdownMenuItem(value: 'nuevo', child: Text(AppLocalizations.of(context)!.newLabel)),
-                    DropdownMenuItem(value: 'usado', child: Text(AppLocalizations.of(context)!.usedLabel)),
+                  items: const [
+                    DropdownMenuItem(value: 'nuevo', child: Text('Nuevo')),
+                    DropdownMenuItem(value: 'usado', child: Text('Usado')),
                   ],
-                  onChanged: (v) => setState(() => _condition = v ?? 'nuevo'),
+                  onChanged: (v) => setState(() => _condition = v ?? _condition),
                 ),
                 const SizedBox(height: 20),
+                // Contacto
                 TextFormField(
                   controller: _contactCtrl,
                   decoration: _inputDecoration('Contacto', Icons.email),
-                  validator:
-                      (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+                  validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 20),
+                // Stock
                 TextFormField(
                   initialValue: _stock.toString(),
                   keyboardType: TextInputType.number,
                   decoration: _inputDecoration('Stock', Icons.numbers),
-                  onChanged: (v) => _stock = int.tryParse(v) ?? 1,
+                  onChanged: (v) => _stock = int.tryParse(v) ?? _stock,
                   validator: (v) {
                     final n = int.tryParse(v ?? '');
-                    if (n == null || n < 1)
-                      return 'Stock debe ser un número positivo';
+                    if (n == null || n < 1) return 'Stock debe ser un número positivo';
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
+                // Añadir imagen
                 ElevatedButton.icon(
                   onPressed: imageCount >= 4 ? null : _pickImage,
                   icon: const Icon(Icons.add_a_photo),
-                  label: Text(AppLocalizations.of(context)!.addImage(imageCount)),
+                  label: Text('Añadir imagen (\$imageCount/4)'),
                 ),
                 const SizedBox(height: 20),
-                if (showExistingImages)
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: existingImages.length,
-                      itemBuilder:
-                          (context, i) => Padding(
+                // Previews de imágenes
+                SizedBox(
+                  height: 100,
+                  child: showExistingImages
+                      ? ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: existingImages.length,
+                          itemBuilder: (context, i) => Padding(
                             padding: const EdgeInsets.only(right: 10),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
@@ -302,95 +318,67 @@ class _EditDroneScreenState extends State<EditDroneScreen>
                               ),
                             ),
                           ),
-                    ),
-                  )
-                else
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: imageCount,
-                      itemBuilder: (context, i) {
-                        if (kIsWeb) {
-                          return Padding(
+                        )
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: imageCount,
+                          itemBuilder: (context, i) => Padding(
                             padding: const EdgeInsets.only(right: 10),
                             child: Stack(
                               children: [
-                                Image.memory(
-                                  _imagesWebBytes[i],
-                                  width: 100,
-                                  fit: BoxFit.cover,
-                                ),
+                                if (kIsWeb)
+                                  Image.memory(_imagesWebBytes[i], width: 100, fit: BoxFit.cover)
+                                else
+                                  Image.file(_imagesMobile[i], width: 100, fit: BoxFit.cover),
                                 Positioned(
                                   right: 0,
                                   top: 0,
                                   child: GestureDetector(
                                     onTap: () {
                                       setState(() {
-                                        _imagesWeb.removeAt(i);
-                                        _imagesWebBytes.removeAt(i);
+                                        if (kIsWeb) {
+                                          _imagesWeb.removeAt(i);
+                                          _imagesWebBytes.removeAt(i);
+                                        } else {
+                                          _imagesMobile.removeAt(i);
+                                        }
                                       });
                                     },
                                     child: Container(
                                       color: Colors.black54,
-                                      child: const Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                      ),
+                                      child: const Icon(Icons.close, color: Colors.white),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        } else {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: Stack(
-                              children: [
-                                Image.file(
-                                  _imagesMobile[i],
-                                  width: 100,
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _imagesMobile.removeAt(i);
-                                      });
-                                    },
-                                    child: Container(
-                                      color: Colors.black54,
-                                      child: const Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child:
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(AppLocalizations.of(context)!.saveChanges),
+                          ),
+                        ),
                 ),
+                const SizedBox(height: 30),
+                // Botón Guardar para usuarios no-admin
+                if (!_isAdmin)
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(loc.saveChanges),
+                  ),
               ],
             ),
           ),
         ),
       ),
+      // Botón flotante para admin
+      floatingActionButton: _isAdmin
+          ? FloatingActionButton(
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Icon(Icons.save),
+            )
+          : null,
     );
   }
+
 }

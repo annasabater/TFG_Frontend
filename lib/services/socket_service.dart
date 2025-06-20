@@ -33,8 +33,8 @@ class SocketService {
     _envLoaded = true;
   }
 
-  /// Base HTTP (per login, etc) 
-  static String get _httpBase {
+  /// Base HTTP (para REST, login, y web-socket en web)
+  static String get httpBase {
     final raw = dotenv.env['SERVER_URL'];
     if (raw != null && raw.isNotEmpty) {
       return raw.replaceFirst(RegExp(r'/api/?$'), '');
@@ -49,17 +49,17 @@ class SocketService {
     return 'http://localhost:9000';
   }
 
-  /// Base WebSocket (ws:// o wss://)
-  static String get _wsBase {
-    if (_httpBase.startsWith('https')) {
-      return _httpBase.replaceFirst('https', 'wss');
+  /// Base WS (wss:// o ws://) para móvil/desktop
+  static String get wsBase {
+    if (httpBase.startsWith('https')) {
+      return httpBase.replaceFirst('https', 'wss');
     } else {
-      return _httpBase.replaceFirst('http', 'ws');
+      return httpBase.replaceFirst('http', 'ws');
     }
   }
 
-  /// Getter públic per a usar a totes les pàgines
-  static String get baseUrl => _wsBase;
+  /// URL pública para websockets (usa wsBase en nativas, httpBase en web)
+  static String get baseUrl => kIsWeb ? httpBase : wsBase;
 
   static void setUserEmail(String email) {
     currentUserEmail = email.trim().toLowerCase();
@@ -80,6 +80,7 @@ class SocketService {
     onGameStarted = callback;
   }
 
+  /// Inicializa el socket de espera / lobby
   static Future<IO.Socket> initWaitingSocket() async {
     await _ensureEnvLoaded();
     if (_socket != null) return _socket!;
@@ -90,6 +91,7 @@ class SocketService {
       throw Exception('Session o email no definit');
     }
 
+    // Credenciales de dron según color
     final colorKey   = _colorMapping[email]!;
     final envEmail   = 'DRON_${colorKey.toUpperCase()}_EMAIL';
     final envPwd     = 'DRON_${colorKey.toUpperCase()}_PASSWORD';
@@ -99,8 +101,10 @@ class SocketService {
       throw Exception('Falten credencials en .env: $envEmail o $envPwd');
     }
 
-    // Petición para obtener JWT de dron
-    final loginUrl = '${dotenv.env['SERVER_URL'] ?? 'http://localhost:9000'}/auth/login';
+    // 🔧 Login para obtener JWT
+    final apiBase  = '${httpBase}/api';
+    final loginUrl = '$apiBase/auth/login';
+
     final resp = await http.post(
       Uri.parse(loginUrl),
       headers: {'Content-Type': 'application/json'},
@@ -115,38 +119,48 @@ class SocketService {
       throw Exception('No s\'ha obtingut accessToken per al dron $colorKey');
     }
 
+    // Conexión al namespace /jocs
+    final socketUrl = '$baseUrl/jocs';
+    final builder = IO.OptionBuilder()
+      // 🔒 Solo WebSocket (sin polling)
+      .setTransports(['websocket'])
+      .setAuth({'token': jwt});
+
+    // Cabecera ngrok únicamente en móviles/escritorio
+    if (!kIsWeb) {
+      builder.setExtraHeaders({'ngrok-skip-browser-warning': 'true'});
+    }
+
     _socket = IO.io(
-      '$baseUrl/jocs',
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({'token': jwt})
-          .disableAutoConnect()
-          .build(),
+      socketUrl,
+      builder
+        .disableAutoConnect()
+        .build(),
     );
 
     _socket!
-      ..onConnect((_)    => _socket!.emit('join', {'sessionId': sid}))
+      ..onConnect((_) => _socket!.emit('join', {'sessionId': sid}))
       ..on('waiting', (_) {})
       ..on('game_started', (_) {
         if (onGameStarted != null) onGameStarted!();
       })
       ..onConnectError((_) {})
-      ..onError((_)        {});
+      ..onError((_) {});
 
     _socket!.connect();
     return _socket!;
   }
 
+  /// Reinicia la conexión (p. ej. tras un endCompetition)
   static Future<IO.Socket> initGameSocket() async {
     _socket?.disconnect();
     _socket = null;
     return initWaitingSocket();
   }
 
+  /// Envia comandos de control (move, fire…)
   static void sendCommand(String action, Map<String, dynamic> payload) {
-    if (_socket == null || !_socket!.connected) {
-      return;
-    }
+    if (_socket == null || !_socket!.connected) return;
     _socket!.emit('control', {
       'sessionId': currentSessionId,
       'action': action,
@@ -161,7 +175,8 @@ class SocketService {
     currentUserEmail = null;
     currentSessionId = null;
   }
-  
+
+  /// Namespace de chat (igual que antes)
   static Future<IO.Socket> initChatSocket() async {
     if (_chatSocket != null && _chatSocket!.connected) {
       return _chatSocket!;
@@ -173,17 +188,17 @@ class SocketService {
     _chatSocket = IO.io(
       url,
       IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({'token': token})
-          .disableAutoConnect()
-          .build(),
+        .setTransports(['websocket'])
+        .setAuth({'token': token})
+        .disableAutoConnect()
+        .build(),
     );
 
     _chatSocket!
       ..onConnect((_)       {})
       ..on('new_message', (_) {})
-      ..onConnectError((_)   {})
-      ..onError((_)          {});
+      ..onConnectError((_)  {})
+      ..onError((_)         {});
 
     _chatSocket!.connect();
     return _chatSocket!;
@@ -194,9 +209,7 @@ class SocketService {
     required String receiverId,
     required String content,
   }) {
-    if (_chatSocket == null || !_chatSocket!.connected) {
-      return;
-    }
+    if (_chatSocket == null || !_chatSocket!.connected) return;
     _chatSocket!.emit('send_message', {
       'senderId': senderId,
       'receiverId': receiverId,

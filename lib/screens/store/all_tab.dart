@@ -1,5 +1,7 @@
 // lib/screens/store/all_tab.dart
 
+import 'package:SkyNet/provider/users_provider.dart';
+import 'package:SkyNet/screens/store/edit_drone_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/drone_query.dart';
@@ -417,26 +419,39 @@ class _AllDronesViewState extends State<_AllDronesView>
                       childAspectRatio: isMobile ? 1.1 : 0.75,
                     ),
                     itemCount: prov.drones.length,
-                    itemBuilder:
-                        (context, i) => DroneCard(
-                          drone: prov.drones[i],
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder:
-                                  (_) =>
-                                      DroneDetailModal(drone: prov.drones[i]),
-                            );
-                          },
-                        ),
-                  ),
-                );
-              },
-            ),
-          ),
+                    itemBuilder: (context, i) {
+                      final drone = prov.drones[i];
+                      final isAdmin = context.read<UserProvider>().isAdmin;
+
+                  return DroneCard(
+                    drone: drone,
+                    onTap: () {
+                      if (isAdmin) {
+                        // El admin edita directamente
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditDroneScreen(drone: drone),
+                          ),
+                        );
+                      } else {
+                        // Usuario normal ve detalle
+                        showDialog(
+                          context: context,
+                          builder: (_) => DroneDetailModal(drone: drone),
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
+            );
+          },
         ),
-      ],
-    );
+      ),
+    ),
+  ],
+);
   }
 }
 

@@ -1,5 +1,3 @@
-// lib/widgets/Layout.dart
-
 import 'package:SkyNet/api/google_signin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +11,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class LayoutWrapper extends StatelessWidget {
   final Widget child;
   final String title;
+  final settingsRoute = '/settings';
 
   const LayoutWrapper({super.key, required this.child, required this.title});
 
@@ -38,31 +37,39 @@ class LayoutWrapper extends StatelessWidget {
       'dron_rojo1@upc.edu',
       'dron_amarillo1@upc.edu',
     };
-    bool isInvitado(String e) => RegExp(r'^invitado\d+@upc\.edu$').hasMatch(e);
+    bool isInvitado(String e) => RegExp(r'^invitado\d+@upc\.edu\$').hasMatch(e);
     bool isRoute(String r) => GoRouterState.of(context).uri.toString() == r;
 
+    // Construcción de los ítems de navegación
     List<Widget> navItems = [
       _navItem(context, loc.home, Icons.home, '/', isRoute('/')),
     ];
 
     if (droneEmails.contains(email)) {
       navItems.add(_navItem(context, loc.games, Icons.sports_esports, '/jocs', isRoute('/jocs')));
+      navItems.add(
+        _navItem(context, loc.settings, Icons.settings, settingsRoute, isRoute(settingsRoute)),
+      );
     } else if (isInvitado(email)) {
       navItems.addAll([
         _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
         _navItem(context, loc.spectateGames, Icons.visibility, '/jocs/spectate', isRoute('/jocs/spectate')),
       ]);
+      navItems.add(
+        _navItem(context, loc.settings, Icons.settings, settingsRoute, isRoute(settingsRoute)),
+      );
     } else {
       navItems.addAll([
         _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
         _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
-        if (admin) _navItem(context, loc.createUser, Icons.person_add, '/editar', isRoute('/editar')),
-        if (admin) _navItem(context, loc.deleteUser, Icons.delete_outline, '/borrar', isRoute('/borrar')),
         _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
         _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
+        _navItem(context, loc.spectateGames, Icons.visibility, '/jocs/spectate', isRoute('/jocs/spectate')),
         _navItem(context, loc.playTesting, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
+        if (admin)
+          _navItem(context, loc.adminDetails, Icons.admin_panel_settings, '/detalles', isRoute('/detalles')),
       ]);
     }
 
@@ -122,7 +129,6 @@ class LayoutWrapper extends StatelessWidget {
                   );
                 }),
                 const Divider(height: 24),
-              
               ],
             ),
           ),

@@ -18,16 +18,9 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   bool _visible = false;
   String _selectedRole = 'Usuario';
 
-  static const _allRoles = [
-    'Administrador',
-    'Usuario',
-    'Empresa',
-    'Gobierno',
-  ];
-
   // Variables para validar la contraseña
-  bool _hasMinLength = false;  // mínimo 8 caracteres
-  bool _hasMaxLength = false;  // máximo 20 caracteres
+  bool _hasMinLength = false;
+  bool _hasMaxLength = false;
   bool _hasLowercase = false;
   bool _hasUppercase = false;
   bool _hasNumber = false;
@@ -36,6 +29,11 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   // Validaciones visuales para username y email
   bool _isUsernameValid = false;
   bool _isEmailValid = false;
+
+  static const _allRoles = [
+    'Usuario',
+    'Administrador',
+  ];
 
   @override
   void initState() {
@@ -51,7 +49,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       setState(() {
         _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(_emailCtrl.text.trim());
       });
-      _refreshRoles();
     });
 
     _passwordCtrl.addListener(() {
@@ -67,23 +64,20 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _emailCtrl.removeListener(_refreshRoles);
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  void _refreshRoles() => setState(() {});
-
   void _validatePassword(String pw) {
     setState(() {
-      _hasMinLength = pw.length >= 8;
-      _hasMaxLength = pw.length <= 20;
-      _hasLowercase = RegExp(r'[a-z]').hasMatch(pw);
-      _hasUppercase = RegExp(r'[A-Z]').hasMatch(pw);
-      _hasNumber = RegExp(r'[0-9]').hasMatch(pw);
-      _hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(pw);
+      _hasMinLength   = pw.length >= 8;
+      _hasMaxLength   = pw.length <= 20;
+      _hasLowercase   = RegExp(r'[a-z]').hasMatch(pw);
+      _hasUppercase   = RegExp(r'[A-Z]').hasMatch(pw);
+      _hasNumber      = RegExp(r'[0-9]').hasMatch(pw);
+      _hasSpecialChar = RegExp(r'[!@#\\$%\^&\*(),.?":{}|<>]').hasMatch(pw);
     });
   }
 
@@ -93,13 +87,8 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       case 'Administrador':
         return localizations.roleAdministrator;
       case 'Usuario':
-        return localizations.roleUser;
-      case 'Empresa':
-        return localizations.roleCompany;
-      case 'Gobierno':
-        return localizations.roleGovernment;
       default:
-        return role;
+        return localizations.roleUser;
     }
   }
 
@@ -108,13 +97,12 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim().toLowerCase();
     final pw    = _passwordCtrl.text;
+    final isUpc = email.endsWith('@upc.edu');
 
     if (name.isEmpty || email.isEmpty || pw.isEmpty) {
       _showError(localizations.emptyFieldsError);
       return;
     }
-
-    // Validaciones username y email
     if (!_isUsernameValid) {
       _showError('El nombre de usuario debe tener al menos 3 caracteres');
       return;
@@ -123,37 +111,27 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _showError('El email no tiene un formato válido');
       return;
     }
-
-    // Contraseña debe cumplir todas las condiciones
     if (!(_hasMinLength && _hasMaxLength && _hasLowercase && _hasUppercase && _hasNumber && _hasSpecialChar)) {
       _showError('La contraseña no cumple todos los requisitos');
       return;
     }
 
-    final isUpc = email.endsWith('@upc.edu');
-    if (_selectedRole == 'Administrador' && !isUpc) {
-      _showError('Només es pot registrar com Administrador amb un correu @upc.edu');
-      return;
-    }
+    // Si no es UPC, forzar rol "Usuario"
+    final roleToSend = isUpc ? _selectedRole : 'Usuario';
 
     setState(() => _isLoading = true);
-
     try {
       await AuthService().signup(
         userName: name,
         email:    email,
         password: pw,
-        role:     _selectedRole,
+        role:     roleToSend,
       );
-      if (mounted) {
-        context.go('/login');
-      }
+      if (mounted) context.go('/login');
     } catch (e) {
       _showError(e.toString());
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -216,12 +194,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     final colors = Theme.of(context).colorScheme;
     final localizations = AppLocalizations.of(context)!;
     final isWide = MediaQuery.of(context).size.width > 700;
-
-    final isUpc  = _emailCtrl.text.endsWith('@upc.edu');
-    final roles  = isUpc
-        ? _allRoles
-        : _allRoles.where((r) => r != 'Administrador').toList();
-    if (!roles.contains(_selectedRole)) _selectedRole = roles.first;
+    final isUpc  = _emailCtrl.text.trim().toLowerCase().endsWith('@upc.edu');
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -335,25 +308,28 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         ),
                         const SizedBox(height: 25),
 
-                        DropdownButtonFormField<String>(
-                          value: _selectedRole,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: colors.surface.withOpacity(0.05),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
+                        // Solo mostrar selector de rol si email termina en @upc.edu
+                        if (isUpc) ...[
+                          DropdownButtonFormField<String>(
+                            value: _selectedRole,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: colors.surface.withOpacity(0.05),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              labelText: localizations.role,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            labelText: localizations.role,
+                            items: _allRoles.map((r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(_getRoleTranslation(r)),
+                            )).toList(),
+                            onChanged: (v) => setState(() => _selectedRole = v!),
                           ),
-                          items: roles.map((r) => DropdownMenuItem(
-                            value: r,
-                            child: Text(_getRoleTranslation(r)),
-                          )).toList(),
-                          onChanged: (v) => setState(() => _selectedRole = v!),
-                        ),
-                        const SizedBox(height: 40),
+                          const SizedBox(height: 40),
+                        ],
 
                         _isLoading
                             ? Center(child: CircularProgressIndicator(color: colors.primary))

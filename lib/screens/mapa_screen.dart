@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import '../../services/geojson_service.dart';
 import '../widgets/flight_zones_layer.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class MapaScreen extends StatefulWidget {
   const MapaScreen({super.key});

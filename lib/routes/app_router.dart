@@ -1,5 +1,6 @@
 //lib/routes/app_router.dart
 
+import 'package:SkyNet/provider/users_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
 import 'package:SkyNet/screens/auth/register_screen.dart';
@@ -40,6 +41,9 @@ import 'package:SkyNet/screens/mini_game/menu_jocs.dart';
 import 'package:SkyNet/screens/mini_game/pluja_asteroides.dart';
 import 'package:SkyNet/screens/mini_game/guerra_drons.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../screens/settings_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
@@ -116,8 +120,6 @@ final GoRouter appRouter = GoRouter(
             GoRoute(path: 'imprimir', builder: (_, __) => const ImprimirScreen()),
           ],
         ),
-        GoRoute(path: 'editar', builder: (_, __) => const EditarScreen()),
-        GoRoute(path: 'borrar', builder: (_, __) => const BorrarScreen()),
         GoRoute(
           path: 'jocs',
           builder: (_, __) => const JocsPage(),
@@ -191,6 +193,34 @@ final GoRouter appRouter = GoRouter(
               builder: (_, __) => const GuerraDronsScreen(),
             ),
           ],
+        ),
+        GoRoute(
+          path: 'settings',
+          builder: (_, __) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: 'detalles',
+          builder: (_, __) => const DetailsScreen(),
+          redirect: (ctx, state) {
+          final isAdmin = ctx.read<UserProvider>().isAdmin;
+          return isAdmin ? null : '/login';
+        },
+      ),
+        GoRoute(
+        path: '/editar',
+        builder: (_, __) => const EditarScreen(),
+        redirect: (ctx, state) {
+          final isAdmin = ctx.read<UserProvider>().isAdmin;
+          return isAdmin ? null : '/login';  
+        },
+      ),
+        GoRoute(
+          path: 'borrar',
+          builder: (_, __) => const BorrarScreen(),
+          redirect: (ctx, state) {
+          final isAdmin = ctx.read<UserProvider>().isAdmin;
+          return isAdmin ? null : '/login';  
+        },
         ),
       ],
     ),

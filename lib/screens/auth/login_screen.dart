@@ -265,7 +265,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             height: 24,
                             width: 24,
                           ),
-                          label: Text('Iniciar sesión con Google'),
+                          label: Text('Iniciar/Registrarse con Google'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black87,

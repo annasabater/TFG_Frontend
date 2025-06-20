@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../provider/users_provider.dart';
 import '../services/socket_service.dart';
-import '../data/game_texts.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 
 class _FancyButton extends StatelessWidget {
@@ -69,6 +69,7 @@ class JocsPage extends StatelessWidget {
   const JocsPage({super.key});
 
   void _showTextDialog(BuildContext ctx, String title, String content) {
+    final loc = AppLocalizations.of(ctx)!;
     showDialog(
       context: ctx,
       builder: (_) => AlertDialog(
@@ -77,7 +78,7 @@ class JocsPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cerrar'),
+            child: Text(loc.closeButton),
           ),
         ],
       ),
@@ -86,11 +87,12 @@ class JocsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final isCompetitor = context.watch<UserProvider>().isCompetitor;
     final email = context.read<UserProvider>().currentUser!.email;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Juegos')),
+      appBar: AppBar(title: Text(loc.gamesTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -102,15 +104,15 @@ class JocsPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+              _FancyButton(
+                label: loc.descriptionLabel,
+                icon: Icons.info_outline,
+                onTap: () => _showTextDialog(context, loc.descriptionLabel, loc.gameDescription),
+              ),
                 _FancyButton(
-                  label: 'Descripción',
-                  icon: Icons.info_outline,
-                  onTap: () => _showTextDialog(context, 'Descripción del juego', kGameDescription),
-                ),
-                _FancyButton(
-                  label: 'Manual',
+                  label: loc.manualLabel,
                   icon: Icons.menu_book_outlined,
-                  onTap: () => _showTextDialog(context, 'Manual del juego', kGameManual),
+                  onTap: () => _showTextDialog(context, loc.manualLabel, loc.gameManual),
                 ),
               ],
             ),
@@ -118,9 +120,9 @@ class JocsPage extends StatelessWidget {
 
             _buildGameCard(
               context,
-              title: 'COMBATE',
+              title: loc.combatMode,
               image: 'assets/competencia.png',
-              buttonText: 'Entrar',
+              buttonText: loc.enterButton,
               onTap: () async {
                 if (isCompetitor) {
                   SocketService.setCompetitionUserEmail(email);
@@ -131,10 +133,10 @@ class JocsPage extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('Acceso denegado'),
-                      content: const Text('No estás autorizado para jugar a la competencia.'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+                      title: Text(loc.accessDeniedTitle),
+                      content: Text(loc.accessDeniedContent),
+                    actions: [
+                        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(loc.okButton)),
                       ],
                     ),
                   );

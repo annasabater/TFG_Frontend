@@ -1,4 +1,4 @@
-//lib/screens/editar_screen.dart
+// lib/screens/editar_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:SkyNet/provider/users_provider.dart';
@@ -17,14 +17,19 @@ class _EditarScreenState extends State<EditarScreen> {
   final userNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final roleController = TextEditingController();
+
+  // Lista de roles y variable para almacenar el seleccionado
+  static const _allRoles = <String>[
+    'Usuario',
+    'Administrador',
+  ];
+  String _selectedRole = _allRoles.first;
 
   @override
   void dispose() {
     userNameController.dispose();
     emailController.dispose();
     passwordController.dispose();
-    roleController.dispose();
     super.dispose();
   }
 
@@ -120,11 +125,30 @@ class _EditarScreenState extends State<EditarScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            _buildFormField(
-                              controller: roleController,
-                              label: 'Rol',
-                              icon: Icons.badge,
-                              validator: (value) => value == null || value.isEmpty
+                            // Dropdown para seleccionar rol
+                            DropdownButtonFormField<String>(
+                              value: _selectedRole,
+                              decoration: InputDecoration(
+                                labelText: 'Rol',
+                                prefixIcon: const Icon(Icons.badge),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                              ),
+                              items: _allRoles.map((rol) {
+                                return DropdownMenuItem(
+                                  value: rol,
+                                  child: Text(rol),
+                                );
+                              }).toList(),
+                              onChanged: (valor) {
+                                setState(() {
+                                  _selectedRole = valor!;
+                                });
+                              },
+                              validator: (valor) => valor == null || valor.isEmpty
                                   ? 'Cal especificar un rol'
                                   : null,
                             ),
@@ -136,13 +160,15 @@ class _EditarScreenState extends State<EditarScreen> {
                                     userNameController.text,
                                     emailController.text,
                                     passwordController.text,
-                                    roleController.text,
+                                    _selectedRole,
                                   );
 
                                   userNameController.clear();
                                   emailController.clear();
                                   passwordController.clear();
-                                  roleController.clear();
+                                  setState(() {
+                                    _selectedRole = _allRoles.first;
+                                  });
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../services/socket_service.dart';
 
 class WaitingRoomPage extends StatefulWidget {
@@ -14,7 +15,7 @@ class WaitingRoomPage extends StatefulWidget {
 }
 
 class _WaitingRoomPageState extends State<WaitingRoomPage> {
-  String _waitingMsg = 'Esperando a que el profesor inicie la partida…';
+  String _waitingMsg = '';
   IO.Socket? _socket;
 
   @override
@@ -28,7 +29,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     _socket!
       ..on('waiting', (data) {
         if (data is Map && data.containsKey('msg')) {
-          setState(() => _waitingMsg = data['msg']);
+          setState(() => _waitingMsg = data['msg'] as String);
         }
       })
       ..on('game_started', (_) {
@@ -48,11 +49,16 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final message = _waitingMsg.isEmpty
+        ? loc.waitingRoomMessage
+        : _waitingMsg;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Sala de espera')),
+      appBar: AppBar(title: Text(loc.waitingRoomTitle)),
       body: Center(
         child: Text(
-          _waitingMsg,
+          message,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 18),
         ),

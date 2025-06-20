@@ -4,8 +4,6 @@ import 'package:SkyNet/geolocation.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
-
-// Importaciones condicionales para Google Maps
 import 'package:SkyNet/web_config.dart';
 import 'package:SkyNet/web_config_web.dart' if (dart.library.io) 'package:SkyNet/web_config_stub.dart';
 
