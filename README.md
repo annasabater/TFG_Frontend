@@ -27,19 +27,29 @@ Crea un fitxer `.env` a la carpeta arrel que contingui el següent:
 
 ### URL pùblica de la teva API (ngrok tunnel cap al port 9000) + /api
 SERVER_URL=https://e7f0-85-49-132-44.ngrok-free.app/api
+
 ADMIN_KEY=profe1234
 
+
 DRON_ROJO_EMAIL=dron_rojo1@upc.edu
+
 DRON_ROJO_PASSWORD=Dron_rojo1*
 
+
 DRON_AZUL_EMAIL=dron_azul1@upc.edu
+
 DRON_AZUL_PASSWORD=Dron_azul1*
 
+
 DRON_VERDE_EMAIL=dron_verde1@upc.edu
+
 DRON_VERDE_PASSWORD=Dron_verde1*
 
+
 DRON_AMARILLO_EMAIL=dron_amarillo1@upc.edu
+
 DRON_AMARILLO_PASSWORD=Dron_amarillo1*
+
 
 GOOGLE_MAPS_API_KEY=AIzaSyB3kZh-VYxXIJXrNhZKX-KjiXFGQIbM2LI
 
