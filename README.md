@@ -56,7 +56,7 @@ GOOGLE_MAPS_API_KEY=AIzaSyB3kZh-VYxXIJXrNhZKX-KjiXFGQIbM2LI
 
 ## Instal·lació de dependències
 
-Des de la carpeta arrel del projecte, executa:
+Des de la carpeta arrel del projecte, executa: flutter pub get
 
 Això instal·larà:
     socket_io_client
