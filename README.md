@@ -5,13 +5,12 @@ Aquest projecte és una aplicació Flutter per a la competició i control en tem
 
 ## Taula de continguts
 
-1. [Requisits previs](#requisits-previs)  
-2. [Estructura del repositori](#estructura-del-repositori)  
-3. [Configuració de l’entorn](#configuració-de-lentorn)  
-4. [Variables d’entorn (`.env`)](#variables-dentorn-env)  
-5. [Instal·lació de dependències](#instal·lació-de-dependències)  
-6. [Executar l’aplicació](#executar-laplicació)  
-7. [Referències](#referències)  
+1. [Requisits previs](#requisits-previs)   
+2. [Configuració de l’entorn](#configuració-de-lentorn)  
+3. [Variables d’entorn (`.env`)](#variables-dentorn-env)  
+4. [Instal·lació de dependències](#instal·lació-de-dependències)  
+5. [Executar l’aplicació](#executar-laplicació)  
+6. [Referències](#referències)  
 
 
 ## Requisits previs
