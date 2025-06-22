@@ -1,6 +1,8 @@
 //lib/routes/app_router.dart
 
 import 'package:SkyNet/provider/users_provider.dart';
+import 'package:SkyNet/screens/mini_game/flappy_ball.dart';
+import 'package:SkyNet/screens/mini_game/reaction_game.dart';
 import 'package:go_router/go_router.dart';
 import 'package:SkyNet/screens/auth/login_screen.dart';
 import 'package:SkyNet/screens/auth/register_screen.dart';
@@ -36,6 +38,7 @@ import 'package:SkyNet/screens/notifications_screen.dart';
 import 'package:SkyNet/screens/social/following_screen.dart';
 import 'package:SkyNet/screens/mini_game/play_testing_game.dart';
 import 'package:SkyNet/screens/mini_game/play_testing_menu.dart';
+import 'package:SkyNet/screens/mini_game/tap_target_game.dart';
 import 'package:SkyNet/screens/mini_game/drone_battle_screen.dart';
 import 'package:SkyNet/screens/mini_game/menu_jocs.dart';
 import 'package:SkyNet/screens/mini_game/pluja_asteroides.dart';
@@ -189,8 +192,16 @@ final GoRouter appRouter = GoRouter(
               builder: (_, __) => const PlujaAsteroidesScreen(),
             ),
             GoRoute(
-              path: 'guerra-drons',
-              builder: (_, __) => const GuerraDronsScreen(),
+              path: 'tap-target',
+              builder: (_, __) => const TapTargetScreen(),
+            ),
+            GoRoute(
+              path: 'reaction-test',
+              builder: (_, __) => const ReactionGameScreen(),
+            ),
+            GoRoute(
+              path: 'flappy-ball',
+              builder: (_, __) => const FlappyBallScreen(),
             ),
           ],
         ),

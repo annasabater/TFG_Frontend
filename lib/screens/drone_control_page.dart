@@ -12,22 +12,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import '../services/socket_service.dart';
 
-/// Gira 180° cuando la pantalla está en vertical (alto > ancho)
-class _RotateIfPortrait extends StatelessWidget {
-  const _RotateIfPortrait({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final needsRotation = size.height > size.width;
-    return RotatedBox(
-      quarterTurns: needsRotation ? 2 : 0,
-      child: child,
-    );
-  }
-}
-
 class DroneControlPage extends StatefulWidget {
   final String sessionId;
   const DroneControlPage({super.key, required this.sessionId});
@@ -43,7 +27,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   bool   _showMap      = true;
   bool   _mapLocked    = false;
   bool   _gameFinished = false;
-  double _currentZoom  = 20;
+  double _currentZoom  = 19;
 
   final Map<String, Marker>  _droneMarkers  = {};
   final Map<String, Marker>  _bulletMarkers = {};
@@ -372,116 +356,70 @@ class _DroneControlPageState extends State<DroneControlPage> {
 
   @override
   Widget build(BuildContext context) {
-    final telemetryLabel = _myTelemetry == null
-      ? const SizedBox.shrink()
-      : Positioned(
-          top: 56,
-          left: 16,
-          child: Text(
-            'Pos: ${(_myTelemetry!['lat'] as double).toStringAsFixed(5)}, '
-            '${(_myTelemetry!['lon'] as double).toStringAsFixed(5)}   '
-            'Hd: ${(_myTelemetry!['heading'] as num).toStringAsFixed(1)}°',
-            style: const TextStyle(fontSize: 14, color: Colors.black),
-          ),
-        );
-
-    final scoreLabel = _scores.isEmpty
-      ? const SizedBox.shrink()
-      : Align(
-          alignment: Alignment.topCenter,
-          child: Container(
-            margin: const EdgeInsets.only(top: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(12)
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: _scores.entries.map((e) {
-                final clr = _playerColor[e.key]!;
-                final name = {
-                  'dron_rojo1@upc.edu'    : 'Jugador 1 (Rojo)',
-                  'dron_azul1@upc.edu'    : 'Jugador 2 (Azul)',
-                  'dron_verde1@upc.edu'   : 'Jugador 3 (Verde)',
-                  'dron_amarillo1@upc.edu': 'Jugador 4 (Amarillo)',
-                }[e.key] ?? e.key.split('@').first;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    '$name: ${e.value}',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: clr),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        );
-
-    return _RotateIfPortrait(
-      child: Scaffold(
-        backgroundColor: const Color(0xFFEFF2F5),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              if (_showMap) Positioned.fill(child: _buildMap()),
-              Positioned(
-                top: 16,
-                left: 16,
-                child: IconButton(
-                  icon: Icon(_showMap ? Icons.layers_clear : Icons.layers),
-                  onPressed: () => setState(() => _showMap = !_showMap),
-                ),
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
+    final needsRotation = isMobile && size.height > size.width;
+    Widget content = Scaffold(
+      backgroundColor: const Color(0xFFEFF2F5),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            if (_showMap) Positioned.fill(child: _buildMap()),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: IconButton(
+                icon: Icon(_showMap ? Icons.layers_clear : Icons.layers),
+                onPressed: () => setState(() => _showMap = !_showMap),
               ),
-              if (_showMap) ...[
-                _zoomBtn( 70, Icons.add,    () {
-                  setState(() {
-                    _currentZoom++;
-                    _mapController.move(_mapController.center, _currentZoom);
-                  });
-                }),
-                _zoomBtn(130, Icons.remove, () {
-                  setState(() {
-                    _currentZoom--;
-                    _mapController.move(_mapController.center, _currentZoom);
-                  });
-                }),
-                _zoomBtn(190, _mapLocked ? Icons.lock : Icons.lock_open,
-                  () => setState(() => _mapLocked = !_mapLocked),
-                ),
-              ],
-              telemetryLabel,
-              scoreLabel,
-              Positioned(
-                top: 30,
-                right: 16,
-                child: Column(
-                  children: [
-                    _bulletBtn('assets/bullet1.png', 'small_fast'),
-                    const SizedBox(height: 12),
-                    _bulletBtn('assets/bullet2.png', 'medium'),
-                    const SizedBox(height: 12),
-                    _bulletBtn('assets/bullet3.png', 'large_slow'),
-                  ],
-                ),
+            ),
+            if (_showMap) ...[
+              _zoomBtn( 70, Icons.add,    () {
+                setState(() {
+                  _currentZoom++;
+                  _mapController.move(_mapController.center, _currentZoom);
+                });
+              }),
+              _zoomBtn(130, Icons.remove, () {
+                setState(() {
+                  _currentZoom--;
+                  _mapController.move(_mapController.center, _currentZoom);
+                });
+              }),
+              _zoomBtn(190, _mapLocked ? Icons.lock : Icons.lock_open,
+                () => setState(() => _mapLocked = !_mapLocked),
               ),
-              if (!_gameFinished)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 40),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [_joystick('left'), _joystick('right')],
-                    ),
-                  ),
-                ),
-              if (_gameFinished) _buildGameOverOverlay(context),
             ],
-          ),
+            Positioned(
+              top: 30,
+              right: 16,
+              child: Column(
+                children: [
+                  _bulletBtn('assets/bullet1.png', 'small_fast'),
+                  const SizedBox(height: 12),
+                  _bulletBtn('assets/bullet2.png', 'medium'),
+                  const SizedBox(height: 12),
+                  _bulletBtn('assets/bullet3.png', 'large_slow'),
+                ],
+              ),
+            ),
+            if (!_gameFinished)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [_joystick('left'), _joystick('right')],
+                  ),
+                ),
+              ),
+            if (_gameFinished) _buildGameOverOverlay(context),
+          ],
         ),
       ),
     );
+    return content;
   }
 
   Widget _buildGameOverOverlay(BuildContext context) => Positioned.fill(

@@ -2,7 +2,6 @@ import 'package:SkyNet/api/google_signin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import '../provider/users_provider.dart';
 import '../provider/theme_provider.dart';
 import '../widgets/language_selector.dart';
@@ -52,25 +51,26 @@ class LayoutWrapper extends StatelessWidget {
       );
     } else if (isInvitado(email)) {
       navItems.addAll([
-        _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
-        _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
+        _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
         _navItem(context, loc.spectateGames, Icons.visibility, '/jocs/spectate', isRoute('/jocs/spectate')),
+        _navItem(context, loc.menuMiniGamesTitle, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
       ]);
       navItems.add(
         _navItem(context, loc.settings, Icons.settings, settingsRoute, isRoute(settingsRoute)),
       );
     } else {
       navItems.addAll([
-        _navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
-        _navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
-        _navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
+        //_navItem(context, loc.socialNetwork, Icons.people, '/xarxes', isRoute('/xarxes')),
+        //_navItem(context, loc.chat, Icons.chat, '/chat', isRoute('/chat')),
+        //_navItem(context, loc.profile, Icons.account_circle, '/profile', isRoute('/profile')),
         _navItem(context, loc.map, Icons.map, '/mapa', isRoute('/mapa')),
-        _navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
+        //_navItem(context, loc.store, Icons.store, '/store', isRoute('/store')),
         _navItem(context, loc.spectateGames, Icons.visibility, '/jocs/spectate', isRoute('/jocs/spectate')),
-        _navItem(context, loc.playTesting, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
-        if (admin)
-          _navItem(context, loc.adminDetails, Icons.admin_panel_settings, '/detalles', isRoute('/detalles')),
+        _navItem(context, loc.menuMiniGamesTitle, Icons.videogame_asset, '/play-testing', isRoute('/play-testing')),
       ]);
+      navItems.add(
+        _navItem(context, loc.settings, Icons.settings, settingsRoute, isRoute(settingsRoute)),
+      );
     }
 
     return Scaffold(

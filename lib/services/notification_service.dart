@@ -7,7 +7,15 @@ import 'auth_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NotificationService {
-  static final _base = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+  static String get _base {
+    var url = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    if (!url.endsWith('/api')) url = url.replaceAll(RegExp(r'/api.*'), '') + '/api';
+    return url;
+  }
+
+  static String get _host => _base.replaceFirst(RegExp(r'/api$'), '');
+
+  static String absolute(String path) => path.startsWith('http') ? path : '_host$path';
 
   static Future<Map<String, String>> _headers() async {
     final token = await AuthService().token;

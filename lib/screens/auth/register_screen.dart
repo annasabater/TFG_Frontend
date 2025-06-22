@@ -14,8 +14,11 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _isLoading = false;
-  bool _visible = false;
+
+  bool _isLoading     = false;
+  bool _visible       = false;
+  bool _obscurePassword = true; // controla visibilidad contraseña
+
   String _selectedRole = 'Usuario';
 
   // Variables para validar la contraseña
@@ -23,12 +26,12 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   bool _hasMaxLength = false;
   bool _hasLowercase = false;
   bool _hasUppercase = false;
-  bool _hasNumber = false;
+  bool _hasNumber    = false;
   bool _hasSpecialChar = false;
 
   // Validaciones visuales para username y email
   bool _isUsernameValid = false;
-  bool _isEmailValid = false;
+  bool _isEmailValid    = false;
 
   static const _allRoles = [
     'Usuario',
@@ -47,7 +50,8 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
     _emailCtrl.addListener(() {
       setState(() {
-        _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(_emailCtrl.text.trim());
+        _isEmailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$")
+                         .hasMatch(_emailCtrl.text.trim());
       });
     });
 
@@ -77,7 +81,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _hasLowercase   = RegExp(r'[a-z]').hasMatch(pw);
       _hasUppercase   = RegExp(r'[A-Z]').hasMatch(pw);
       _hasNumber      = RegExp(r'[0-9]').hasMatch(pw);
-      _hasSpecialChar = RegExp(r'[!@#\\$%\^&\*(),.?":{}|<>]').hasMatch(pw);
+      _hasSpecialChar = RegExp(r'[!@#\\\$%\^&\*(),.?":{}|<>]').hasMatch(pw);
     });
   }
 
@@ -111,12 +115,12 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _showError('El email no tiene un formato válido');
       return;
     }
-    if (!(_hasMinLength && _hasMaxLength && _hasLowercase && _hasUppercase && _hasNumber && _hasSpecialChar)) {
+    if (!(_hasMinLength && _hasMaxLength && _hasLowercase &&
+          _hasUppercase && _hasNumber && _hasSpecialChar)) {
       _showError('La contraseña no cumple todos los requisitos');
       return;
     }
 
-    // Si no es UPC, forzar rol "Usuario"
     final roleToSend = isUpc ? _selectedRole : 'Usuario';
 
     setState(() => _isLoading = true);
@@ -127,7 +131,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
         password: pw,
         role:     roleToSend,
       );
-      if (mounted) context.go('/login');
+      if (mounted) context.go('/');
     } catch (e) {
       _showError(e.toString());
     } finally {
@@ -166,25 +170,41 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     );
   }
 
-  InputDecoration _inputDecoration(String hintText, IconData prefixIcon, bool isValid) {
+  InputDecoration _inputDecoration(
+    String hintText,
+    IconData prefixIcon,
+    bool isValid,
+  ) {
     return InputDecoration(
       hintText: hintText,
       prefixIcon: Icon(prefixIcon),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 2),
+        borderSide: BorderSide(
+          color: isValid ? Colors.green : Colors.red,
+          width: 2,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: isValid ? Colors.green : Colors.red, width: 3),
+        borderSide: BorderSide(
+          color: isValid ? Colors.green : Colors.red,
+          width: 3,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.red, width: 3),
+        borderSide: BorderSide(
+          color: Colors.red,
+          width: 3,
+        ),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.red, width: 3),
+        borderSide: BorderSide(
+          color: Colors.red,
+          width: 3,
+        ),
       ),
     );
   }
@@ -249,22 +269,13 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Center(
-                          child: Image.asset(
-                            'assets/logo_skynet.png',
-                            width: 100,
-                            height: 100,
-                          ),
+                          child: Image.asset('assets/logo_skynet.png', width: 100, height: 100),
                         ),
                         const SizedBox(height: 30),
                         Text(
                           localizations.register,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: colors.primary,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
+                          style: TextStyle(color: colors.primary, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                         ),
                         const SizedBox(height: 40),
 
@@ -286,10 +297,14 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         // Password
                         TextFormField(
                           controller: _passwordCtrl,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: localizations.password,
                             prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
                           ),
                         ),
@@ -308,7 +323,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         ),
                         const SizedBox(height: 25),
 
-                        // Solo mostrar selector de rol si email termina en @upc.edu
+                        // Selector de rol si es UPC
                         if (isUpc) ...[
                           DropdownButtonFormField<String>(
                             value: _selectedRole,
@@ -337,19 +352,10 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                                 onPressed: _register,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: colors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                                   minimumSize: const Size(double.infinity, 55),
                                 ),
-                                child: Text(
-                                  localizations.register,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                                child: Text(localizations.register, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
                               ),
 
                         const SizedBox(height: 40),
@@ -357,24 +363,11 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              localizations.login,
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
-                            ),
+                            Text(localizations.login, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
                             const SizedBox(width: 8),
                             GestureDetector(
                               onTap: () => context.go('/login'),
-                              child: Text(
-                                localizations.login,
-                                style: TextStyle(
-                                  color: colors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              child: Text(localizations.login, style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                           ],
                         ),

@@ -42,11 +42,12 @@
   "viewProfile": "Ver perfil",
   "writeCommentHint": "Escribe un comentario…",
   "reloadUsers": "Recargar Usuarios",
+  "mapFeatureDescription": "Explora el terreno, localiza puntos clave y planifica tu camino.",
   "welcomeMessage": "Bienvenido a SkyNet",
   "appDescription": "SkyNet es una plataforma todo-en-uno que ofrece juegos multijugador, chat en tiempo real, funcionalidades de red social y un mercado para comprar y vender drones y servicios, todo con backend MongoDB.",
   "features": "Módulos disponibles",
   "gamesFeatureTitle": "Juegos multijugador",
-  "gamesFeatureDescription": "Únete y compite con amigos mediante conexiones socket en tiempo real.",
+  "gamesFeatureDescription": "Cumple misiones y supera desafíos tú solo.",
   "chatFeatureTitle": "Chat en tiempo real",
   "chatFeatureDescription": "Mensajería instantánea en canales o conversaciones privadas.",
   "socialFeatureTitle": "Red social",
@@ -204,6 +205,15 @@
   "exitButton": "Volver",
   "warTitle": "Guerra de Drones",
   "warStartButton": "Comenzar Batalla",
+  "rainAsteroids": "Lluvia de Asteroides",
+  "droneWar": "Guerra de Drones",
+  "tapTarget": "Toca el Objetivo",
+  "balloonPop": "Explota Globos",
+  "reactionTest": "Prueba de Reacción",
+  "spaceShooter": "Disparador Espacial",
+  "hopAndDodge": "Salta y Esquiva",
+  "stepUp": "¡Sube!",
+  "flappyBall": "Bola Voladora",
   "warHeading": "¡Guerra de Drones!",
   "warControls": "Controles:\nJugador 1: WASD + Espacio\nJugador 2: Flechas + Enter",
   "asteroidRainTitle": "Lluvia de Asteroides",
@@ -227,7 +237,6 @@
   "restartButton": "Reiniciar",
   "totalLabel": "Total",
   "uniqueRolesLabel": "Roles únicos",
-  "userListTitle": "Lista de usuarios",
   "addButton": "Añadir",
   "deleteButton": "Eliminar",
   "noUsersFound": "No se han encontrado usuarios",
@@ -380,7 +389,6 @@
   "chatFeatureTitle": "Chat en tiempo real",
   "chatFeatureDescription": "Mensajería instantánea en canales o conversaciones privadas.",
   "gamesFeatureTitle": "Juegos multijugador",
-  "gamesFeatureDescription": "Únete y compite con amigos mediante conexiones socket en tiempo real.",
   "printTitle": "Imprimir",
   "gamesPageTitle": "Juegos",
   "descriptionButton": "Descripción",
@@ -442,6 +450,103 @@
   "gameOverTitle": "PARTIDA FINALIZADA",
   "goHome": "Ir al Home",
   "gameDescription": "📜 Descripción del Juego\n\nEl juego es una competencia de drones diseñada para desafiar las habilidades de los jugadores en un entorno de combate dinámico y competitivo. Los participantes controlan sus drones con precisión, estrategia y rapidez para eliminar a sus oponentes y sobrevivir en un campo de batalla que puede incluir obstáculos. La meta es convertirse en el último jugador en pie o acumular la mayor cantidad de puntos, según el modo seleccionado.\n\n─────────────────────────────────────────────────────────\n\n🕹 Modalidades Disponibles\n\n• Número de jugadores: 2 a 4\n• Modos: Todos contra todos (último en pie), 2 vs 2 (respawn habilitado)\n• Tiempo límite: 8 minutos\n\n─────────────────────────────────────────────────────────\n\n🚀 Dinámica y Armamento\n\n• Bala pequeña y rápida → alta cadencia, velocidad ~800 m/s\n• Bala mediana → equilibrio daño/velocidad ~500 m/s\n• Bala grande y lenta → alto daño, velocidad ~100 m/s\n\n─────────────────────────────────────────────────────────\n\n🎯 Condiciones de Victoria\n\n• 10 puntos por enemigo eliminado\n•   1 punto por obstáculo destruido\n\n─────────────────────────────────────────────────────────\n\n“Una experiencia envolvente donde la estrategia y la habilidad se combinan para crear enfrentamientos llenos de emoción.”",
-  "gameManual": "📖 Manual del Juego\n\n─────────────────────────────────────────────────────────\n\nOBJETIVO DEL JUEGO\n\nEliminar a los oponentes y ser el último jugador en pie, o bien acumular la mayor cantidad de puntos antes de que termine el tiempo.\n\n─────────────────────────────────────────────────────────\n\nCONFIGURACIÓN\n\n• Jugadores: 2–4\n\n─────────────────────────────────────────────────────────\n\nMODO DE JUEGO\n\n• Entorno real\n• Todos vs Todos / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nMECÁNICA DE DISPARO\n\nProyectil              | Cadencia    | Recarga  | Velocidad\n----------------------|-------------|----------|---------\nBala pequeña y rápida | 0,5 s/tiro  | 0,5 s    | 800 m/s\nBala mediana          | 1 s/tiro    | 1 s      | 500 m/s\nBala grande y lenta   | 2 s/tiro    | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTÁCULOS\n\nEstructuras destructibles otorgan 1 punto extra al destruirlas.\n\n─────────────────────────────────────────────────────────\n\nPUNTUACIÓN\n\n• 10 pts por eliminación\n•   1 pt por obstáculo\n\n─────────────────────────────────────────────────────────\n\nFINAL DE LA PARTIDA\n\nSe muestra una tabla de resultados con eliminaciones, disparos, obstáculos destruidos y puntos totales.\n\n¡Buena suerte y que gane el mejor piloto!"
-
+  "gameManual": "📖 Manual del Juego\n\n─────────────────────────────────────────────────────────\n\nOBJETIVO DEL JUEGO\n\nEliminar a los oponentes y ser el último jugador en pie, o bien acumular la mayor cantidad de puntos antes de que termine el tiempo.\n\n─────────────────────────────────────────────────────────\n\nCONFIGURACIÓN\n\n• Jugadores: 2–4\n\n─────────────────────────────────────────────────────────\n\nMODO DE JUEGO\n\n• Entorno real\n• Todos vs Todos / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nMECÁNICA DE DISPARO\n\nProyectil              | Cadencia    | Recarga  | Velocidad\n----------------------|-------------|----------|---------\nBala pequeña y rápida | 0,5 s/tiro  | 0,5 s    | 800 m/s\nBala mediana          | 1 s/tiro    | 1 s      | 500 m/s\nBala grande y lenta   | 2 s/tiro    | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTÁCULOS\n\nEstructuras destructibles otorgan 1 punto extra al destruirlas.\n\n─────────────────────────────────────────────────────────\n\nPUNTUACIÓN\n\n• 10 pts por eliminación\n•   1 pt por obstáculo\n\n─────────────────────────────────────────────────────────\n\nFINAL DE LA PARTIDA\n\nSe muestra una tabla de resultados con eliminaciones, disparos, obstáculos destruidos y puntos totales.\n\n¡Buena suerte y que gane el mejor piloto!",
+"rainAsteroidsDescription": "Esquiva los asteroides que caen y recoge corazones para sobrevivir el máximo tiempo.",
+  "@rainAsteroidsDescription": {
+    "description": "Descripción para el minijuego Lluvia de Asteroides"
+  },
+  "tapTargetDescription": "Toca el objetivo móvil tantas veces como puedas antes de que acabe el tiempo.",
+  "@tapTargetDescription": {
+    "description": "Descripción para el minijuego Toca el Objetivo"
+  },
+  "flappyBallDescription": "Mantén la bola en el aire tocando la pantalla y evita chocar con los tubos.",
+  "@flappyBallDescription": {
+    "description": "Descripción para el minijuego Bola Voladora"
+  },
+  "reactionTestDescription": "Espera el destello y tócalo lo más rápido que puedas para medir tu tiempo de reacción.",
+  "@reactionTestDescription": {
+    "description": "Descripción para el minijuego Prueba de Reacción"
+  },
+  "info": "Info",
+  "@info": {
+    "description": "Etiqueta del botón de información"
+  },
+  "ok": "Aceptar",
+  "@ok": {
+    "description": "Etiqueta del botón Aceptar en diálogos"
+  },
+  "flappyBallTitle": "Flappy Ball",
+  "gameOverTitle": "Partida terminada",
+  "scoreText": "Puntuación: {score}",
+  "@scoreText": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "playAgain": "Volver a jugar",
+  "endGame": "Terminar partida",
+  "tapTargetTitle": "Toca el objetivo",
+  "timeLabel": "Tiempo",
+  "scoreLabel": "Puntuación",
+  "gameOverTitle": "¡Partida terminada!",
+  "tapTargetScore": "Tu puntuación: {score}",
+  "@tapTargetScore": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "playAgain": "Volver a jugar",
+  "endGame": "Salir",
+  "reactionTitle": "Desafío de Reacción",
+  "roundLabel": "Ronda",
+  "timeLeftLabel": "Tiempo Restante",
+  "totalTimeLabel": "Tiempo Total",
+  "reactionWinRounds": "¡Has completado {rounds} rondas!",
+  "reactionWinRounds@rounds": {
+    "placeholders": { "rounds": {} }
+  },
+  "reactionFailRound": "¡Has fallado en la ronda {round}!",
+  "reactionFailRound@round": {
+    "placeholders": { "round": {} }
+  },
+  "reactionSummary": "Total: {totalTime} ms\nRondas: {rounds}\nTiempo restante: {timeLeft} ms",
+  "@reactionSummary": {
+    "placeholders": {
+      "totalTime": {},
+      "rounds": {},
+      "timeLeft": {}
+    }
+  },
+  "playAgain": "Volver a jugar",
+  "endGame": "Salir",
+  "plujaAsteroidesTitle": "Pluja d'Asteroides",
+  "timePlayed": "Tiempo jugado: {time}",
+  "@timePlayed": {
+    "placeholders": { "time": {} }
+  },
+  "plujaAsteroidesGameOverTitle": "Partida finalizada",
+  "plujaAsteroidesSummary": "Has terminado con {lives} vidas restantes",
+  "@plujaAsteroidesSummary": {
+    "placeholders": { "lives": {} }
+  },
+  "playAgain": "Volver a jugar",
+  "exitGame": "Salir",
+  "configurationFeatureTitle": "Configuración",
+  "configurationFeatureDescription": "Accede y cambia la configuración y las preferencias de la aplicación.",
+  "spectateSessionsTitle": "Sesión en directo",
+  "spectateNoGameTitle": "⚠️ Aún no se ha iniciado ninguna partida",
+  "spectateWaitingMessage": "Esperando que el profesor inicie la partida…",
+  "descriptionLabel": "Descripción",
+  "manualLabel": "Manual",
+  "gameDescription": "Aquí va la descripción completa…",
+  "gameManual": "Aquí va el manual completo…",
+  "droneControlTitle": "Control de Dron",
+  "gameOverTitle": "PARTIDA FINALIZADA",
+  "goHome": "Ir al Inicio",
+  "telemetryLabel": "Posición",
+  "headingLabel": "Oriént.",
+  "player1Label": "Jugador 1 (Rojo)",
+  "player2Label": "Jugador 2 (Azul)",
+  "player3Label": "Jugador 3 (Verde)",
+  "player4Label": "Jugador 4 (Amarillo)"
 }

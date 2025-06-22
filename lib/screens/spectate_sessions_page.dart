@@ -50,7 +50,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   final Map<String, Polygon> _obstaclePolys = {};
   final Map<String, int> _scores = {};
 
-  // estado & parpadeo de cada dron 
+  // estado & parpadeo de cada dron
   final Map<String, String> _droneStates = {}; // 'active' | 'landed'
   bool _blinkVisible = true;
   Timer? _blinkTimer;
@@ -87,6 +87,14 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
         _socket!.emit('join', {'sessionId': widget.sessionId});
       })
       ..on('state_update', _handleStateUpdate)
+      ..on('game_started', (_) {
+        if (!mounted) return;
+        _resetScenario();
+        setState(() {
+          _gameFinished = false;
+          _gameStarted  = true;
+        });
+      })
       ..on('game_ended', (_) {
         if (!mounted || _gameFinished) return;
         _resetScenario();
@@ -98,14 +106,6 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
           if (mounted) context.go('/');
         });
       })
-      ..on('game_started', (_) {
-        if (!mounted) return;
-        _resetScenario();
-        setState(() {
-          _gameFinished = false;
-          _gameStarted  = true;
-        });
-      })
       ..on('disconnect', (_) => debugPrint('Spectator disconnected'));
   }
 
@@ -114,7 +114,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     if (_gameFinished) return;
 
     final action = data['action'] ?? '';
-    final drone = data['drone'] ?? '';
+    final drone  = data['drone']  ?? '';
     final payload = data['payload'] as Map<String, dynamic>? ?? {};
 
     switch (action) {
@@ -186,25 +186,24 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
     _blinkTimer = null;
     _blinkVisible = true;
     _currentZoom = 20;
-    _mapLocked = true;
+    _mapLocked    = true;
   }
 
   void _updateDrone(String email, Map<String, dynamic> p) {
     if (!_isCompetitor(email)) return;
-    final lat = p['lat'] as double;
-    final lon = p['lon'] as double;
+    final lat = p['lat']     as double;
+    final lon = p['lon']     as double;
     final hdg = (p['heading'] as num?)?.toDouble() ?? 0;
     _rebuildMarker(email, lat: lat, lon: lon, heading: hdg);
   }
 
-  void _rebuildMarker(String email,
-      {double? lat, double? lon, double? heading}) {
-    final old = _droneMarkers[email];
+  void _rebuildMarker(String email, {double? lat, double? lon, double? heading}) {
+    final old   = _droneMarkers[email];
     final point = LatLng(
-      lat ?? old?.point.latitude ?? 0,
+      lat ?? old?.point.latitude  ?? 0,
       lon ?? old?.point.longitude ?? 0,
     );
-    final hdg = heading ?? 0;
+    final hdg   = heading ?? 0;
     final color = _playerColor[email]!;
     final state = _droneStates[email] ?? 'active';
     final opacity = state == 'landed'
@@ -226,9 +225,9 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   }
 
   void _updateBullet(Map<String, dynamic> p, {required bool create}) {
-    final id = p['bulletId'] as String;
-    final lat = p['lat'] as double;
-    final lon = p['lon'] as double;
+    final id  = p['bulletId'] as String;
+    final lat = p['lat']      as double;
+    final lon = p['lon']      as double;
     _bulletMarkers[id] = Marker(
       point: LatLng(lat, lon),
       width: 12,
@@ -240,7 +239,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
 
   void _addFence(dynamic geometry, String droneEmail) {
     if (geometry is! List || !_isCompetitor(droneEmail)) return;
-    final points = geometry
+    final points = (geometry as List)
         .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
         .toList();
     final color = _playerColor[droneEmail]!;
@@ -253,7 +252,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   }
 
   void _addObstacle(List<dynamic> geometry) {
-    final key = geometry.map((e) => '${e["lat"]},${e["lon"]}').join('|');
+    final key = geometry.map((e) => '${e['lat']},${e['lon']}').join('|');
     _obstaclePolys[key] = Polygon(
       points: geometry
           .map<LatLng>((pt) => LatLng(pt['lat'] as double, pt['lon'] as double))
@@ -265,7 +264,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   }
 
   void _removeObstacle(List<dynamic> geometry) {
-    final key = geometry.map((e) => '${e["lat"]},${e["lon"]}').join('|');
+    final key = geometry.map((e) => '${e['lat']},${e['lon']}').join('|');
     _obstaclePolys.remove(key);
   }
 
@@ -294,8 +293,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
       options: MapOptions(
         center: LatLng(41.2764478, 1.9886568),
         zoom: _currentZoom,
-        interactiveFlags:
-            _mapLocked ? InteractiveFlag.none : InteractiveFlag.all,
+        interactiveFlags: _mapLocked ? InteractiveFlag.none : InteractiveFlag.all,
       ),
       children: [
         TileLayer(
@@ -319,70 +317,20 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final scoreLabel = _scores.isEmpty
-        ? const SizedBox.shrink()
-        : Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ..._scores.entries.map((e) {
-                    final clr = _playerColor[e.key]!;
-                    final name = {
-                          'dron_rojo1@upc.edu': 'Jugador 1 (Rojo)',
-                          'dron_azul1@upc.edu': 'Jugador 2 (Azul)',
-                          'dron_verde1@upc.edu': 'Jugador 3 (Verde)',
-                          'dron_amarillo1@upc.edu': 'Jugador 4 (Amarillo)',
-                        }[e.key] ??
-                        e.key.split('@').first;
-                    return Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6),
-                      child: Text(
-                        '$name: ${e.value}',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: clr),
-                      ),
-                    );
-                  }).toList(),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.sports_esports),
-                    label: const Text('Mini Joc'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const DroneGame(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
 
-    // Envuelve todo el Scaffold para controlar la rotación
     return _RotateIfPortrait(
       child: Scaffold(
+        appBar: AppBar(
+          title: Text(loc.spectateSessionsTitle),
+          backgroundColor: Colors.blue,
+          leading: BackButton(onPressed: () => context.go('/')),
+        ),
         backgroundColor: const Color(0xFFEFF2F5),
         body: Stack(
           children: [
             Positioned.fill(child: _buildMap()),
+
+            // Overlay de espera antes de empezar la partida
             if (!_gameStarted)
               Positioned.fill(
                 child: Container(
@@ -390,9 +338,9 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        '⚠️ Aún no se ha iniciado ninguna partida',
-                        style: TextStyle(
+                      Text(
+                        '⚠️ ${loc.spectateNoGameTitle}',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -400,9 +348,9 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Esperando a que el profesor inicie la partida…',
-                        style: TextStyle(
+                      Text(
+                        loc.spectateWaitingMessage,
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 16,
                         ),
@@ -414,14 +362,12 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                         children: [
                           _styledButton(
                             loc.descriptionLabel,
-                            () => _showTextDialog(
-                                loc.descriptionLabel, loc.gameDescription),
+                            () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
                           ),
                           const SizedBox(width: 16),
                           _styledButton(
                             loc.manualLabel,
-                            () => _showTextDialog(
-                                loc.manualLabel, loc.gameManual),
+                            () => _showTextDialog(loc.manualLabel, loc.gameManual),
                           ),
                         ],
                       ),
@@ -429,6 +375,8 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                   ),
                 ),
               ),
+
+            // Botones de descripción/manual una vez iniciada la partida
             if (_gameStarted)
               Positioned(
                 bottom: 24,
@@ -437,26 +385,72 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
                   children: [
                     _styledButton(
                       '📖 ${loc.descriptionLabel}',
-                      () => _showTextDialog(
-                          loc.descriptionLabel, loc.gameDescription),
+                      () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
                     ),
                     const SizedBox(width: 12),
                     _styledButton(
                       '🛠 ${loc.manualLabel}',
-                      () => _showTextDialog(
-                          loc.manualLabel, loc.gameManual),
+                      () => _showTextDialog(loc.manualLabel, loc.gameManual),
                     ),
                   ],
                 ),
               ),
-            _zoomBtn(70, Icons.add, () {}),
-            _zoomBtn(130, Icons.remove, () {}),
+
+            // Zoom y lock
+            _zoomBtn(70, Icons.add,    () => setState(() { _currentZoom++; _mapController.move(_mapController.center, _currentZoom); })),
+            _zoomBtn(130, Icons.remove, () => setState(() { _currentZoom--; _mapController.move(_mapController.center, _currentZoom); })),
             _zoomBtn(
               190,
               _mapLocked ? Icons.lock : Icons.lock_open,
               () => setState(() => _mapLocked = !_mapLocked),
             ),
-            scoreLabel,
+
+            // Puntuaciones y mini-juego
+            if (_scores.isNotEmpty) ...[
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ..._scores.entries.map((e) {
+                        final clr  = _playerColor[e.key]!;
+                        final name = {
+                          'dron_rojo1@upc.edu':    'Jugador 1 (Rojo)',
+                          'dron_azul1@upc.edu':    'Jugador 2 (Azul)',
+                          'dron_verde1@upc.edu':   'Jugador 3 (Verde)',
+                          'dron_amarillo1@upc.edu':'Jugador 4 (Amarillo)',
+                        }[e.key] ?? e.key.split('@').first;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            '$name: ${e.value}',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: clr),
+                          ),
+                        );
+                      }).toList(),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.sports_esports),
+                        label: const Text('Mini Joc'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DroneGame()));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            // Overlay de fin de partida
             if (_gameFinished) _buildGameOverOverlay(context),
           ],
         ),
@@ -487,20 +481,15 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
               const Text(
                 'PARTIDA FINALIZADA',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                icon: const Icon(Icons.home),
-                label: const Text('Ir al Home'),
+                icon: const Icon(Icons.home, color: Colors.black87),
+                label: const Text('Ir al Home', style: TextStyle(color: Colors.black87)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.85),
-                  foregroundColor: Colors.black87,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 onPressed: () => GoRouter.of(context).go('/'),
               ),
@@ -520,13 +509,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                )
-              ],
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
             ),
             child: Icon(icon, size: 24, color: Colors.black87),
           ),

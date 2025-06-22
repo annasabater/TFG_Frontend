@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io' show File;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,12 +12,18 @@ import '../models/post.dart';
 import '../models/user.dart';
 
 class SocialService {
-  static final _base = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
-  static String get _origin => _base.replaceAll('/api', '');
+  static String get _base {
+    var url = dotenv.env['SERVER_URL'] ?? 'http://localhost:9000/api';
+    if (!url.endsWith('/api')) url = url.replaceAll(RegExp(r'/api.*'), '') + '/api';
+    return url;
+  }
 
-  /// Construye una URL absoluta a partir de una ruta relativa
+  /// Host sin el "/api", útil para assets o rutas fuera de la API REST.
+  static String get _host => _base.replaceFirst(RegExp(r'/api$'), '');
+
+  /// Construye una URL absoluta para recursos fuera de la API (imágenes, etc.).
   static String absolute(String path) =>
-      path.startsWith('http') ? path : '$_origin$path';
+    path.startsWith('http') ? path : '$_host$path';
 
   static Future<Map<String, String>> _headers({bool multipart = false}) async {
     final hdr = <String, String>{};
@@ -69,38 +76,65 @@ class SocialService {
 
   static Future<List<Post>> getExplore({int page = 1, int limit = 10}) async {
     final uid = AuthService().currentUser?['_id'];
-    final res = await http.get(
-      Uri.parse('$_base/feed?page=$page&limit=$limit'),
-      headers: await _headers(),
-    );
-    _throwIfNot200(res);
-    return (jsonDecode(res.body) as List)
-        .map((e) => Post.fromJson(e, uid))
-        .toList();
+    try {
+      final res = await http.get(
+        Uri.parse('$_base/feed?page=$page&limit=$limit'),
+        headers: await _headers(),
+      );
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as List)
+            .map((e) => Post.fromJson(e, uid))
+            .toList();
+      } else {
+        debugPrint('SocialService.getExplore HTTP ${res.statusCode}');
+        return <Post>[];
+      }
+    } catch (e, st) {
+      debugPrint('SocialService.getExplore error: $e\n$st');
+      return <Post>[];
+    }
   }
 
   static Future<List<Post>> getFeed({int page = 1, int limit = 10}) async {
     final uid = AuthService().currentUser?['_id'];
-    final res = await http.get(
-      Uri.parse('$_base/posts/following?page=$page&limit=$limit'),
-      headers: await _headers(),
-    );
-    _throwIfNot200(res);
-    return (jsonDecode(res.body) as List)
-        .map((e) => Post.fromJson(e, uid))
-        .toList();
+    try {
+      final res = await http.get(
+        Uri.parse('$_base/posts/following?page=$page&limit=$limit'),
+        headers: await _headers(),
+      );
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as List)
+            .map((e) => Post.fromJson(e, uid))
+            .toList();
+      } else {
+        debugPrint('SocialService.getFeed HTTP ${res.statusCode}');
+        return <Post>[];
+      }
+    } catch (e, st) {
+      debugPrint('SocialService.getFeed error: $e\n$st');
+      return <Post>[];
+    }
   }
 
   static Future<List<Post>> getMyPosts({int page = 1, int limit = 15}) async {
     final uid = AuthService().currentUser?['_id'];
-    final res = await http.get(
-      Uri.parse('$_base/users/$uid/posts?page=$page&limit=$limit'),
-      headers: await _headers(),
-    );
-    _throwIfNot200(res);
-    return (jsonDecode(res.body) as List)
-        .map((e) => Post.fromJson(e, uid))
-        .toList();
+    try {
+      final res = await http.get(
+        Uri.parse('$_base/users/$uid/posts?page=$page&limit=$limit'),
+        headers: await _headers(),
+      );
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as List)
+            .map((e) => Post.fromJson(e, uid))
+            .toList();
+      } else {
+        debugPrint('SocialService.getMyPosts HTTP ${res.statusCode}');
+        return <Post>[];
+      }
+    } catch (e, st) {
+      debugPrint('SocialService.getMyPosts error: $e\n$st');
+      return <Post>[];
+    }
   }
 
   static Future<Post> getPostById(String postId) async {
@@ -122,15 +156,6 @@ class SocialService {
   }
 
   static Future<void> comment(String postId, String content) async {
-    final res = await http.post(
-      Uri.parse('$_base/posts/$postId/comments'),
-      headers: await _headers(),
-      body: jsonEncode({'content': content}),
-    );
-    _throwIfNot200(res);
-  }
-
-  static Future<void> commentWithNotification(String postId, String content) async {
     final res = await http.post(
       Uri.parse('$_base/posts/$postId/comments'),
       headers: await _headers(),
@@ -187,9 +212,7 @@ class SocialService {
 
   static String _ext(String name) {
     final i = name.lastIndexOf('.');
-    return (i >= 0 && i < name.length - 1)
-        ? name.substring(i + 1)
-        : 'jpeg';
+    return (i >= 0 && i < name.length - 1) ? name.substring(i + 1) : 'jpeg';
   }
 
   static Future<void> updatePost(String postId, String description) async {
@@ -233,9 +256,7 @@ class SocialService {
     );
     _throwIfNot200(res);
     final j = jsonDecode(res.body);
-    // El backend devuelve los seguidos en el campo 'user.following' (array de usuarios o IDs)
     final followingList = (j['user']['following'] ?? []) as List;
-    // Si el backend devuelve solo IDs, necesitarás mapearlos a User, aquí se asume que son objetos User
     return followingList.map((e) => User.fromJson(e)).toList();
   }
 

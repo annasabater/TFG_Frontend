@@ -258,26 +258,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           fontWeight: FontWeight.w700,
                         ),
                         const SizedBox(height: 20),
-                        // Google Sign-In button
-                        ElevatedButton.icon(
-                          icon: Image.asset(
-                            'assets/google_logo.png', // Add a Google logo 
-                            height: 24,
-                            width: 24,
-                          ),
-                          label: Text('Iniciar/Registrarse con Google'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black87,
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            elevation: 2,
-                          ),
-                          onPressed: () => signInWithGoogle(context),
-                        ),
-                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

@@ -98,36 +98,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       scrollDirection: Axis.horizontal,
-                      itemCount: 4,
+                      itemCount: 3,
                       itemBuilder: (context, index) {
                         final features = [
+                          
                           {
-                            'image': 'assets/drones_store.webp',
-                            'title': loc.storeFeatureTitle,
-                            'description': loc.storeFeatureDescription,
-                            'route': '/store',
-                            'color': Colors.deepPurpleAccent,
-                          },
-                          {
-                            'image': 'assets/drones_community.webp',
-                            'title': loc.socialFeatureTitle,
-                            'description': loc.socialFeatureDescription,
-                            'route': '/xarxes',
-                            'color': Colors.blueAccent,
-                          },
-                          {
-                            'image': 'assets/drones_chat.webp',
-                            'title': loc.chatFeatureTitle,
-                            'description': loc.chatFeatureDescription,
-                            'route': '/chat',
-                            'color': Colors.green,
-                          },
-                          {
-                            'image': 'assets/drones_games.webp',
-                            'title': loc.gamesFeatureTitle,
+                            'image': 'assets/games.png',
+                            'title': loc.menuMiniGamesTitle,
                             'description': loc.gamesFeatureDescription,
                             'route': '/play-testing',
                             'color': Colors.orangeAccent,
+                          },
+                          {
+                            'image': 'assets/barcelona.jpg',
+                            'title': loc.mapsTitle,
+                            'description': loc.mapFeatureDescription,
+                            'route': '/mapa',
+                            'color': Colors.deepPurpleAccent,
+                          },
+                          {
+                            'image': 'assets/configuration.avif',
+                            'title': loc.configurationFeatureTitle,
+                            'description': loc.configurationFeatureDescription,
+                            'route': '/settings',
+                            'color': Colors.blueAccent,
                           },
                         ];
 

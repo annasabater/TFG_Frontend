@@ -37,13 +37,14 @@
   "socialNetwork": "Xarxa social",
   "chat": "Xat",
   "map": "Mapa",
+  "mapFeatureDescription": "Explora el terreny, localitza punts d’interès i traça la teva ruta.",
   "store": "Botiga",
   "playTesting": "Jocs",
   "welcomeMessage": "Benvinguts a SkyNet",
   "appDescription": "SkyNet és una plataforma tot-en-un que inclou jocs multijugador, xat en temps real, funcions de xarxa social i un mercat de compra-venda de drons i serveis, tot gestionat amb un backend MongoDB.",
   "features": "Mòduls disponibles",
   "gamesFeatureTitle": "Jocs multijugador",
-  "gamesFeatureDescription": "Uneix-te i competeix amb amics a través de sockets en temps real.",
+  "gamesFeatureDescription": "Completa missions i resol reptes en solitari.",
   "chatFeatureTitle": "Xat en temps real",
   "chatFeatureDescription": "Comunica't instantàniament amb altres usuaris a canals o converses privades.",
   "socialFeatureTitle": "Xarxa social",
@@ -249,7 +250,6 @@
   "notLoggedIn": "No estàs loguejat",
   "writeMessageHint": "Escriu un missatge…",
   "usersStatsTitle": "Estadístiques d’usuaris",
-  "userListTitle": "Llista d’usuaris",
   "noUsersFound": "No s’han trobat usuaris",
   "errorLoadingDrones": "Error carregant drons: {error}",
   "editProfileTitle": "Editar Perfil",
@@ -292,8 +292,6 @@
   "socialFeatureDescription": "Segueix perfils, publica actualitzacions i interactua amb la comunitat.",
   "chatFeatureTitle": "Xat en temps real",
   "chatFeatureDescription": "Missatgeria instantània en canals o converses privades.",
-  "gamesFeatureTitle": "Jocs multijugador",
-  "gamesFeatureDescription": "Uneix-t’hi i competeix amb amics mitjançant sockets en temps real.",
   "printTitle": "Imprimir",
   "gamesPageTitle": "Jocs",
   "descriptionButton": "Descripció",
@@ -418,6 +416,15 @@
   "scoreLabel": "Puntuació: {score}",
   "finalScoreLabel": "Puntuació final: {score}",
   "restartButton": "Reiniciar",
+  "rainAsteroids": "Pluja d'Asteroides",
+  "droneWar": "Guerra de Drons",
+  "tapTarget": "Toca el Objetiu",
+  "balloonPop": "Reventar Globus",
+  "reactionTest": "Prova de Reacció",
+  "spaceShooter": "Tirador Espacial",
+  "hopAndDodge": "Salta i Esquiva",
+  "stepUp": "Puja Amunt!",
+  "flappyBall": "Pilota Voladora",
   "userListTitle": "Llista d'usuaris",
   "addButton": "Afegir",
   "deleteButton": "Esborrar",
@@ -433,5 +440,108 @@
   "userDeletedSuccess": "L'usuari {userName} ha estat esborrat",
   "userDeletedError": "No s'ha pogut esborrar l'usuari: {error}",
   "gameDescription": "📜 Descripció del Joc\n\nEl joc és una competició de drons dissenyada per desafiar les habilitats dels jugadors en un entorn de combat dinàmic i competitiu. Els participants controlen els seus drons amb precisió, estratègia i rapidesa per eliminar oponents i sobreviure en un camp de batalla amb obstacles. L’objectiu és ser l’últim dron en peu o acumular la major puntuació, segons el mode seleccionat.\n\n─────────────────────────────────────────────────────────\n\n🕹 Modalitats Disponibles\n\n• Jugadors: 2 a 4\n• Modes: Tots contra tots (últim en peu), 2 vs 2 (respawn habilitat)\n• Límite de temps: 8 minuts\n\n─────────────────────────────────────────────────────────\n\n🚀 Dinàmica i Armes\n\n• Bala petita i ràpida → alta cadència, velocitat ~800 m/s\n• Bala mitjana → equilibri dany/velocitat ~500 m/s\n• Bala gran i lenta → alt dany, velocitat ~100 m/s\n\n─────────────────────────────────────────────────────────\n\n🎯 Condicions de Victòria\n\n• 10 punts per dron eliminat\n•   1 punt per obstacle destruit\n\n─────────────────────────────────────────────────────────\n\n“Una experiència immersiva on estratègia i habilitat es combinen en batalles de drons plenes d’emoció.”",
-  "gameManual": "📖 Manual del Joc\n\n─────────────────────────────────────────────────────────\n\nOBJECTIU\n\nEliminar els oponents i ser l’últim dron en peu, o acumular la major puntuació abans que s’acabi el temps.\n\n─────────────────────────────────────────────────────────\n\nCONFIGURACIÓ\n\n• Jugadors: 2–4\n\n─────────────────────────────────────────────────────────\n\nMODE DE JOC\n\n• Escenari real\n• Tots contra tots / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nMECÀNICA DE DISPAR\n\nProjectil              | Cadència    | Recàrrega | Velocitat\n----------------------|-------------|----------|---------\nBala petita i ràpida  | 0,5 s/trets | 0,5 s    | 800 m/s\nBala mitjana          | 1 s/trets   | 1 s      | 500 m/s\nBala gran i lenta     | 2 s/trets   | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTACLES\n\nEstructures destructibles atorguen 1 punt extra al destruir-les.\n\n─────────────────────────────────────────────────────────\n\nPUNTUACIÓ\n\n• 10 pts per eliminació\n•   1 pt per obstacle\n\n─────────────────────────────────────────────────────────\n\nFINAL DE LA PARTIDA\n\nEs mostra una taula de resultats amb eliminacions, trets, obstacles destruïts i punts totals.\n\nBona sort i que guanyi el millor pilot!"
+  "gameManual": "📖 Manual del Joc\n\n─────────────────────────────────────────────────────────\n\nOBJECTIU\n\nEliminar els oponents i ser l’últim dron en peu, o acumular la major puntuació abans que s’acabi el temps.\n\n─────────────────────────────────────────────────────────\n\nCONFIGURACIÓ\n\n• Jugadors: 2–4\n\n─────────────────────────────────────────────────────────\n\nMODE DE JOC\n\n• Escenari real\n• Tots contra tots / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nMECÀNICA DE DISPAR\n\nProjectil              | Cadència    | Recàrrega | Velocitat\n----------------------|-------------|----------|---------\nBala petita i ràpida  | 0,5 s/trets | 0,5 s    | 800 m/s\nBala mitjana          | 1 s/trets   | 1 s      | 500 m/s\nBala gran i lenta     | 2 s/trets   | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTACLES\n\nEstructures destructibles atorguen 1 punt extra al destruir-les.\n\n─────────────────────────────────────────────────────────\n\nPUNTUACIÓ\n\n• 10 pts per eliminació\n•   1 pt per obstacle\n\n─────────────────────────────────────────────────────────\n\nFINAL DE LA PARTIDA\n\nEs mostra una taula de resultats amb eliminacions, trets, obstacles destruïts i punts totals.\n\nBona sort i que guanyi el millor pilot!",
+  "rainAsteroidsDescription": "Esquiva els asteroides que cauen i recull cors per sobreviure el màxim temps.",
+  "@rainAsteroidsDescription": {
+    "description": "Descripció per al mini-joc Pluja d’Asteroides"
+  },
+  "tapTargetDescription": "Toca l'objectiu mòbil tantes vegades com puguis abans que s'acabi el temps.",
+  "@tapTargetDescription": {
+    "description": "Descripció per al mini-joc Toca l'Objectiu"
+  },
+  "flappyBallDescription": "Mantén la pilota a l'aire tocant la pantalla i evita xocar amb els tubs.",
+  "@flappyBallDescription": {
+    "description": "Descripció per al mini-joc Bola Voladora"
+  },
+  "reactionTestDescription": "Espera el destell i toca'l tan ràpid com puguis per mesurar el teu temps de reacció.",
+  "@reactionTestDescription": {
+    "description": "Descripció per al mini-joc Prova de Reacció"
+  },
+  "info": "Info",
+  "@info": {
+    "description": "Etiqueta del botó d’informació"
+  },
+  "ok": "Acceptar",
+  "@ok": {
+    "description": "Etiqueta del botó Acceptar en diàlegs"
+  },
+    "flappyBallTitle": "Flappy Ball",
+  "gameOverTitle": "Partida finalitzada",
+  "scoreText": "Puntuació: {score}",
+  "@scoreText": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "playAgain": "Tornar a jugar",
+  "endGame": "Finalitzar partida",
+  "tapTargetTitle": "Toca la diana",
+  "timeLabel": "Temps",
+  "scoreLabel": "Puntuació",
+  "gameOverTitle": "Partida finalitzada!",
+  "tapTargetScore": "La teva puntuació: {score}",
+  "@tapTargetScore": {
+    "placeholders": {
+      "score": {}
+    }
+  },
+  "playAgain": "Tornar a jugar",
+  "endGame": "Sortir",
+  "reactionTitle": "Repte de Reacció",
+  "roundLabel": "Ronda",
+  "timeLeftLabel": "Temps Restant",
+  "totalTimeLabel": "Temps Total",
+  "reactionWin": "Has completat {rounds} rondes!",
+  "reactionWinrounds": { "placeholders": { "rounds": {} } },
+  "reactionFail": "Has fallat a la ronda {round}!",
+  "reactionFail@round": { "placeholders": { "round": {} } },
+  "reactionSummary": "Total: {totalTime} ms\nRondes: {rounds}\nTemps restant: {timeLeft} ms",
+  "reactionSummaryrounds": {"placeholders":{"rounds":{}}},
+  "reactionSummarytimeLeft": {"placeholders":{"timeLeft":{}}},
+  "playAgain": "Tornar a jugar",
+  "reactionTitle": "Repte de Reacció",
+  "roundLabel": "Ronda",
+  "timeLeftLabel": "Temps Restant",
+  "totalTimeLabel": "Temps Total",
+  "reactionWinRounds": "Has completat {rounds} rondes!",
+  "reactionWinRounds@rounds": {
+    "placeholders": { "rounds": {} }
+  },
+  "reactionFailRound": "Has fallat a la ronda {round}!",
+  "reactionFailRound@round": {
+    "placeholders": { "round": {} }
+  },
+  "reactionSummary": "Total: {totalTime} ms\nRondes: {rounds}\nTemps restant: {timeLeft} ms",
+  "playAgain": "Tornar a jugar",
+  "endGame": "Sortir",
+  "plujaAsteroidesTitle": "Pluja d'Asteroides",
+  "timePlayed": "Temps jugat: {time}",
+  "@timePlayed": {
+    "placeholders": { "time": {} }
+  },
+  "plujaAsteroidesGameOverTitle": "Partida finalitzada",
+  "plujaAsteroidesSummary": "Has acabat amb {lives} vides restants",
+  "@plujaAsteroidesSummary": {
+    "placeholders": { "lives": {} }
+  },
+  "playAgain": "Tornar a jugar",
+  "exitGame": "Sortir",
+  "configurationFeatureTitle": "Configuració",
+  "configurationFeatureDescription": "Accedeix i canvia la configuració i les preferències de l'aplicació.",
+  "spectateSessionsTitle": "Sessió en directe",
+  "spectateNoGameTitle": "⚠️ Encara no s'ha iniciat cap partida",
+  "spectateWaitingMessage": "Esperant que el professor iniciï la partida…",
+  "descriptionLabel": "Descripció",
+  "manualLabel": "Manual",
+  "gameDescription": "Aquí va la descripció completa…",
+  "gameManual": "Aquí va el manual complet…",
+  "droneControlTitle": "Control de Drone",
+  "gameOverTitle": "PARTIDA FINALITZADA",
+  "goHome": "Anar a Inici",
+  "telemetryLabel": "Posició",
+  "headingLabel": "Capçal",
+  "player1Label": "Jugador 1 (Vermell)",
+  "player2Label": "Jugador 2 (Blau)",
+  "player3Label": "Jugador 3 (Verd)",
+  "player4Label": "Jugador 4 (Groc)"
 }
