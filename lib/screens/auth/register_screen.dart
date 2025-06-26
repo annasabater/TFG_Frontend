@@ -21,6 +21,10 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   String _selectedRole = 'Usuario';
 
+  static final _passwordRegex = RegExp(
+   r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#\$%\^&\*_\-@]).{8,20}$'
+  );
+
   // Variables para validar la contraseña
   bool _hasMinLength = false;
   bool _hasMaxLength = false;
@@ -81,7 +85,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
       _hasLowercase   = RegExp(r'[a-z]').hasMatch(pw);
       _hasUppercase   = RegExp(r'[A-Z]').hasMatch(pw);
       _hasNumber      = RegExp(r'[0-9]').hasMatch(pw);
-      _hasSpecialChar = RegExp(r'[!@#\\\$%\^&\*(),.?":{}|<>]').hasMatch(pw);
+      _hasSpecialChar = RegExp(r'[!#\$%\^&\*_\-@]').hasMatch(pw);
     });
   }
 
@@ -96,48 +100,59 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     }
   }
 
-  Future<void> _register() async {
-    final localizations = AppLocalizations.of(context)!;
-    final name  = _nameCtrl.text.trim();
-    final email = _emailCtrl.text.trim().toLowerCase();
-    final pw    = _passwordCtrl.text;
-    final isUpc = email.endsWith('@upc.edu');
+Future<void> _register() async {
+  final localizations = AppLocalizations.of(context)!;
+  final name  = _nameCtrl.text.trim();
+  final email = _emailCtrl.text.trim().toLowerCase();
+  final pw    = _passwordCtrl.text;
+  final isUpc = email.endsWith('@upc.edu');
 
-    if (name.isEmpty || email.isEmpty || pw.isEmpty) {
-      _showError(localizations.emptyFieldsError);
-      return;
-    }
-    if (!_isUsernameValid) {
-      _showError('El nombre de usuario debe tener al menos 3 caracteres');
-      return;
-    }
-    if (!_isEmailValid) {
-      _showError('El email no tiene un formato válido');
-      return;
-    }
-    if (!(_hasMinLength && _hasMaxLength && _hasLowercase &&
-          _hasUppercase && _hasNumber && _hasSpecialChar)) {
-      _showError('La contraseña no cumple todos los requisitos');
-      return;
-    }
-
-    final roleToSend = isUpc ? _selectedRole : 'Usuario';
-
-    setState(() => _isLoading = true);
-    try {
-      await AuthService().signup(
-        userName: name,
-        email:    email,
-        password: pw,
-        role:     roleToSend,
-      );
-      if (mounted) context.go('/');
-    } catch (e) {
-      _showError(e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  if (name.isEmpty || email.isEmpty || pw.isEmpty) {
+    _showError(localizations.emptyFieldsError);
+    return;
   }
+  if (!_isUsernameValid) {
+    _showError('El nombre de usuario debe tener al menos 3 caracteres');
+    return;
+  }
+  if (!_isEmailValid) {
+    _showError('El email no tiene un formato válido');
+    return;
+  }
+  if (!_passwordRegex.hasMatch(pw)) {
+    _showError(
+      'La contraseña debe tener 8-20 caracteres, al menos una minúscula, '
+      'una mayúscula, un dígito y uno de estos símbolos: ! # \$ % ^ & * _ - @'
+    );
+    return;
+  }
+
+  final roleToSend = isUpc ? _selectedRole : 'Usuario';
+
+  setState(() => _isLoading = true);
+  try {
+    final result = await AuthService().signup(
+      userName: name,
+      email:    email,
+      password: pw,
+      role:     roleToSend,
+    );
+
+    if (result.containsKey('error')) {
+      _showError(result['error'] as String);
+      return;
+    }
+
+    if (mounted) {
+      // Registro OK → vamos al home
+      context.go('/');
+    }
+  } catch (e) {
+    _showError(e.toString());
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
+  }
+}
 
   void _showError(String msg) {
     final localizations = AppLocalizations.of(context)!;
@@ -318,7 +333,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                             _buildCheckItem(_hasLowercase, 'At least one lowercase letter'),
                             _buildCheckItem(_hasUppercase, 'At least one uppercase letter'),
                             _buildCheckItem(_hasNumber, 'At least one number'),
-                            _buildCheckItem(_hasSpecialChar, 'At least one special character'),
+                            _buildCheckItem(_hasSpecialChar, 'Un símbolo (! # \$ % ^ & * _ - @)'),
                           ],
                         ),
                         const SizedBox(height: 25),

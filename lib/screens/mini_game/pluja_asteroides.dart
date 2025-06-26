@@ -56,27 +56,34 @@ class _PlujaAsteroidesScreenState extends State<PlujaAsteroidesScreen> {
     gameTimer = Timer.periodic(const Duration(milliseconds: 16), (_) => updateGame());
   }
 
+  // Bucle principal que mou meteorits i cors, genera nous objectes aleatòriament i comprova col·lisions
   void updateGame() {
     if (!mounted || gameOver) return;
     final size = MediaQuery.of(context).size;
+
+    // Inicia posició del jugador si encara no està definida
     playerX ??= size.width / 2 - playerSize / 2;
     playerY ??= size.height - playerSize * 2;
+
     setState(() {
+      // Mou tots els meteorits i cors cap avall
       asteroids = asteroids.map((a) => Offset(a.dx, a.dy + 5)).toList();
-      hearts = hearts.map((h) => Offset(h.dx, h.dy + 3)).toList();
+      hearts    = hearts   .map((h) => Offset(h.dx, h.dy + 3)).toList();
+
+      // crea nous meteorits (3%) i cors (0,3%)
       if (random.nextDouble() < 0.03) {
-        asteroids.add(
-          Offset(random.nextDouble() * (size.width - asteroidSize), -asteroidSize),
-        );
+        asteroids.add(Offset(random.nextDouble() * (size.width - asteroidSize), -asteroidSize));
       }
       if (random.nextDouble() < 0.003) {
-        hearts.add(
-          Offset(random.nextDouble() * (size.width - heartSize), -heartSize),
-        );
+        hearts.add(Offset(random.nextDouble() * (size.width - heartSize), -heartSize));
       }
+
+      // Detecta col·lisions i ajusta vides
       _checkCollisions();
+
+      // Elimina objectes que surten de la pantalla
       asteroids.removeWhere((a) => a.dy > size.height);
-      hearts.removeWhere((h) => h.dy > size.height);
+      hearts   .removeWhere((h) => h.dy > size.height);
     });
   }
 
@@ -213,7 +220,7 @@ class _PlujaAsteroidesScreenState extends State<PlujaAsteroidesScreen> {
                 backgroundColor: colors.surface,
                 title: Text(loc.plujaAsteroidesGameOverTitle),
                 content: Text(
-                  '${loc.timePlayed(timeText())}\n${loc.plujaAsteroidesSummary(lives)}',
+                  '${loc.timePlayed(timeText())}\n',
                 ),
                 actions: [
                   TextButton(

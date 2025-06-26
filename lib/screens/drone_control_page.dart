@@ -27,7 +27,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   bool   _showMap      = true;
   bool   _mapLocked    = false;
   bool   _gameFinished = false;
-  double _currentZoom  = 19;
+  double _currentZoom  = 18;
 
   final Map<String, Marker>  _droneMarkers  = {};
   final Map<String, Marker>  _bulletMarkers = {};
@@ -60,6 +60,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
   @override
   void initState() {
     super.initState();
+    _resetScenarioContents();
     _connectSocket();
   }
 
@@ -81,6 +82,14 @@ class _DroneControlPageState extends State<DroneControlPage> {
           _showMap      = true;
           _mapLocked    = false;
         });
+      })
+      ..on('waiting', (data) {
+          _resetScenarioContents();
+          setState(() {
+            _gameFinished = false;
+            _showMap      = true;
+            _mapLocked    = true;
+          });
       })
       ..on('game_ended', (_) {
         if (!mounted || _gameFinished) return;
@@ -174,6 +183,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
         setState(() {});
         break;
     }
+    
   }
 
   void _syncBlinkTimer() {
@@ -309,6 +319,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
       }
       return;
     }
+    
     if (_throttleTimer?.isActive ?? false) return;
     _throttleTimer = Timer(_throttlePeriod, () {});
     final nx = off.dx / mag;

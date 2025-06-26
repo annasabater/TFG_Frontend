@@ -43,7 +43,7 @@
   "writeCommentHint": "Write a comment…",
   "reloadUsers": "Reload Users",
   "welcomeMessage": "Welcome to SkyNet",
-  "appDescription": "SkyNet is an all-in-one platform offering multiplayer games, real-time chat, social networking features and a marketplace for buying and selling drones and services, all powered by a MongoDB backend.",
+  "appDescription": "SkyNet is a versatile platform that automatically adapts to your role by giving drone pilots instant access to “Games” and Settings while allowing guests and other users to explore the map, spectate live matches, enjoy mini-games and customize the app, all within a unified interface.",
   "features": "Available Modules",
   "gamesFeatureTitle": "Multiplayer Games",
   "gamesFeatureDescription": "Complete missions and tackle challenges solo.",
@@ -466,7 +466,7 @@
   "@flappyBallDescription": {
     "description": "Description for the Flappy Ball mini-game"
   },
-  "reactionTestDescription": "Wait for the flash and tap it as quickly as you can to test your reaction time.",
+  "reactionTestDescription": "Wait for a green or red square to appear at a random position on the screen, tap the green one as quickly as you can to earn points and extra time, avoid tapping the red one because the game ends if you do, and try to stay in play as long as possible while racking up the highest number of green taps.",
   "@reactionTestDescription": {
     "description": "Description for the Reaction Test mini-game"
   },
@@ -539,12 +539,10 @@
   "configurationFeatureTitle": "Configuration",
   "configurationFeatureDescription": "Access and change app settings and preferences.",
   "spectateSessionsTitle": "Spectate Session",
-  "spectateNoGameTitle": "⚠️ No game has started yet",
+  "spectateNoGameTitle": "No game has started yet",
   "spectateWaitingMessage": "Waiting for the teacher to start the game…",
   "descriptionLabel": "Description",
   "manualLabel": "Manual",
-  "gameDescription": "Here goes the full manual…",
-  "gameManual": "Here goes the full manual…",
   "droneControlTitle": "Drone Control",
   "gameOverTitle": "Game Over!",
   "goHome": "Go Home",

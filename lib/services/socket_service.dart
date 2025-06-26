@@ -122,36 +122,32 @@ class SocketService {
     // Conexión al namespace /jocs
     final socketUrl = '$baseUrl/jocs';
     final builder = IO.OptionBuilder()
-      // 🔒 Solo WebSocket (sin polling)
-      .setTransports(['websocket'])
-      .setAuth({'token': jwt});
+      ..disableAutoConnect()
+      ..setTransports(['websocket'])
+      ..setAuth({'token': jwt})
+      ..setReconnectionAttempts(0)   // 0 = infinitos intentos
+      ..setReconnectionDelay(1000)   // 1 s entre intentos
+      ..setReconnectionDelayMax(5000);
 
-    // Cabecera ngrok únicamente en móviles/escritorio
+    // cabecera extra para móviles/escritorio
     if (!kIsWeb) {
       builder.setExtraHeaders({'ngrok-skip-browser-warning': 'true'});
     }
 
-    _socket = IO.io(
-      socketUrl,
-      builder
-        .disableAutoConnect()
-        .build(),
-    );
-
-    _socket!
+    _socket = IO.io(socketUrl, builder.build())
       ..onConnect((_) => _socket!.emit('join', {'sessionId': sid}))
-      ..on('waiting', (_) {})
+      ..onReconnect((_) => _socket!.emit('join', {'sessionId': sid}))
+      ..onConnectError((err) => print('[socket] connect_error: $err'))
+      ..onError((err)        => print('[socket] error: $err'))
+      ..on('waiting',      (_) {})
       ..on('game_started', (_) {
-        if (onGameStarted != null) onGameStarted!();
-      })
-      ..onConnectError((_) {})
-      ..onError((_) {});
+            onGameStarted?.call();
+        });
 
     _socket!.connect();
     return _socket!;
   }
 
-  /// Reinicia la conexión (p. ej. tras un endCompetition)
   static Future<IO.Socket> initGameSocket() async {
     _socket?.disconnect();
     _socket = null;
@@ -176,7 +172,7 @@ class SocketService {
     currentSessionId = null;
   }
 
-  /// Namespace de chat (igual que antes)
+  /// Namespace de chat
   static Future<IO.Socket> initChatSocket() async {
     if (_chatSocket != null && _chatSocket!.connected) {
       return _chatSocket!;

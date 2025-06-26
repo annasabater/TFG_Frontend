@@ -11,22 +11,6 @@ import '../services/socket_service.dart';
 import 'package:SkyNet/screens/mini_game/drone_game.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-/// Gira 180° cuando la pantalla está en vertical (alto > ancho)
-class _RotateIfPortrait extends StatelessWidget {
-  const _RotateIfPortrait({required this.child, Key? key}) : super(key: key);
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final needsRotation = size.height > size.width;
-    return RotatedBox(
-      quarterTurns: needsRotation ? 2 : 0,
-      child: child,
-    );
-  }
-}
-
 class SpectateSessionsPage extends StatefulWidget {
   final String sessionId;
   const SpectateSessionsPage({super.key, required this.sessionId});
@@ -40,7 +24,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   final MapController _mapController = MapController();
 
   bool _mapLocked = true;
-  double _currentZoom = 20;
+  double _currentZoom = 19;
   bool _gameFinished = false;
   bool _gameStarted = false;
 
@@ -66,6 +50,7 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   @override
   void initState() {
     super.initState();
+    _resetScenario();
     _connectAsSpectator();
   }
 
@@ -317,143 +302,142 @@ class _SpectateSessionsPageState extends State<SpectateSessionsPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
 
-    return _RotateIfPortrait(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(loc.spectateSessionsTitle),
-          backgroundColor: Colors.blue,
-          leading: BackButton(onPressed: () => context.go('/')),
-        ),
-        backgroundColor: const Color(0xFFEFF2F5),
-        body: Stack(
-          children: [
-            Positioned.fill(child: _buildMap()),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(loc.spectateSessionsTitle),
+        backgroundColor: colors.primary,
+        leading: BackButton(onPressed: () => context.go('/')),
+      ),
+      backgroundColor: const Color(0xFFEFF2F5),
+      body: Stack(
+        children: [
+          Positioned.fill(child: _buildMap()),
 
-            // Overlay de espera antes de empezar la partida
-            if (!_gameStarted)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '⚠️ ${loc.spectateNoGameTitle}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        loc.spectateWaitingMessage,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _styledButton(
-                            loc.descriptionLabel,
-                            () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
-                          ),
-                          const SizedBox(width: 16),
-                          _styledButton(
-                            loc.manualLabel,
-                            () => _showTextDialog(loc.manualLabel, loc.gameManual),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Botones de descripción/manual una vez iniciada la partida
-            if (_gameStarted)
-              Positioned(
-                bottom: 24,
-                right: 16,
-                child: Row(
+          // Overlay de espera antes de empezar la partida
+          if (!_gameStarted)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _styledButton(
-                      '📖 ${loc.descriptionLabel}',
-                      () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
+                    Text(
+                      '⚠️ ${loc.spectateNoGameTitle}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(width: 12),
-                    _styledButton(
-                      '🛠 ${loc.manualLabel}',
-                      () => _showTextDialog(loc.manualLabel, loc.gameManual),
+                    const SizedBox(height: 8),
+                    Text(
+                      loc.spectateWaitingMessage,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _styledButton(
+                          loc.descriptionLabel,
+                          () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
+                        ),
+                        const SizedBox(width: 16),
+                        _styledButton(
+                          loc.manualLabel,
+                          () => _showTextDialog(loc.manualLabel, loc.gameManual),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-
-            // Zoom y lock
-            _zoomBtn(70, Icons.add,    () => setState(() { _currentZoom++; _mapController.move(_mapController.center, _currentZoom); })),
-            _zoomBtn(130, Icons.remove, () => setState(() { _currentZoom--; _mapController.move(_mapController.center, _currentZoom); })),
-            _zoomBtn(
-              190,
-              _mapLocked ? Icons.lock : Icons.lock_open,
-              () => setState(() => _mapLocked = !_mapLocked),
             ),
 
-            // Puntuaciones y mini-juego
-            if (_scores.isNotEmpty) ...[
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(12),
+          // Botones de descripción/manual una vez iniciada la partida
+          if (_gameStarted)
+            Positioned(
+              bottom: 24,
+              right: 16,
+              child: Row(
+                children: [
+                  _styledButton(
+                    '📖 ${loc.descriptionLabel}',
+                    () => _showTextDialog(loc.descriptionLabel, loc.gameDescription),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ..._scores.entries.map((e) {
-                        final clr  = _playerColor[e.key]!;
-                        final name = {
-                          'dron_rojo1@upc.edu':    'Jugador 1 (Rojo)',
-                          'dron_azul1@upc.edu':    'Jugador 2 (Azul)',
-                          'dron_verde1@upc.edu':   'Jugador 3 (Verde)',
-                          'dron_amarillo1@upc.edu':'Jugador 4 (Amarillo)',
-                        }[e.key] ?? e.key.split('@').first;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Text(
-                            '$name: ${e.value}',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: clr),
-                          ),
-                        );
-                      }).toList(),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.sports_esports),
-                        label: const Text('Mini Joc'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                        onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DroneGame()));
-                        },
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  _styledButton(
+                    '🛠 ${loc.manualLabel}',
+                    () => _showTextDialog(loc.manualLabel, loc.gameManual),
                   ),
+                ],
+              ),
+            ),
+
+          // Zoom y lock
+          _zoomBtn(70, Icons.add,    () => setState(() { _currentZoom++; _mapController.move(_mapController.center, _currentZoom); })),
+          _zoomBtn(130, Icons.remove, () => setState(() { _currentZoom--; _mapController.move(_mapController.center, _currentZoom); })),
+          _zoomBtn(
+            190,
+            _mapLocked ? Icons.lock : Icons.lock_open,
+            () => setState(() => _mapLocked = !_mapLocked),
+          ),
+
+          // Puntuaciones y mini-juego
+          if (_scores.isNotEmpty) ...[
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ..._scores.entries.map((e) {
+                      final clr  = _playerColor[e.key]!;
+                      final name = {
+                        'dron_rojo1@upc.edu':    'Jugador 1 (Rojo)',
+                        'dron_azul1@upc.edu':    'Jugador 2 (Azul)',
+                        'dron_verde1@upc.edu':   'Jugador 3 (Verde)',
+                        'dron_amarillo1@upc.edu':'Jugador 4 (Amarillo)',
+                      }[e.key] ?? e.key.split('@').first;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          '$name: ${e.value}',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: clr),
+                        ),
+                      );
+                    }).toList(),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.sports_esports),
+                      label: const Text('Mini Joc'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DroneGame()));
+                      },
+                    ),
+                  ],
                 ),
               ),
-            ],
-
-            // Overlay de fin de partida
-            if (_gameFinished) _buildGameOverOverlay(context),
+            ),
           ],
-        ),
+
+          // Overlay de fin de partida
+          if (_gameFinished) _buildGameOverOverlay(context),
+        ],
       ),
     );
   }

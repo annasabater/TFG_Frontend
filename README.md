@@ -69,11 +69,8 @@ Això instal·larà:
 
 ## Executar l’aplicació
 
-### En web
+flutter pub get
 flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
-
-### En mode desenvolupament
-flutter run
 
 
 ## Referències

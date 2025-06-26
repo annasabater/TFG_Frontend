@@ -14,20 +14,20 @@ class TapTargetScreen extends StatefulWidget {
 }
 
 class _TapTargetScreenState extends State<TapTargetScreen> {
-  static const gameDuration = Duration(seconds: 20);
+  static const Duration gameDuration = Duration(seconds: 20);
+
   int score = 0;
   Timer? _timer;
   Duration _timeLeft = gameDuration;
   Offset _targetPosition = Offset.zero;
-  double _targetSize = 50;
+  double _targetSize = 50.0;
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startGame();
-    });
+    // Esperem a què es construeixi la UI per calcular grandàries
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
   }
 
   @override
@@ -41,19 +41,16 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
     _randomizeTarget(size);
     score = 0;
     _timeLeft = gameDuration;
-
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeLeft.inSeconds <= 1) {
         timer.cancel();
         _showGameOver();
       } else {
-        setState(() {
-          _timeLeft -= const Duration(seconds: 1);
-        });
+        setState(() => _timeLeft -= const Duration(seconds: 1));
       }
     });
-    setState(() {}); // refresca tiempo y marcador
+    setState(() {}); // refresca marcador i comptador
   }
 
   void _randomizeTarget(Size size) {
@@ -78,6 +75,7 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(loc.gameOverTitle),
         content: Text(loc.tapTargetScore(score)),
         actions: [
@@ -99,31 +97,42 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final timePct = _timeLeft.inSeconds / gameDuration.inSeconds;
+    final loc    = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+    final pct    = _timeLeft.inSeconds / gameDuration.inSeconds;
 
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: () => context.go('/play-testing')),
-        title: Text(loc.tapTargetTitle),
-        backgroundColor: Colors.blue,
+        title: Text(loc.tapTargetTitle, style: const TextStyle(color: Colors.white)),
+        backgroundColor: colors.primary,
+        elevation: 2,
       ),
-      backgroundColor: Colors.lightBlue[100],
+      backgroundColor: colors.surfaceVariant,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTapDown: _onTapDown,
         child: Stack(
           children: [
+            // Comptador restant
             Positioned(
               top: 16,
               left: 16,
-              child: Text('${loc.timeLabel}: ${_timeLeft.inSeconds}s'),
+              child: Text(
+                '${loc.timeLabel}: ${_timeLeft.inSeconds}s',
+                style: TextStyle(color: colors.onSurface, fontSize: 16),
+              ),
             ),
+            // Puntuació
             Positioned(
               top: 16,
               right: 16,
-              child: Text('${loc.scoreLabel}: $score'),
+              child: Text(
+                '${loc.scoreLabel}: $score',
+                style: TextStyle(color: colors.onSurface, fontSize: 16),
+              ),
             ),
+            // Objectiu mòbil
             AnimatedPositioned(
               duration: const Duration(milliseconds: 200),
               left: _targetPosition.dx,
@@ -132,26 +141,27 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
                 width: _targetSize,
                 height: _targetSize,
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: colors.primary.withOpacity(0.8),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 4,
+                      color: colors.onSurface.withOpacity(0.3),
+                      blurRadius: 6,
                     ),
                   ],
                 ),
               ),
             ),
+            // Barra de temps
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: LinearProgressIndicator(
-                value: timePct,
+                value: pct,
                 minHeight: 8,
-                color: Colors.grey[600],           // barra de progreso gris
-                backgroundColor: Colors.grey[300],  // fondo de la barra
+                color: colors.primary,
+                backgroundColor: colors.primary.withOpacity(0.3),
               ),
             ),
           ],

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:SkyNet/widgets/Layout.dart';
 import 'package:SkyNet/provider/users_provider.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,23 +12,71 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => Provider.of<UserProvider>(context, listen: false).loadUsers());
+    // Carga usuarios / sesión
+    Future.microtask(
+      () => Provider.of<UserProvider>(context, listen: false).loadUsers(),
+    );
+  }
+
+  /// Comprueba si el correo pertenece a uno de los 4 drones
+  bool _isDroneMail(String? mail) {
+    const drones = {
+      'dron_rojo1@upc.edu',
+      'dron_azul1@upc.edu',
+      'dron_verde1@upc.edu',
+      'dron_amarillo1@upc.edu',
+    };
+    return mail != null && drones.contains(mail.toLowerCase());
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final colors = Theme.of(context).colorScheme;
+    final loc         = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth   = screenWidth > 600 ? 320.0 : screenWidth * 0.7;
 
-    // Definir ancho de tarjeta: máximo 320px en desktop, 70% en móvil
-    double cardWidth = screenWidth * 0.7;
-    if (screenWidth > 600) {
-      cardWidth = 320;
+    // Obtener e-mail del usuario actual
+    final userProv  = context.watch<UserProvider>();
+    final userEmail = userProv.currentUser?.email;
+    final isDrone   = _isDroneMail(userEmail);
+
+    // Definir lista de features
+    final features = <Map<String, dynamic>>[
+      {
+        'image'      : 'assets/game.jpeg',
+        'title'      : isDrone ? loc.gamesTitle           : loc.menuMiniGamesTitle,
+        'description': isDrone ? loc.gamesTitle           : loc.gamesFeatureDescription,
+        'route'      : isDrone ? '/jocs'                  : '/play-testing',
+        'color'      : Colors.orangeAccent,
+      },
+      {
+        'image'      : 'assets/barcelona.jpg',
+        'title'      : loc.mapsTitle,
+        'description': loc.mapFeatureDescription,
+        'route'      : '/mapa',
+        'color'      : Colors.deepPurpleAccent,
+      },
+      {
+        'image'      : 'assets/settings.jpg',
+        'title'      : loc.configurationFeatureTitle,
+        'description': loc.configurationFeatureDescription,
+        'route'      : '/settings',
+        'color'      : Colors.blueAccent,
+      },
+    ];
+
+    // Si NO es dron, añado la tarjeta de espectador
+    if (!isDrone) {
+      features.add({
+        'image'      : 'assets/espectador.jpg',
+        'title'      : loc.spectateSessionsTitle,
+        'description': loc.spectateGames,
+        'route'      : '/jocs/spectate',
+        'color'      : Colors.green,  
+      });
     }
 
     return LayoutWrapper(
@@ -37,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            // Hero Section
             Stack(
               children: [
                 SizedBox(
@@ -54,15 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   right: 24,
                   child: Text(
                     loc.welcomeMessage,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 32,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
-                            blurRadius: 6,
-                            color: Colors.black.withOpacity(0.5),
-                            offset: Offset(2, 2))
+                          blurRadius: 6,
+                          color: Colors.black54,
+                          offset: Offset(2, 2),
+                        ),
                       ],
                     ),
                   ),
@@ -77,63 +124,31 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    loc.appDescription,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+                  Text(loc.appDescription,
+                      style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 24),
-
-                  Text(
-                    loc.features,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+                  Text(loc.features,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
 
-                  // Feature Cards Scroll adaptado a móvil y PC
                   SizedBox(
                     height: 260,
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       scrollDirection: Axis.horizontal,
-                      itemCount: 3,
+                      itemCount: features.length,
                       itemBuilder: (context, index) {
-                        final features = [
-                          
-                          {
-                            'image': 'assets/games.png',
-                            'title': loc.menuMiniGamesTitle,
-                            'description': loc.gamesFeatureDescription,
-                            'route': '/play-testing',
-                            'color': Colors.orangeAccent,
-                          },
-                          {
-                            'image': 'assets/barcelona.jpg',
-                            'title': loc.mapsTitle,
-                            'description': loc.mapFeatureDescription,
-                            'route': '/mapa',
-                            'color': Colors.deepPurpleAccent,
-                          },
-                          {
-                            'image': 'assets/configuration.avif',
-                            'title': loc.configurationFeatureTitle,
-                            'description': loc.configurationFeatureDescription,
-                            'route': '/settings',
-                            'color': Colors.blueAccent,
-                          },
-                        ];
-
-                        final feature = features[index];
-
+                        final f = features[index];
                         return _DashboardButton(
-                          image: feature['image'] as String,
-                          title: feature['title'] as String,
-                          description: feature['description'] as String,
-                          route: feature['route'] as String,
-                          color: feature['color'] as Color,
-                          maxWidth: cardWidth,
+                          image      : f['image']      as String,
+                          title      : f['title']      as String,
+                          description: f['description']as String,
+                          route      : f['route']      as String,
+                          color      : f['color']      as Color,
+                          maxWidth   : cardWidth,
                         );
                       },
                     ),
@@ -180,11 +195,11 @@ class _DashboardButtonState extends State<_DashboardButton> {
     final colors = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
+      onExit:  (_) => setState(() => _hovering = false),
       child: AnimatedScale(
-        scale: _hovering ? 1.04 : 1.0,
+        scale   : _hovering ? 1.04 : 1.0,
         duration: const Duration(milliseconds: 180),
-        curve: Curves.easeInOut,
+        curve   : Curves.easeInOut,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -195,12 +210,12 @@ class _DashboardButtonState extends State<_DashboardButton> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                color: _hovering ? widget.color.withOpacity(0.10) : colors.surface,
-                boxShadow: [
+                color       : _hovering ? widget.color.withOpacity(0.10) : colors.surface,
+                boxShadow   : [
                   BoxShadow(
-                    color: widget.color.withOpacity(0.13),
+                    color     : widget.color.withOpacity(0.13),
                     blurRadius: _hovering ? 18 : 10,
-                    offset: const Offset(0, 6),
+                    offset    : const Offset(0, 6),
                   ),
                 ],
                 border: Border.all(
@@ -209,8 +224,8 @@ class _DashboardButtonState extends State<_DashboardButton> {
                 ),
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize      : MainAxisSize.min,
+                mainAxisAlignment : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   ClipRRect(
@@ -227,22 +242,19 @@ class _DashboardButtonState extends State<_DashboardButton> {
                     widget.title,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 21,
+                      fontSize  : 21,
                       fontWeight: FontWeight.bold,
-                      color: widget.color,
+                      color     : widget.color,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Flexible(
                     child: Text(
                       widget.description,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        color: colors.onSurfaceVariant,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                      textAlign   : TextAlign.center,
+                      style       : TextStyle(fontSize: 15.5, color: colors.onSurfaceVariant),
+                      maxLines    : 3,
+                      overflow    : TextOverflow.ellipsis,
                     ),
                   ),
                 ],

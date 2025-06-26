@@ -14,21 +14,21 @@ class ReactionGameScreen extends StatefulWidget {
 }
 
 class _ReactionGameScreenState extends State<ReactionGameScreen> {
-  static const int spawnIntervalMs = 500; // cada 200 ms aparece un cuadrado ⇒ 5/s
-  static const int tickIntervalMs = 100;  // rebaja tiempo cada 0,1 s
+  static const int spawnIntervalMs = 500;
+  static const int tickIntervalMs  = 100;
 
   final Random _rand = Random();
   Timer? _spawnTimer;
   Timer? _countdownTimer;
   Stopwatch _stopwatch = Stopwatch();
 
-  int _timeLeftMs = 10000;   // empieza en 10 s
+  int _timeLeftMs    = 10000;
   bool _flashVisible = false;
-  Offset _flashPos = Offset.zero;
-  Size _flashSize = Size.zero;
-  Color _flashColor = Colors.green;
+  Offset _flashPos   = Offset.zero;
+  Size _flashSize    = Size.zero;
+  Color? _flashColor;
 
-  int _greenHits = 0;        // cuenta sólo verdes
+  int _greenHits = 0;
 
   @override
   void initState() {
@@ -37,10 +37,10 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
   }
 
   void _startGame() {
-    _timeLeftMs = 10000;
-    _greenHits = 0;
-    _flashVisible = false;
-    _stopwatch = Stopwatch()..start();
+    _timeLeftMs    = 10000;
+    _greenHits     = 0;
+    _flashVisible  = false;
+    _stopwatch     = Stopwatch()..start();
 
     _spawnTimer?.cancel();
     _countdownTimer?.cancel();
@@ -65,13 +65,17 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
   void _spawnFlash() {
     if (_timeLeftMs <= 0) return;
     setState(() {
-      _flashColor = _rand.nextDouble() < 0.3 ? Colors.red : Colors.green;
-      Size screen = MediaQuery.of(context).size;
-      double w = screen.width * (0.1 + _rand.nextDouble() * 0.1);
-      double x = _rand.nextDouble() * (screen.width - w);
-      double y = _rand.nextDouble() * (screen.height - w - 100) + 50;
-      _flashSize = Size(w, w);
-      _flashPos = Offset(x, y);
+      // 30% vermell, 70% verd
+      final isRed = _rand.nextDouble() < 0.3;
+      _flashColor = isRed ? Colors.red : Colors.green;
+
+      final screen = MediaQuery.of(context).size;
+      final w      = screen.width * (0.1 + _rand.nextDouble() * 0.1);
+      final x      = _rand.nextDouble() * (screen.width - w);
+      final y      = _rand.nextDouble() * (screen.height - w - 100) + 50;
+
+      _flashSize    = Size(w, w);
+      _flashPos     = Offset(x, y);
       _flashVisible = true;
     });
   }
@@ -95,15 +99,12 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
         _flashVisible = false;
         if (_flashColor == Colors.green) {
           _greenHits++;
-          _timeLeftMs += 800;   // +0,8 s
+          _timeLeftMs += 800;
         } else {
-          // rojo ⇒ fin del juego inmediato
           _timeLeftMs = 0;
         }
       });
-      if (_timeLeftMs <= 0) {
-        _endGame();
-      }
+      if (_timeLeftMs <= 0) _endGame();
     }
   }
 
@@ -112,18 +113,16 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
     _countdownTimer?.cancel();
     _stopwatch.stop();
 
-    final loc = AppLocalizations.of(context)!;
-    final totalPlayedSec = (_stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1);
+    final loc    = AppLocalizations.of(context)!;
+    final played = (_stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1);
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(loc.reactionTitle),
-        content: Text(
-          '⏱ Tiempo jugado: ${totalPlayedSec}s\n'
-          '✅ Cuadros verdes: $_greenHits',
-        ),
+        content: Text('⏱ $played s\n✅ $_greenHits'),
         actions: [
           TextButton(
             onPressed: () {
@@ -143,14 +142,16 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final loc    = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.reactionTitle),
-        backgroundColor: Colors.blue,
+        title: Text(loc.reactionTitle, style: const TextStyle(color: Colors.white)),
+        backgroundColor: colors.primary,
         leading: BackButton(onPressed: () => context.go('/play-testing')),
       ),
-      backgroundColor: Colors.lightBlue[100],
+      backgroundColor: colors.surfaceVariant,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTapDown: _onTapDown,
@@ -161,18 +162,18 @@ class _ReactionGameScreenState extends State<ReactionGameScreen> {
               right: 16,
               child: Text(
                 '${loc.timeLeftLabel}: ${(_timeLeftMs / 1000).toStringAsFixed(1)}s',
-                style: const TextStyle(fontSize: 18),
+                style: TextStyle(color: colors.onSurface, fontSize: 18),
               ),
             ),
             Positioned(
               top: 16,
               left: 16,
               child: Text(
-                '✅: $_greenHits',
-                style: const TextStyle(fontSize: 18),
+                '✅ $_greenHits',
+                style: TextStyle(color: colors.onSurface, fontSize: 18),
               ),
             ),
-            if (_flashVisible)
+            if (_flashVisible && _flashColor != null)
               Positioned(
                 left: _flashPos.dx,
                 top: _flashPos.dy,
