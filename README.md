@@ -76,8 +76,9 @@ flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
 
 ## Vídeos
 
-Enllaç del vídeo de funcionament:
-Enllaç del vídeo del recorregut pel codi:
+Enllaç del vídeo de funcionament: https://www.youtube.com/watch?v=4DQgxJfO3Jo
+
+Enllaç del vídeo del recorregut pel codi: https://www.youtube.com/watch?v=YajXjRgMd1A
 
 
 ## Referències
