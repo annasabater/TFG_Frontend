@@ -314,7 +314,8 @@
   "daltonicMode": "Color-blind Mode",
   "readingMode": "Reading Mode",
   "logout": "Log Out",
-  "gamesTitle": "Games",
+  "gamesTitle": "Game at the DronLab",
+  "gameDescriptiontitle": "Combat match with 1–4 drones in the DronLab",
   "descriptionLabel": "Description",
   "manualLabel": "Manual",
   "socialNetwork": "Social Network",
@@ -365,7 +366,6 @@
   "spectateMiniGameButton": "Mini Game",
   "spectateGameOverTitle": "GAME OVER",
   "spectateGoHome": "Go Home",
-  "gamesTitle": "Games",
   "descriptionLabel": "Description",
   "manualLabel": "Manual",
   "gameManual": "Here goes the full manual of the game…",
@@ -452,8 +452,8 @@
   "accessDeniedTitle": "Access Denied",
   "okButton": "OK",
   "adminDetails": "Admin Details",
-  "gameDescription": "📜 Game Description\n\nThe drone game is a competitive experience designed to challenge players’ skills in a dynamic battlefield. Participants control their drones with precision, strategy, and speed to eliminate opponents and survive amid obstacles. The goal is to be the last drone standing or accumulate the highest score, depending on the selected mode.\n\n─────────────────────────────────────────────────────────\n\n🕹 Available Modes\n\n• Players: 2 to 4\n• Modes: Free-for-all (last man standing), 2 vs 2 (respawn enabled)\n• Time Limit: 8 minutes\n\n─────────────────────────────────────────────────────────\n\n🚀 Weapons & Dynamics\n\n• Small Fast Bullet → High fire rate, ~800 m/s\n• Medium Bullet → Balanced damage/speed, ~500 m/s\n• Large Slow Bullet → Heavy damage, ~100 m/s\n\n─────────────────────────────────────────────────────────\n\n🎯 Victory Conditions\n\n• 10 points per drone eliminated\n•   1 point per obstacle destroyed\n\n─────────────────────────────────────────────────────────\n\n“An immersive experience where strategy and skill collide in thrilling drone battles.”",
-  "gameManual": "📖 Game Manual\n\n─────────────────────────────────────────────────────────\n\nOBJECTIVE\n\nEliminate opponents and be the last drone standing, or collect the most points before time runs out.\n\n─────────────────────────────────────────────────────────\n\nSETUP\n\n• Players: 2–4\n\n─────────────────────────────────────────────────────────\n\nGAME MODE\n\n• Real-world arena\n• Free-for-all / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nFIRING MECHANICS\n\nProjectile             | Rate       | Reload   | Speed  \n----------------------|------------|----------|-------\nSmall Fast Bullet     | 0.5 s/shot | 0.5 s    | 800 m/s\nMedium Bullet         | 1 s/shot   | 1 s      | 500 m/s\nLarge Slow Bullet     | 2 s/shot   | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTACLES\n\nDestructible structures grant 1 extra point when destroyed.\n\n─────────────────────────────────────────────────────────\n\nSCORING\n\n• 10 pts per elimination\n•   1 pt per obstacle\n\n─────────────────────────────────────────────────────────\n\nEND OF GAME\n\nA results table shows kills, shots fired, obstacles destroyed, and total points.\n\nGood luck and may the best pilot win!",
+  "gameDescription": "📜 COMBAT – BRIEF DESCRIPTION\n\nCombat is a competition of 1 – 4 drones within the DRONLAB (controlled outdoor area). Before each match the professor designs the scenario and places destructible obstacles, so the terrain changes every time.\n\nSCORING\n• 10 PTS for taking down another drone\n• 1 PT for destroying an obstacle\n\nALTITUDE\nDrones cannot exceed 5 m in height.\n\nRESPAWN\nIf the mode allows, a destroyed drone respawns after 10 sec and automatically ascends to 5 M. In the last drone standing mode there is no respawn.\n\nMODES\n• Last Drone Standing\n• Free-for-all with respawn\n• 2 vs 2 with respawn\n• Typical time limit: 8 MIN\n\nStrategy combines shooting, obstacle use, and fence placement to dominate the DRONLAB.",
+  "gameManual": "📖 COMBAT – QUICK MANUAL\n\nOBJECTIVE\nAccumulate the highest score or be the last operational drone before time runs out.\n\nSETUP\n1. The professor configures the scenario and obstacles.\n2. Pilots wait in the lobby until the Game Started signal.\n\nCONTROLS (Two joysticks)\n• LEFT: YAW (X) AND ASCEND/DESCEND (Y)\n• RIGHT: HORIZONTAL MOVEMENT (X) AND FORWARD/BACKWARD (Y)\n\nWEAPONS\n| Projectile | Rate | Approx. Speed | Damage |\n|------------|------|---------------|--------|\n| Small      | 0.5 S| 800 M/S       | low    |\n| Medium     | 1 S  | 500 M/S       | medium |\n| Large      | 2 S  | 100 M/S       | high   |\n\nOBSTACLES\nDestructible; worth 1 PT when destroyed.\n\nRESPAWN\nIf enabled, you respawn after 10 sec at 5 m altitude.\n\nEND\nWhen time expires or only one drone remains, a results table shows eliminations, obstacles, and total points.",
   "rainAsteroidsDescription": "Dodge falling asteroids and collect hearts to survive as long as possible.",
   "@rainAsteroidsDescription": {
     "description": "Description for the Rain Asteroids mini-game"

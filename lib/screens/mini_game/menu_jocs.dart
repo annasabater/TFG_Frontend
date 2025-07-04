@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-// Import directo de la pantalla PlujaAsteroides
 import 'package:SkyNet/screens/mini_game/pluja_asteroides.dart';
 
 class MenuJocsScreen extends StatelessWidget {

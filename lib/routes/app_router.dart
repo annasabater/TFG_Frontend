@@ -49,7 +49,7 @@ import 'package:provider/provider.dart';
 import '../screens/settings_screen.dart';
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: AuthService().isLoggedIn ? '/xarxes' : '/login',
+ initialLocation: AuthService().isLoggedIn ? '/' : '/login',
   routes: [
 
     GoRoute(

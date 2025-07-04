@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'image'      : 'assets/game.jpeg',
         'title'      : isDrone ? loc.gamesTitle           : loc.menuMiniGamesTitle,
-        'description': isDrone ? loc.gamesTitle           : loc.gamesFeatureDescription,
+        'description': isDrone ? loc.gameDescriptiontitle : loc.gamesFeatureDescription,
         'route'      : isDrone ? '/jocs'                  : '/play-testing',
         'color'      : Colors.orangeAccent,
       },

@@ -325,7 +325,6 @@
   "daltonicMode": "Mode daltonic",
   "readingMode": "Mode lectura",
   "logout": "Tancar sessió",
-  "gamesTitle": "Jocs",
   "descriptionLabel": "Descripció",
   "manualLabel": "Manual",
   "closeButton": "Tancar",
@@ -373,7 +372,8 @@
   "spectateMiniGameButton": "Mini Joc",
   "spectateGameOverTitle": "PARTIDA FINALITZADA",
   "spectateGoHome": "Anar a l'inici",
-  "gamesTitle": "Jocs",
+  "gamesTitle": "Joc al DronLab",
+  "gameDescriptiontitle": "Partida de combat amb 1–4 drons en el DronLab",
   "descriptionLabel": "Descripció",
   "manualLabel": "Manual",
   "accessDeniedTitle": "Accés denegat",
@@ -435,8 +435,8 @@
   "confirmDeleteButton": "Esborrar",
   "userDeletedSuccess": "L'usuari {userName} ha estat esborrat",
   "userDeletedError": "No s'ha pogut esborrar l'usuari: {error}",
-  "gameDescription": "📜 Descripció del Joc\n\nEl joc és una competició de drons dissenyada per desafiar les habilitats dels jugadors en un entorn de combat dinàmic i competitiu. Els participants controlen els seus drons amb precisió, estratègia i rapidesa per eliminar oponents i sobreviure en un camp de batalla amb obstacles. L’objectiu és ser l’últim dron en peu o acumular la major puntuació, segons el mode seleccionat.\n\n─────────────────────────────────────────────────────────\n\n🕹 Modalitats Disponibles\n\n• Jugadors: 2 a 4\n• Modes: Tots contra tots (últim en peu), 2 vs 2 (respawn habilitat)\n• Límite de temps: 8 minuts\n\n─────────────────────────────────────────────────────────\n\n🚀 Dinàmica i Armes\n\n• Bala petita i ràpida → alta cadència, velocitat ~800 m/s\n• Bala mitjana → equilibri dany/velocitat ~500 m/s\n• Bala gran i lenta → alt dany, velocitat ~100 m/s\n\n─────────────────────────────────────────────────────────\n\n🎯 Condicions de Victòria\n\n• 10 punts per dron eliminat\n•   1 punt per obstacle destruit\n\n─────────────────────────────────────────────────────────\n\n“Una experiència immersiva on estratègia i habilitat es combinen en batalles de drons plenes d’emoció.”",
-  "gameManual": "📖 Manual del Joc\n\n─────────────────────────────────────────────────────────\n\nOBJECTIU\n\nEliminar els oponents i ser l’últim dron en peu, o acumular la major puntuació abans que s’acabi el temps.\n\n─────────────────────────────────────────────────────────\n\nCONFIGURACIÓ\n\n• Jugadors: 2–4\n\n─────────────────────────────────────────────────────────\n\nMODE DE JOC\n\n• Escenari real\n• Tots contra tots / 2 vs 2\n\n─────────────────────────────────────────────────────────\n\nMECÀNICA DE DISPAR\n\nProjectil              | Cadència    | Recàrrega | Velocitat\n----------------------|-------------|----------|---------\nBala petita i ràpida  | 0,5 s/trets | 0,5 s    | 800 m/s\nBala mitjana          | 1 s/trets   | 1 s      | 500 m/s\nBala gran i lenta     | 2 s/trets   | 1 s      | 100 m/s\n\n─────────────────────────────────────────────────────────\n\nOBSTACLES\n\nEstructures destructibles atorguen 1 punt extra al destruir-les.\n\n─────────────────────────────────────────────────────────\n\nPUNTUACIÓ\n\n• 10 pts per eliminació\n•   1 pt per obstacle\n\n─────────────────────────────────────────────────────────\n\nFINAL DE LA PARTIDA\n\nEs mostra una taula de resultats amb eliminacions, trets, obstacles destruïts i punts totals.\n\nBona sort i que guanyi el millor pilot!",
+  "gameDescription": "📜 COMBAT – DESCRIPCIÓ BREU\n\nCombat és una competició de 1 – 4 drons dins del DRONLAB (zona exterior controlada). Abans de cada partida el professor defineix l'escenari i coloca els obstacles destructibles, de manera que el terreny varia cada cop.\n\nPUNTUACIÓ\n• 10 pts per enderrocar un altre dron\n• 1 pt per obstacle destruit\n\nALTURA\nEls drons no poden superar els 5 m d'altura.\n\nRESPAWN\nSi el mode ho permet, un dron destruït reapareix després de 10 seg i s'enlaira automàticament a 5 M. En el mode últim en peu no hi ha respawn.\n\nMODES\n• Últim dron en peu\n• Tots contra tots amb respawn\n• 2 vs 2 amb respawn\n• Límit de temps habitual: 8 MIN\n\nL'estratègia combina tirs, ús d'obstacles i col·locació de tanques per dominar el DRONLAB.",
+  "gameManual": "📖 COMBAT – MANUAL RÀPID\n\nOBJECTIU\nAcumula la màxima puntuació o sigues l'últim dron operatiu abans que s'acabi el temps.\n\nPREPARACIÓ\n1. El professor configura l'escenari i els obstacles.\n2. Els pilots esperen a la sala fins al senyal Game Started.\n\nCONTROLS (dos joysticks)\n• ESQUERRE: GIR (X) I PUJAR/BAIXAR (Y)\n• DRET: MOVIMENT HORITZONTAL (X) I AVANÇ/RETROCEDIR (Y)\n\nARMES\n| Projectil | Cadència | Velocitat aprox. | Dany |\n|-----------|----------|------------------|------|\n| Petit     | 0,5 S    | 800 M/S          | baix |\n| Mitjà     | 1 S      | 500 M/S          | mitjà |\n| Gran      | 2 S      | 100 M/S          | alt  |\n\nOBSTACLES\nDestructibles; valen 1 PT en destruir-los.\n\nRESPAWN\nSi està habilitat, reapareixes després de 10 seg a 5 m d'altura.\n\nFINAL\nQuan acaba el temps o queda un sol dron actiu, es mostra la taula amb eliminacions, obstacles i punts totals.",
   "rainAsteroidsDescription": "Esquiva els asteroides que cauen i recull cors per sobreviure el màxim temps.",
   "@rainAsteroidsDescription": {
     "description": "Descripció per al mini-joc Pluja d’Asteroides"

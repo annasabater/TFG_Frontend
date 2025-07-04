@@ -77,6 +77,7 @@ class AuthService {
   String get _signupUrl => '$baseApiUrl/auth/register';
   String get _userUrl => '$baseApiUrl/users';
   String get _googleUrl => '$baseApiUrl/auth/google';
+  
 
   /// Login: guarda currentUser + JWT.
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -207,6 +208,25 @@ class AuthService {
     currentUser = null;
     _jwt = null;
   }
+
+
+Future<bool> refresh() async {
+  final prefs = await SharedPreferences.getInstance();
+  final refTok = prefs.getString('refreshToken');
+  if (refTok == null) return false;
+
+  final resp = await http.post(
+    Uri.parse('$baseApiUrl/auth/refresh'),
+    headers: {'Authorization': 'Bearer $refTok'},
+  );
+  if (resp.statusCode != 200) return false;
+
+  final body = jsonDecode(resp.body) as Map<String, dynamic>;
+  final newJwt = body['accesstoken'] as String?;
+  if (newJwt == null) return false;
+  return _saveToken(newJwt);        // sobreescriu el JWT antic
+}
+
 
   Future<Map<String, dynamic>> loginWithGoogle(GoogleSignInAccount user) async {
     final response = await http.post(

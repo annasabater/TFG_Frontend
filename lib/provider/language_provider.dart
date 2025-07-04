@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LanguageProvider extends ChangeNotifier {
   static const String _languageKey = 'language_code';
   late SharedPreferences _prefs;
-  Locale _currentLocale = const Locale('es'); // quan es registra un usuari, per defecte es posa a 'espanyol'
+  // quan es registra un usuari, per defecte es posa a 'espanyol'
+  Locale _currentLocale = const Locale('es');   
 
   LanguageProvider() {
     _loadLanguage();

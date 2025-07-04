@@ -26,7 +26,6 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
   @override
   void initState() {
     super.initState();
-    // Esperem a què es construeixi la UI per calcular grandàries
     WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
   }
 
@@ -37,8 +36,15 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
   }
 
   void _startGame() {
-    final size = MediaQuery.of(context).size;
-    _randomizeTarget(size);
+    final media   = MediaQuery.of(context);
+    final width   = media.size.width;
+    final height  = media.size.height
+                  - media.padding.top          // barra de estado/notch
+                  - kToolbarHeight             // AppBar
+                  - media.padding.bottom;      // barra de gestos
+    final playArea = Size(width, height);
+
+    _randomizeTarget(playArea);
     score = 0;
     _timeLeft = gameDuration;
     _timer?.cancel();
@@ -50,12 +56,18 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
         setState(() => _timeLeft -= const Duration(seconds: 1));
       }
     });
-    setState(() {}); // refresca marcador i comptador
+    setState(() {}); // refresca marcador y contador
   }
 
-  void _randomizeTarget(Size size) {
-    final x = _random.nextDouble() * (size.width - _targetSize);
-    final y = _random.nextDouble() * (size.height - _targetSize - 100) + 100;
+  void _randomizeTarget(Size playArea) {
+    const double topMargin  = 64.0;  // deja espacio para contador/puntuación
+    const double sideMargin = 16.0;  // margen lateral
+    final maxX = playArea.width  - _targetSize - sideMargin;
+    final maxY = playArea.height - _targetSize - sideMargin;
+
+    final x = sideMargin + _random.nextDouble() * maxX;
+    final y = topMargin  + _random.nextDouble() * (maxY - topMargin);
+
     _targetPosition = Offset(x, y);
   }
 
@@ -64,7 +76,14 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
     final rect = _targetPosition & Size(_targetSize, _targetSize);
     if (rect.contains(tap)) {
       score++;
-      _randomizeTarget(MediaQuery.of(context).size);
+      // recalcula en el mismo área de juego
+      final media   = MediaQuery.of(context);
+      final width   = media.size.width;
+      final height  = media.size.height
+                    - media.padding.top
+                    - kToolbarHeight
+                    - media.padding.bottom;
+      _randomizeTarget(Size(width, height));
       setState(() {});
     }
   }
@@ -114,7 +133,7 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
         onTapDown: _onTapDown,
         child: Stack(
           children: [
-            // Comptador restant
+            // Contador restante
             Positioned(
               top: 16,
               left: 16,
@@ -123,7 +142,7 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
                 style: TextStyle(color: colors.onSurface, fontSize: 16),
               ),
             ),
-            // Puntuació
+            // Puntuación
             Positioned(
               top: 16,
               right: 16,
@@ -132,7 +151,7 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
                 style: TextStyle(color: colors.onSurface, fontSize: 16),
               ),
             ),
-            // Objectiu mòbil
+            // Diana móvil
             AnimatedPositioned(
               duration: const Duration(milliseconds: 200),
               left: _targetPosition.dx,
@@ -152,7 +171,7 @@ class _TapTargetScreenState extends State<TapTargetScreen> {
                 ),
               ),
             ),
-            // Barra de temps
+            // Barra de tiempo
             Positioned(
               bottom: 0,
               left: 0,

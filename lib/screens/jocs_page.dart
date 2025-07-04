@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../provider/users_provider.dart';
 import '../services/socket_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 
 class _FancyButton extends StatelessWidget {
@@ -86,6 +87,7 @@ class JocsPage extends StatelessWidget {
   }
 
   @override
+
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final isCompetitor = context.watch<UserProvider>().isCompetitor;

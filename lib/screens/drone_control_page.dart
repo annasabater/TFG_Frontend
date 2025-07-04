@@ -9,7 +9,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/socket_service.dart';
 
 class DroneControlPage extends StatefulWidget {
@@ -27,7 +27,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
   bool   _showMap      = true;
   bool   _mapLocked    = false;
   bool   _gameFinished = false;
-  double _currentZoom  = 18;
+  bool   _gameStarted = false;        
+  double _currentZoom  = 19;
 
   final Map<String, Marker>  _droneMarkers  = {};
   final Map<String, Marker>  _bulletMarkers = {};
@@ -45,9 +46,9 @@ class _DroneControlPageState extends State<DroneControlPage> {
   Map<String, dynamic>? _myTelemetry;
 
   Timer?              _throttleTimer;
-  static const double _deadZone       = 0.7;
-  static const double _maxSpeed       = 0.3;
-  static const Duration _throttlePeriod = Duration(milliseconds: 100);
+  static const double _deadZone     = 0.7;
+  static const double _maxSpeed     = 0.3;     
+  static const Duration _throttlePeriod = Duration(milliseconds: 100); 
 
   static const Map<String, Color> _playerColor = {
     'dron_rojo1@upc.edu'    : Colors.red,
@@ -60,7 +61,6 @@ class _DroneControlPageState extends State<DroneControlPage> {
   @override
   void initState() {
     super.initState();
-    _resetScenarioContents();
     _connectSocket();
   }
 
@@ -76,7 +76,8 @@ class _DroneControlPageState extends State<DroneControlPage> {
       })
       ..on('game_started', (_) {
         if (!mounted) return;
-        _resetScenarioContents();
+        _gameStarted = true;
+      //  _resetScenarioContents();
         setState(() {
           _gameFinished = false;
           _showMap      = true;
@@ -84,15 +85,17 @@ class _DroneControlPageState extends State<DroneControlPage> {
         });
       })
       ..on('waiting', (data) {
-          _resetScenarioContents();
-          setState(() {
-            _gameFinished = false;
-            _showMap      = true;
-            _mapLocked    = true;
-          });
+            if (!_gameStarted && !_gameFinished) {
+             // _resetScenarioContents();
+              setState(() {
+                _showMap   = true;
+                _mapLocked = true;
+              });
+            }
       })
       ..on('game_ended', (_) {
         if (!mounted || _gameFinished) return;
+        _gameStarted = false;
         _resetScenarioContents();
         setState(() {
           _gameFinished = true;
@@ -202,6 +205,7 @@ class _DroneControlPageState extends State<DroneControlPage> {
       _blinkVisible = true;
     }
   }
+
 
   void _resetScenarioContents() {
     _droneMarkers.clear();

@@ -24,270 +24,299 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   bool _visible = false;
   bool _obscurePassword = true;
-  String? _errorMessage; //  almacenamos el error para mostrarlo en pantalla
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    // Lazy-animate both the hero image and the content card.
     Future.delayed(const Duration(milliseconds: 200), () {
-      setState(() {
-        _visible = true;
-      });
+      if (mounted) setState(() => _visible = true);
     });
   }
-
-  Future<void> _signUserIn(BuildContext context) async {
+  Future<void> _signUserIn() async {
     final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
     final loc = AppLocalizations.of(context)!;
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = loc.emptyFieldsError;
-      });
+      setState(() => _errorMessage = loc.emptyFieldsError);
       return;
     }
 
     try {
       final result = await AuthService().login(email, password);
       if (result.containsKey('error')) {
-        if (context.mounted) {
-          setState(() {
-            _errorMessage = result['error'] as String;
-          });
-        }
+        if (!mounted) return;
+        setState(() => _errorMessage = result['error'] as String);
         return;
       }
 
       final mapUser = result['user'] as Map<String, dynamic>;
-      if (context.mounted) {
-        context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
-        SocketService.setUserEmail(mapUser['email'] as String);
-        context.go('/');
-      }
+      if (!mounted) return;
+      context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
+      SocketService.setUserEmail(mapUser['email'] as String);
+      context.go('/');
     } catch (e) {
-      if (context.mounted) {
-        setState(() {
-          _errorMessage = e.toString();
-        });
-      }
+      if (mounted) setState(() => _errorMessage = e.toString());
     }
   }
 
-  Future<void> signInWithGoogle(BuildContext context) async {
+  Future<void> _signInWithGoogle() async {
     final user = await GoogleSignInApi.login();
     if (user == null) {
-      setState(() {
-        _errorMessage = 'Login with google failed';
-      });
+      setState(() => _errorMessage = 'Login with Google failed');
       return;
     }
+
     try {
       final result = await AuthService().loginWithGoogle(user);
-      print(result);
-
       if (result.containsKey('error') || result['user'] == null) {
-        setState(() {
-          _errorMessage = result['error'] ?? 'Error al procesar la respuesta';
-        });
+        setState(() =>
+            _errorMessage = result['error'] ?? 'Error al procesar la respuesta');
         return;
       }
 
       final mapUser = result['user'] as Map<String, dynamic>;
-
       if (!mounted) return;
       context.read<UserProvider>().setCurrentUser(User.fromJson(mapUser));
       SocketService.setUserEmail(mapUser['email']);
       context.go('/');
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error al iniciar sesión con Google: $e';
-      });
+      setState(() => _errorMessage = 'Error al iniciar sesión con Google: $e');
     }
   }
+
+  bool get _isWide => MediaQuery.of(context).size.width > 700;
+
+  double get _sidePadding => _isWide ? 40 : 20;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.of(context).size.width > 700;
 
     return Scaffold(
       backgroundColor: colors.surface,
-      body: Row(
-        children: [
-          if (isWide)
+      body: SafeArea(
+        child: Row(
+          children: [
+            if (_isWide)
+              Expanded(
+                flex: 3,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 1500),
+                  opacity: _visible ? 1.0 : 0.0,
+                  curve: Curves.easeInOut,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
+                    ),
+                    child: Image.asset(
+                      'assets/barcelona2.png',
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      width: double.infinity,
+                    ),
+                  ),
+                ),
+              ),
+
             Expanded(
               flex: 3,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 1500),
-                opacity: _visible ? 1.0 : 0.0,
-                curve: Curves.easeInOut,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                  child: Image.asset(
-                    'assets/barcelona2.png',
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    width: double.infinity,
-                  ),
-                ),
-              ),
-            ),
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 1500),
-                opacity: _visible ? 1.0 : 0.0,
-                curve: Curves.easeInOut,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 60,
-                  ),
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 35,
-                      vertical: 40,
+              child: Center(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 1500),
+                  opacity: _visible ? 1.0 : 0.0,
+                  curve: Curves.easeInOut,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _sidePadding,
+                      vertical: _isWide ? 60 : 40,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.97),
-                      borderRadius: BorderRadius.circular(35),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 30,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(
-                          child: Image.asset(
-                            'assets/logo_skynet.png',
-                            width: 100,
-                            height: 100,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        Text(
-                          loc.welcome,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: colors.primary,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                
-                        MyTextfield(
-                          controller: emailController,
-                          hintText: loc.email,
-                          obscureText: false,
-                          prefixIcon: Icons.email_outlined,
-                        ),
-                        const SizedBox(height: 25),
-       
-                        TextField(
-                          controller: passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            hintText: loc.password,
-                            prefixIcon: Icon(
-                              Icons.lock_outline,
-                              color: colors.onSurfaceVariant,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: colors.primary.withOpacity(0.7),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            filled: true,
-                            fillColor: colors.surface.withOpacity(0.05),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-               
-                        if (_errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 20),
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: colors.error,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        MyButton(
-                          onTap: () => _signUserIn(context),
-                          text: loc.login,
-                          color: colors.primary,
-                          textColor: Colors.white,
-                          borderRadius: 25,
-                          height: 55,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              loc.notAMember,
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => context.go('/register'),
-                              child: Text(
-                                loc.register,
-                                style: TextStyle(
-                                  color: colors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: _LoginCard(
+                        colors: colors,
+                        loc: loc,
+                        emailController: emailController,
+                        passwordController: passwordController,
+                        errorMessage: _errorMessage,
+                        obscurePassword: _obscurePassword,
+                        onTogglePasswordVisibility: () =>
+                            setState(() => _obscurePassword = !_obscurePassword),
+                        onEmailPasswordSignIn: _signUserIn,
+                        onGoogleSignIn: _signInWithGoogle,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _LoginCard extends StatelessWidget {
+  const _LoginCard({
+    required this.colors,
+    required this.loc,
+    required this.emailController,
+    required this.passwordController,
+    required this.errorMessage,
+    required this.obscurePassword,
+    required this.onTogglePasswordVisibility,
+    required this.onEmailPasswordSignIn,
+    required this.onGoogleSignIn,
+  });
+
+  final ColorScheme colors;
+  final AppLocalizations loc;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final String? errorMessage;
+  final bool obscurePassword;
+  final VoidCallback onTogglePasswordVisibility;
+  final void Function() onEmailPasswordSignIn;
+  final void Function() onGoogleSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    // Adaptive font sizes to avoid overflow on tiny screens.
+    final double headlineSize = MediaQuery.of(context).size.width < 360 ? 24 : 28;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 40),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.97),
+        borderRadius: BorderRadius.circular(35),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Image.asset(
+              'assets/logo_skynet.png',
+              width: 100,
+              height: 100,
+            ),
+          ),
+          const SizedBox(height: 30),
+          Text(
+            loc.welcome,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.primary,
+              fontSize: headlineSize,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 40),
+
+          MyTextfield(
+            controller: emailController,
+            hintText: loc.email,
+            obscureText: false,
+            prefixIcon: Icons.email_outlined,
+          ),
+          const SizedBox(height: 25),
+
+          TextField(
+            controller: passwordController,
+            obscureText: obscurePassword,
+            decoration: InputDecoration(
+              hintText: loc.password,
+              prefixIcon: Icon(
+                Icons.lock_outline,
+                color: colors.onSurfaceVariant,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: colors.primary.withOpacity(0.7),
+                ),
+                onPressed: onTogglePasswordVisibility,
+              ),
+              filled: true,
+              fillColor: colors.surface.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 18,
+                horizontal: 16,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          if (errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Text(
+                errorMessage!,
+                style: TextStyle(
+                  color: colors.error,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+          MyButton(
+            onTap: onEmailPasswordSignIn,
+            text: loc.login,
+            color: colors.primary,
+            textColor: Colors.white,
+            borderRadius: 25,
+            height: 55,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+          const SizedBox(height: 20),
+
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            children: [
+              Text(
+                loc.notAMember,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: 16,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.go('/register'),
+                child: Text(
+                  loc.register,
+                  style: TextStyle(
+                    color: colors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
